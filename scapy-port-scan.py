@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
+try:
+    import scapy
+    from scapy.all import *
+except ImportError:
+    print("Error: Scapy library not found. Please install it with: pip install scapy")
+    sys.exit(1)
+
+import socket
+import subprocess
+import platform
 import time
 import random
 import sys
