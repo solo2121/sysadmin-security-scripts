@@ -1,2 +1,112 @@
-build/
+# -------------------------
+# Operating system files
+# -------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
 
+# -------------------------
+# Editor / IDE files
+# -------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.orig
+
+# -------------------------
+# Language / runtime files
+# -------------------------
+# Node / JavaScript
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+venv/
+env/
+.venv/
+
+# Java / Kotlin / Scala
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+.gradle/
+build/
+target/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+vendor/
+
+# Rust
+/target/
+Cargo.lock          # remove this line if you’re building a binary crate
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+
+# Ruby
+*.gem
+.bundle/
+vendor/bundle
+
+# PHP
+/vendor/
+.env
+.env.*.local
+
+# -------------------------
+# Logs, databases, misc
+# -------------------------
+*.log
+*.sqlite
+*.db
+*.pid
+*.seed
+*.pid.lock
+
+# -------------------------
+# Environment / secrets
+# -------------------------
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+secrets.yaml
+
+# -------------------------
+# Temporary / generated
+# -------------------------
+tmp/
+temp/
+.cache/
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# -------------------------
+# macOS & Windows
+# -------------------------
+.DS_Store
+._*
+Thumbs.db
