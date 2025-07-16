@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import random
+
 import time
 
 def detect_firewall(host, open_ports, closed_ports):
@@ -39,7 +39,7 @@ def decoy_scan(host, port, scan_type, decoy_ips=None):
     """Perform scan with decoy IPs to mask real source"""
     if decoy_ips is None:
         # Generate random decoy IPs
-        decoy_ips = [f"{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}" 
+        decoy_ips = [f"{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}"
                     for _ in range(3)]
 
     # Perform decoy scans (won't wait for responses)
@@ -256,7 +256,7 @@ def main():
         parser = argparse.ArgumentParser(description='Port Scanner with Scapy')
         parser.add_argument('host', help='Target host to scan')
         parser.add_argument('-p', '--ports', default='1-1000', help='Port range (e.g., 1-1000 or 80,443,8080)')
-        parser.add_argument('-t', '--type', default='1', choices=['1','2','3','4','5','6'], 
+        parser.add_argument('-t', '--type', default='1', choices=['1','2','3','4','5','6'],
                           help='Scan type (1-6)')
         parser.add_argument('--threads', default=50, type=int, help='Number of threads')
 
