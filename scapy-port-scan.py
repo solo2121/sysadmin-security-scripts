@@ -1,6 +1,19 @@
 #!/usr/bin/env python3
 
 import time
+import random
+import sys
+import threading
+from datetime import datetime
+import argparse
+from scapy.all import *
+from scapy.all import fragment as scapy_fragment
+
+def banner():
+    print("=" * 50)
+    print("           PORT SCANNER WITH SCAPY")
+    print("=" * 50)
+    print()
 
 def detect_firewall(host, open_ports, closed_ports):
     """Detect potential firewall presence based on scan results"""
@@ -30,7 +43,7 @@ def firewall_evasion_delay():
 def fragment_packet(packet, fragment_size=8):
     """Fragment IP packet to evade firewalls"""
     try:
-        fragments = fragment(packet, fragsize=fragment_size)
+        fragments = scapy_fragment(packet, fragsize=fragment_size)
         return fragments
     except:
         return [packet]
@@ -96,18 +109,6 @@ def timing_evasion_scan(host, port, scan_type, timing_level=3):
     time.sleep(delay)
 
     return scan_port(host, port, scan_type)
-
-from scapy.all import *
-import sys
-import threading
-from datetime import datetime
-import argparse
-
-def banner():
-    print("=" * 50)
-    print("           PORT SCANNER WITH SCAPY")
-    print("=" * 50)
-    print()
 
 def tcp_syn_scan(host, port):
     """TCP SYN Scan"""
