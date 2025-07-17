@@ -35,7 +35,7 @@ def select_interface(interfaces):
     print("Available network interfaces:\n")
     for i, iface in enumerate(interfaces, 1):
         print(f"{i}. {iface}")
-    
+
     while True:
         try:
             choice = int(input("\nSelect interface (number): "))
@@ -49,13 +49,13 @@ def select_interface(interfaces):
 def select_save_location():
     print_header()
     default_dir = os.path.join(os.path.expanduser('~'), 'pcaps')
-    
+
     print(f"Current default save location: {default_dir}")
     print("\nOptions:")
     print("1. Use default location")
     print("2. Specify custom location")
     print("3. Use current directory")
-    
+
     while True:
         choice = input("\nSelect save location option (1-3): ")
         if choice == '1':
@@ -90,7 +90,7 @@ def select_capture_options():
     print("3. Capture specific host")
     print("4. Capture specific protocol")
     print("5. Advanced filter (custom)")
-    
+
     options = []
     while True:
         choice = input("\nSelect capture option (1-5): ")
@@ -121,7 +121,7 @@ def select_packet_count():
     print("Packet Count Options:\n")
     print("1. Unlimited (capture until stopped)")
     print("2. Specific number of packets")
-    
+
     while True:
         choice = input("\nSelect packet count option (1-2): ")
         if choice == '1':
@@ -135,12 +135,12 @@ def select_packet_count():
 def run_tcpdump(interface, save_dir, filename, filter_options, count_options):
     save_path = os.path.join(save_dir, filename)
     command = ['sudo', 'tcpdump', '-i', interface, '-w', save_path] + filter_options + count_options
-    
+
     print("\nStarting capture with the following command:")
     print(" ".join(command))
     print(f"\nSaving to: {save_path}")
     print("Press Ctrl+C to stop capture...\n")
-    
+
     try:
         process = subprocess.Popen(command)
         process.wait()
@@ -162,19 +162,19 @@ def main():
     if os.geteuid() != 0:
         print("This script requires root privileges. Please run with sudo.")
         sys.exit(1)
-    
+
     interfaces = get_interface_list()
     if not interfaces:
         print("No network interfaces found.")
         sys.exit(1)
-    
+
     interface = select_interface(interfaces)
     save_dir = select_save_location()
     filter_options = select_capture_options()
     count_options = select_packet_count()
     filename = generate_filename(interface)
-    
+
     run_tcpdump(interface, save_dir, filename, filter_options, count_options)
 
-if __name__ == "__main__":
+if __name_ == "__main__":
     main()
