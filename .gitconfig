@@ -4,6 +4,7 @@
 
 [credential]
     credentialstore = secretservice
+	helper = cache
 
 [credential "https://dev.azure.com"]
     useHttpPath = true
