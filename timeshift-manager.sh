@@ -1,7 +1,7 @@
 #!/bin/bash
 # TimeShift Manager - System Snapshot Management Tool
 # Description: Interactive shell script for managing system snapshots with TimeShift
-# Version: 4.0
+# Version: 2.0
 # Author: Solo
 # Last Modified: 2025-07-11
 
