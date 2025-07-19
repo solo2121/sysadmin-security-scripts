@@ -15,8 +15,7 @@ bind 'set completion-ignore-case on'
 bind 'set show-all-if-ambiguous on'
 bind 'TAB:menu-complete'
 
-show_menu()
-    echo "=================================="
+show_menu()    echo "=================================="
     echo "        Git Management Menu"
     echo "=================================="
     echo "1. Check Git Status"
