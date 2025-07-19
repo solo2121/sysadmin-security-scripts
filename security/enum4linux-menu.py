@@ -15,10 +15,10 @@ import sys
 from typing import List, Tuple
 
 # ------------------------------------------------------------------
-# 1. Pretty ASCII banner
+# Banner
 # ------------------------------------------------------------------
 BANNER = r"""
- ____ ____ ____ ____ ____ ____ ____ ____ ____ ____ ____ ____ ____ ____ 
+ ____ ____ ____ ____ ____ ____ ____ ____ ____ ____ ____ ____ ____ ____
 ||e |||n |||u |||m |||4 |||l |||i |||n |||u |||x |||  |||M |||E |||N |||U ||
 ||__|||__|||__|||__|||__|||__|||__|||__|||__|||__|||__|||__|||__|||__|||__||
 |/__\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|
@@ -26,8 +26,8 @@ Interactive wrapper for the classic SMB enumeration tool.
 """
 
 # ------------------------------------------------------------------
-# 2. Available enum4linux switches
-#    (description, short switch, long switch)
+# Available enum4linux switches
+# (description, short switch, long switch)
 # ------------------------------------------------------------------
 OPTIONS: List[Tuple[str, str, str]] = [
     ("Do everything (-a)",                       "-a", ""),
@@ -45,7 +45,7 @@ OPTIONS: List[Tuple[str, str, str]] = [
 ]
 
 # ------------------------------------------------------------------
-# 3. Helper functions
+# Helper functions
 # ------------------------------------------------------------------
 def clear_screen() -> None:
     os.system("cls" if os.name == "nt" else "clear")
@@ -65,7 +65,7 @@ def ask(prompt: str, valid: List[str]) -> str:
             return choice
 
 # ------------------------------------------------------------------
-# 4. Main interactive menu
+# Main interactive menu
 # ------------------------------------------------------------------
 def interactive_menu(target: str, custom_options: List[str]) -> None:
     selected = set()
