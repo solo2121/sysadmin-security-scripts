@@ -1,6 +1,6 @@
 # Pentesting & Linux Sysadmin Scripts
 
-A curated collection of security testing and system administration scripts designed to streamline penetration testing workflows and automate routine Linux administration tasks.
+A collection of security testing and system administration scripts designed to streamline penetration testing workflows and automate routine Linux administration tasks.
 
 🔗 **Repository**: [github.com/solo2121/sysadmin-security-scripts](https://github.com/solo2121/sysadmin-security-scripts)
 
