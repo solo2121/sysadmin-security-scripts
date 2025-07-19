@@ -1,9 +1,24 @@
- Pentesting & Linux Sysadmin Scripts
+# Pentesting & Linux Sysadmin Scripts
 
-Welcome to my collection of security testing and system administration scripts! These tools are designed to simplify penetration testing, automate Linux tasks, and enhance productivity for security professionals and sysadmins.
+A curated collection of security testing and system administration scripts designed to streamline penetration testing workflows and automate routine Linux administration tasks.
 
-Features
+🔗 **Repository**: [github.com/solo2121/sysadmin-security-scripts](https://github.com/solo2121/sysadmin-security-scripts)
 
-✔ Pentesting Helpers – Automation for reconnaissance, exploitation, and post-exploitation tasks.
-✔ Sysadmin Shortcuts – Handy scripts for Linux server management, logging, and hardening.
-✔ Bash & Python Power – Lightweight, efficient, and customizable for your workflow.
+## Features
+
+### Pentesting Tools
+- **Reconnaissance**: Automated scanning and enumeration scripts
+- **Exploitation**: Helpers for common vulnerability exploitation
+- **Post-Exploitation**: Privilege escalation and persistence checks
+
+### Sysadmin Utilities
+- **Server Management**: Daily maintenance and monitoring scripts
+- **Log Analysis**: Parsing and alerting tools
+- **System Hardening**: Security configuration and compliance checks
+
+## Getting Started
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/solo2121/sysadmin-security-scripts.git
+   cd sysadmin-security-scripts
