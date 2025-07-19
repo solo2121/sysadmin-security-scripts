@@ -82,7 +82,7 @@ while true; do
     echo "8) Exit"
     echo -e "\e[0m"
 
-    read -p "Enter your choice [1-8]: " choice
+    read -r -p "Enter your choice [1-8]: " choice
     case $choice in
         1)
             clear_caches 1
@@ -112,7 +112,7 @@ while true; do
             echo "Uptime: $(uptime -p)"
             echo "CPU: $(lscpu | grep 'Model name' | cut -d: -f2 | xargs)"
             echo -e "\e[0m"
-            read -p "Press [Enter] to continue..."
+            read -r -p "Press [Enter] to continue..."
             ;;
         8)
             echo "Exiting. Goodbye!"
