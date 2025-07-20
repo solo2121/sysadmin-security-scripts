@@ -1,55 +1,65 @@
-```markdown
-# 🛡️ Pentesting & Linux Sysadmin Scripts
+# 🛡️ Security and System Administration Toolkit
 
-> A curated collection of ready-to-run security-testing and system-administration scripts for red-teamers, blue-teamers, and DevOps alike.
+> Production-ready automation scripts for offensive security, defensive operations, and Linux infrastructure management.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub stars](https://img.shields.io/github/stars/solo2121/sysadmin-security-scripts?style=social)](https://github.com/solo2121/sysadmin-security-scripts/stargazers)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/solo2121/sysadmin-security-scripts/pulls)
 
 ---
 
-## 📌 About
+## 📌 Overview
 
-This repository delivers **production-grade** automation for:
+This repository provides battle-tested automation solutions for security professionals and system administrators:
 
-* **Red-Team Engagements** – reconnaissance, exploitation, post-exploitation  
-* **Blue-Team Defense** – monitoring, log parsing, hardening  
-* **DevOps Day-to-Day** – server upkeep, compliance checks, alerting  
+- **Red Team Operations**: Reconnaissance, exploitation, and post-exploitation workflows
+- **Blue Team Defense**: Security monitoring, log analysis, and hardening procedures
+- **Infrastructure Management**: Compliance auditing, maintenance automation, and alerting systems
 
-All scripts are POSIX-compliant, non-interactive, and include inline usage documentation.
-
----
-
-## ✨ Highlights
-
-| Category | What’s Inside |
-| --- | --- |
-| **🔍 Pentesting Tools** | • Lightweight recon & enumeration<br>• Exploitation wrappers<br>• Priv-esc & persistence checks |
-| **⚙️ Sysadmin Utilities** | • Daily maintenance cronables<br>• Structured log analytics<br>• CIS-style hardening scripts |
+All scripts feature:
+- POSIX shell compliance
+- Non-interactive execution
+- Embedded documentation
+- Production environment validation
 
 ---
 
-## 🚀 Quick-Start
+## ✨ Capabilities
 
-```bash
-git clone https://github.com/solo2121/sysadmin-security-scripts.git
-cd sysadmin-security-scripts
-```
-
-### 📚 Step-by-Step Guides
-| Guide | Purpose |
-| --- | --- |
-| [Pentest Tutorial](./docs/pentest-tutorial.md) | End-to-end penetration-testing walkthrough |
-| [TimeShift CLI Guide](./docs/timeshift-cli-guide.md) | System snapshots & bare-metal recovery with TimeShift |
+| Category              | Functionality                                                                 |
+|-----------------------|-------------------------------------------------------------------------------|
+| **🔍 Security Testing** | Network reconnaissance, vulnerability exploitation, privilege escalation checks |
+| **⚙️ System Management** | Automated maintenance, CIS benchmark compliance, log analytics, backup solutions |
 
 ---
 
-## ⚖️ Disclaimer
-Use only on systems you own or have **explicit written permission** to test.  
-The authors assume **no liability** for misuse.
+## 🚀 Getting Started
 
----
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/solo2121/sysadmin-security-scripts.git
+   cd sysadmin-security-scripts
 
-## 📄 License
-[MIT](./LICENSE) © 2024
-```
+2. Review documentation:
+   ls docs/*.md
+
+📚 Documentation Guides
+File	Description
+Pentesting Workflow - End-to-end penetration testing methodology
+System Recovery Guide - Bare-metal recovery using TimeShift snapshots
+
+⚖️ Usage Policy
+
+    WARNING:
+
+        Use exclusively on systems you own or have explicit written authorization to test
+
+        Compliance with all applicable laws is required
+
+        Maintain appropriate audit trails for all operations
+
+        No warranty provided - use at your own risk
+
+📄 License
+
+Distributed under the MIT License - © 2024
