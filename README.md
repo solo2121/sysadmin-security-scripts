@@ -41,8 +41,7 @@ All scripts feature:
    cd sysadmin-security-scripts
 
 2. Review documentation:
-   ls docs/*.md
-
+   
 📚 Documentation Guides
 File	Description
 Pentesting Workflow - End-to-end penetration testing methodology
