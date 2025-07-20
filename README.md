@@ -19,17 +19,24 @@ This repository provides battle-tested automation solutions for security profess
 All scripts feature:
 - POSIX shell compliance
 - Non-interactive execution
-- Embedded documentation
 - Production environment validation
+- Minimal dependencies
 
 ---
 
 ## ✨ Capabilities
 
-| Category              | Functionality                                                                 |
-|-----------------------|-------------------------------------------------------------------------------|
-| **🔍 Security Testing** | Network reconnaissance, vulnerability exploitation, privilege escalation checks |
-| **⚙️ System Management** | Automated maintenance, CIS benchmark compliance, log analytics, backup solutions |
+### Security Testing
+- Network reconnaissance and mapping
+- Vulnerability exploitation frameworks
+- Privilege escalation checks
+- Forensic data collection
+
+### System Management
+- Automated maintenance tasks
+- CIS benchmark compliance auditing
+- Log analysis and anomaly detection
+- Backup and recovery solutions
 
 ---
 
@@ -40,24 +47,51 @@ All scripts feature:
    git clone https://github.com/solo2121/sysadmin-security-scripts.git
    cd sysadmin-security-scripts
 
-2. Review documentation:
-   
-📚 Documentation Guides
-File	Description
-Pentesting Workflow - End-to-end penetration testing methodology
-System Recovery Guide - Bare-metal recovery using TimeShift snapshots
+⚠️ Critical Usage Notice
 
-⚖️ Usage Policy
+Operational Guidelines:
 
-    WARNING:
+    Thoroughly review all scripts before execution
 
-        Use exclusively on systems you own or have explicit written authorization to test
+    Validate in isolated test environments first
 
-        Compliance with all applicable laws is required
+    Understand each script's functionality and potential impact
 
-        Maintain appropriate audit trails for all operations
+    Adjust parameters according to your specific environment
 
-        No warranty provided - use at your own risk
+Legal and Ethical Requirements:
+
+    Use exclusively on systems you own or have explicit written authorization to test
+
+    Compliance with all applicable laws is mandatory
+
+    Maintain comprehensive audit trails for all operations
+
+    No warranty provided - use at your own risk
+
+    :warning: Unauthorized use of these tools may violate computer security laws. Proceed with extreme caution and proper authorization.
+
+🤝 Contributing
+
+We welcome contributions through:
+
+    Issue reporting
+
+    Feature requests
+
+    Pull requests
+
+Development Standards:
+
+    Maintain POSIX shell compatibility
+
+    Include clear header comments in all scripts
+
+    Use descriptive variable and function names
+
+    Validate on multiple Linux distributions
+
+    Keep dependencies to a minimum
 
 📄 License
 
