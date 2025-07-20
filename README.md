@@ -33,13 +33,13 @@ This repository provides **ready-to-use** scripts for:
    git clone https://github.com/solo2121/sysadmin-security-scripts.git
    cd sysadmin-security-scripts
 
-- 📖 **Pentest Tutorial**: [`docs/pentest-tutorial`](docs/pentest-tutorial)
+2. Pick your guide
+   📖 Pentest Tutorial: docs/pentest-tutorial.md
+   🕒 TimeShift CLI Guide: docs/timeshift-cli-guide.md
 
-## ⚖️ Disclaimer
-**Use these tools only on systems you own or have explicit permission to test.**  
-The authors are **not liable** for any misuse.
+⚖️ Disclaimer
+Use these tools only on systems you own or have explicit permission to test.
+The authors are not liable for any misuse.
 
----
-
-## 📄 License
-Released under the [MIT License](LICENSE).
+📄 License
+Released under the MIT License.
