@@ -1,0 +1,39 @@
+[user]
+	name = solo2121
+	email = miguel_carlo@msn.com
+
+[core]
+    editor = nano
+    autocrlf = input
+    sshCommand = ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes
+
+[credential]
+    helper = manager-core  # or libsecret/osxkeychain based on your OS
+
+[remote "origin"]
+    url = git@github.com:solo2121/sysadmin-security-scripts  # Changed to SSH
+    fetch = +refs/heads/*:refs/remotes/origin/*
+
+[pull]
+    rebase = true
+
+[push]
+    default = current
+
+[color]
+    ui = true
+
+[merge]
+    conflictstyle = diff3
+
+[alias]
+    st = status
+    co = checkout
+    br = branch
+    ci = commit -m
+    unstage = reset HEAD --
+    last = log -1 HEAD
+    lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'
+
+[init]
+    defaultBranch = main
