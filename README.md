@@ -29,3 +29,6 @@ A collection of security testing and system administration scripts designed to s
 
 Use these tools **only on systems you own or have explicit permission to test**.  
 The authors are **not liable** for any misuse.
+
+📄 License
+MIT
