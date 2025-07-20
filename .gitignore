@@ -107,4 +107,4 @@ temp/
 *.bak
 *.save
 *.backup
-.cache/
+.cache/.gitconfig
