@@ -1,34 +1,43 @@
-# Pentesting & Linux Sysadmin Scripts
+# 🛡️ Pentesting & Linux Sysadmin Scripts
 
-A collection of security testing and system administration scripts designed to streamline penetration testing workflows and automate routine Linux administration tasks.
+> A collection of security-testing and system-administration scripts that streamline penetration-testing workflows and automate routine Linux maintenance.
 
-🔗 **Repository**: [github.com/solo2121/sysadmin-security-scripts](https://github.com/solo2121/sysadmin-security-scripts)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub stars](https://img.shields.io/github/stars/solo2121/sysadmin-security-scripts?style=social)](https://github.com/solo2121/sysadmin-security-scripts/stargazers)
 
-## Features
+---
 
-### Pentesting Tools
-- **Reconnaissance**: Automated scanning and enumeration scripts
-- **Exploitation**: Helpers for common vulnerability exploitation
-- **Post-Exploitation**: Privilege escalation and persistence checks
+## 📌 About
 
-### Sysadmin Utilities
-- **Server Management**: Daily maintenance and monitoring scripts
-- **Log Analysis**: Parsing and alerting tools
-- **System Hardening**: Security configuration and compliance checks
+This repository provides **ready-to-use** scripts for:
 
-## Getting Started
+- **Red-team engagements** – reconnaissance, exploitation, post-exploitation  
+- **Blue-team defense** – monitoring, log parsing, hardening  
+- **DevOps day-to-day** – server upkeep, compliance checks, alerting
 
-1. Clone this repository:
+---
+
+## ✨ Features
+
+| Category | Highlights |
+|----------|-----------|
+| **🔍 Pentesting Tools** | • Reconnaissance & enumeration<br>• Exploitation helpers<br>• Priv-esc & persistence checks |
+| **⚙️ Sysadmin Utilities** | • Daily maintenance scripts<br>• Log analysis & alerting<br>• Security hardening |
+
+---
+
+## 🚀 Quick-start
+
+1. Clone the repository  
    ```bash
    git clone https://github.com/solo2121/sysadmin-security-scripts.git
    cd sysadmin-security-scripts
 
----
-
 ## ⚖️ Disclaimer
-
-Use these tools **only on systems you own or have explicit permission to test**.  
+**Use these tools only on systems you own or have explicit permission to test.**  
 The authors are **not liable** for any misuse.
 
-📄 License
-MIT
+---
+
+## 📄 License
+Released under the [MIT License](LICENSE).
