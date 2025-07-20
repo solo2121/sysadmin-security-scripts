@@ -1,13 +1,14 @@
 # -------------------------
-# Operating system files
+# Operating System Files
 # -------------------------
 .DS_Store
+._*
 Thumbs.db
 desktop.ini
 *.lnk
 
 # -------------------------
-# Editor / IDE files
+# Editor/IDE Files
 # -------------------------
 .vscode/
 .idea/
@@ -15,11 +16,12 @@ desktop.ini
 *.swo
 *~
 *.orig
+idea/workspace.xml   # JetBrains secrets
 
 # -------------------------
-# Language / runtime files
+# Language/Runtime Files
 # -------------------------
-# Node / JavaScript
+# Node
 node_modules/
 npm-debug.log*
 yarn-debug.log*
@@ -35,7 +37,7 @@ venv/
 env/
 .venv/
 
-# Java / Kotlin / Scala
+# Java/Kotlin/Scala
 *.class
 *.jar
 *.war
@@ -55,7 +57,7 @@ vendor/
 
 # Rust
 /target/
-Cargo.lock          # remove this line if you’re building a binary crate
+# Cargo.lock          # Uncomment for libraries, keep for binaries
 
 # .NET
 bin/
@@ -70,13 +72,12 @@ vendor/bundle
 
 # PHP
 /vendor/
-.env
-.env.*.local
 
 # -------------------------
-# Logs, databases, misc
+# Logs/Databases
 # -------------------------
 *.log
+*.log.*
 *.sqlite
 *.db
 *.pid
@@ -84,35 +85,26 @@ vendor/bundle
 *.pid.lock
 
 # -------------------------
-# Environment / secrets
+# Secrets/Configs
 # -------------------------
-.env
-.env.local
-.env.*.local
+.env*
+!.env.example        # Allow example files
 *.key
 *.pem
+*.secret
+*.token
 secrets.yaml
+credentials.*
+config.json          # ⚠️ Only if contains secrets
+vault.yml
 
 # -------------------------
-# Temporary / generated
+# Temporary Files
 # -------------------------
 tmp/
 temp/
-.cache/
 *.tmp
 *.bak
-*.orig
-*.rej
-
-# -------------------------
-# macOS & Windows
-# -------------------------
-.DS_Store
-._*
-Thumbs.db
-
-# -------------------------
-# Git files (added per your request)
-# -------------------------
-.gitconfig
-.gitignore  # ⚠️ Only uncomment if you truly don’t want to track changes to .gitignore itself
+*.save
+*.backup
+.cache/
