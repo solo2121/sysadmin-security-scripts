@@ -11,9 +11,9 @@ This script automates the Amass enumeration process in three phases:
 The script creates timestamped output directories by default and handles
 command execution with proper error reporting.
 
-Author: Your Name (your.email@example.com)
+Author: Solo
 Version: 1.0
-Date: 2023-11-15
+Date: 2025-07-21
 License: MIT
 
 Usage: ./amass-scan.py <domain> [output-dir]
