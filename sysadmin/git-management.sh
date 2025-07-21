@@ -1,6 +1,23 @@
 #!/usr/bin/env bash
 # Modern Git Management Script with Menu
 
+# Enable strict mode
+set -o errexit      # Exit on error
+set -o nounset      # Exit on unset variables
+set -o pipefail     # Catch pipe failures
+shopt -s nocasematch # Case-insensitive matching
+
+# Error handling function
+handle_error() {
+    local exit_code=$?
+    local line_number=$1
+    local command_name=${2:-"unknown"}
+    echo "Error occurred at line $line_number: command '$command_name' exited with status $exit_code" >&2
+    exit "$exit_code"
+}
+
+trap 'handle_error $LINENO "$BASH_COMMAND"' ERR
+
 # Enable git completion if available
 for completion_file in \
     /usr/share/bash-completion/completions/git \
@@ -8,16 +25,11 @@ for completion_file in \
     ~/.git-completion.bash
 do
     if [[ -f "$completion_file" ]]; then
+        # shellcheck disable=SC1090
         source "$completion_file"
         break
     fi
 done
-
-# Improved shell settings
-set -o errexit      # Exit on error
-set -o nounset      # Exit on unset variables
-set -o pipefail     # Catch pipe failures
-shopt -s nocasematch # Case-insensitive matching
 
 # Enhanced readline settings
 bind -x '"\C-l": clear' # Bind Ctrl+L to clear
@@ -44,57 +56,66 @@ show_menu() {
 
 check_git_repo() {
     if ! git rev-parse --git-dir &>/dev/null; then
-        printf "Error: Not a git repository!\n" >&2
+        printf "Error: Not a git repository!\\n" >&2
         exit 1
     fi
 }
 
 git_status() {
-    printf "\nGit Status:\n"
-    printf "%s\n" "----------"
+    printf "\\nGit Status:\\n"
+    printf "%s\\n" "----------"
     git status
 }
 
 add_files() {
-    printf "\nCurrent status:\n"
+    printf "\\nCurrent status:\\n"
     git status --short
-    printf "\n"
+    printf "\\n"
     
     read -rp "Add all files? (y/n) or specify files: " choice
     
     case "$choice" in
-        [yY]|yes)
+        [yY]|[yY][eE][sS])
             git add .
-            printf "All files added to staging area.\n"
+            printf "All files added to staging area.\\n"
             ;;
-        [nN]|no)
-            read -rp "Enter file names (space separated): " files
-            # Use array to handle filenames with spaces
-            read -ra files_array <<< "$files"
+        [nN]|[nN][oO])
+            read -rp "Enter file names (space separated): " -a files_array
+            if (( ${#files_array[@]} == 0 )); then
+                printf "No files specified.\\n" >&2
+                return 1
+            fi
             git add "${files_array[@]}"
-            printf "Selected files added to staging area.\n"
+            printf "Selected files added to staging area.\\n"
             ;;
         *)
-            # Handle case where user entered filenames directly
-            git add "$choice"
-            printf "Files added to staging area.\n"
+            if [[ -n "$choice" ]]; then
+                git add "$choice"
+                printf "Files added to staging area.\\n"
+            else
+                printf "No input provided.\\n" >&2
+                return 1
+            fi
             ;;
     esac
 }
 
 commit_changes() {
-    printf "\nStaged files:\n"
+    printf "\\nStaged files:\\n"
     git diff --cached --name-only
-    printf "\n"
+    printf "\\n"
     
     while true; do
         read -rp "Enter commit message: " message
         if [[ -n "$message" ]]; then
-            git commit -m "$message"
-            printf "Changes committed successfully!\n"
+            if ! git commit -m "$message"; then
+                printf "Commit failed!\\n" >&2
+                return 1
+            fi
+            printf "Changes committed successfully!\\n"
             break
         else
-            printf "Commit message cannot be empty! Try again.\n" >&2
+            printf "Commit message cannot be empty! Try again.\\n" >&2
         fi
     done
 }
@@ -103,27 +124,36 @@ push_changes() {
     local current_branch
     current_branch=$(git branch --show-current)
     
-    printf "\nPushing changes to remote repository...\n"
-    read -rp "Push to branch '$current_branch'? (y/n): " confirm
+    printf "\\nPushing changes to remote repository...\\n"
+    read -rp "Push to branch '%s'? (y/n): " "current_branch" confirm
     
     if [[ "$confirm" =~ ^[yY] ]]; then
-        git push origin "$current_branch"
+        if ! git push origin "$current_branch"; then
+            printf "Push failed!\\n" >&2
+            return 1
+        fi
     else
         read -rp "Enter branch name: " branch
-        git push origin "$branch"
+        if ! git push origin "$branch"; then
+            printf "Push failed!\\n" >&2
+            return 1
+        fi
     fi
     
-    printf "Changes pushed successfully!\n"
+    printf "Changes pushed successfully!\\n"
 }
 
 fetch_changes() {
-    printf "\nFetching changes from remote repository...\n"
-    git fetch
-    printf "Fetch completed!\n\n"
+    printf "\\nFetching changes from remote repository...\\n"
+    if ! git fetch; then
+        printf "Fetch failed!\\n" >&2
+        return 1
+    fi
+    printf "Fetch completed!\\n\\n"
     
-    printf "Remote changes summary:\n"
+    printf "Remote changes summary:\\n"
     if ! git log HEAD..origin/"$(git branch --show-current)" --oneline 2>/dev/null; then
-        printf "No new changes to fetch.\n"
+        printf "No new changes to fetch.\\n"
     fi
 }
 
@@ -131,16 +161,19 @@ pull_changes() {
     local current_branch
     current_branch=$(git branch --show-current)
     
-    printf "\nPulling changes from remote repository...\n"
-    git pull origin "$current_branch"
-    printf "Pull completed!\n"
+    printf "\\nPulling changes from remote repository...\\n"
+    if ! git pull origin "$current_branch"; then
+        printf "Pull failed!\\n" >&2
+        return 1
+    fi
+    printf "Pull completed!\\n"
 }
 
 view_log() {
-    printf "\nGit Log (last 10 commits):\n"
-    printf "%s\n" "-------------------------"
+    printf "\\nGit Log (last 10 commits):\\n"
+    printf "%s\\n" "-------------------------"
     git log --oneline -10
-    printf "\n"
+    printf "\\n"
     
     read -rp "View detailed log? (y/n): " detail
     if [[ "$detail" =~ ^[yY] ]]; then
@@ -149,11 +182,11 @@ view_log() {
 }
 
 view_branches() {
-    printf "\nLocal branches:\n"
-    printf "%s\n" "---------------"
+    printf "\\nLocal branches:\\n"
+    printf "%s\\n" "---------------"
     git branch
-    printf "\nRemote branches:\n"
-    printf "%s\n" "----------------"
+    printf "\\nRemote branches:\\n"
+    printf "%s\\n" "----------------"
     git branch -r
 }
 
@@ -177,9 +210,9 @@ main() {
             6) clear; pull_changes; wait_for_input ;;
             7) clear; view_log; wait_for_input ;;
             8) clear; view_branches; wait_for_input ;;
-            9) printf "Goodbye!\n"; exit 0 ;;
+            9) printf "Goodbye!\\n"; exit 0 ;;
             *) 
-                printf "Invalid option! Please select 1-9.\n" >&2
+                printf "Invalid option! Please select 1-9.\\n" >&2
                 sleep 1
                 ;;
         esac
