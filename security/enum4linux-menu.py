@@ -21,7 +21,7 @@ Requirements:
     - enum4linux installed and in $PATH
     - smbclient, nmblookup, and other SMB tools (normally bundled with enum4linux)
 
-Author: Solo>
+Author: Solo
 License: MIT
 Version: 1.0.0
 Last Modified: 2025-07-21
