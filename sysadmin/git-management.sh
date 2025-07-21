@@ -1,203 +1,189 @@
-#!/bin/bash
-# Git Management Script with Menu
-# Enable tab completion for git commands
-if [ -f /usr/share/bash-completion/completions/git ]; then
-    source /usr/share/bash-completion/completions/git
-elif [ -f /etc/bash_completion.d/git ]; then
-    source /etc/bash_completion.d/git
-elif [ -f ~/.git-completion.bash ]; then
-    source ~/.git-completion.bash
-fi
+#!/usr/bin/env bash
+# Modern Git Management Script with Menu
 
-# Enable tab completion for bash
-set -o emacs
+# Enable git completion if available
+for completion_file in \
+    /usr/share/bash-completion/completions/git \
+    /etc/bash_completion.d/git \
+    ~/.git-completion.bash
+do
+    if [[ -f "$completion_file" ]]; then
+        source "$completion_file"
+        break
+    fi
+done
+
+# Improved shell settings
+set -o errexit      # Exit on error
+set -o nounset      # Exit on unset variables
+set -o pipefail     # Catch pipe failures
+shopt -s nocasematch # Case-insensitive matching
+
+# Enhanced readline settings
+bind -x '"\C-l": clear' # Bind Ctrl+L to clear
 bind 'set completion-ignore-case on'
 bind 'set show-all-if-ambiguous on'
 bind 'TAB:menu-complete'
 
-show_menu()    echo "=================================="
-    echo "        Git Management Menu"
-    echo "=================================="
-    echo "1. Check Git Status"
-    echo "2. Add Files to Staging"
-    echo "3. Commit Changes"
-    echo "4. Push to Remote"
-    echo "5. Fetch from Remote"
-    echo "6. Pull from Remote"
-    echo "7. View Git Log"
-    echo "8. View Branches"
-    echo "9. Exit"
-    echo "=================================="
+show_menu() {
+    clear
+    printf "%s\n" "==================================" \
+                  "        Git Management Menu" \
+                  "==================================" \
+                  "1. Check Git Status" \
+                  "2. Add Files to Staging" \
+                  "3. Commit Changes" \
+                  "4. Push to Remote" \
+                  "5. Fetch from Remote" \
+                  "6. Pull from Remote" \
+                  "7. View Git Log" \
+                  "8. View Branches" \
+                  "9. Exit" \
+                  "=================================="
 }
 
 check_git_repo() {
-    if ! git rev-parse --git-dir > /dev/null 2>&1; then
-        echo "Error: Not a git repository!"
+    if ! git rev-parse --git-dir &>/dev/null; then
+        printf "Error: Not a git repository!\n" >&2
         exit 1
     fi
 }
 
 git_status() {
-    echo "Git Status:"
-    echo "----------"
+    printf "\nGit Status:\n"
+    printf "%s\n" "----------"
     git status
 }
 
 add_files() {
-    echo "Current status:"
+    printf "\nCurrent status:\n"
     git status --short
-    echo ""
-    read -p "Add all files? (y/n) or specify files: " choice
-    if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
-        git add .
-        echo "All files added to staging area."
-    elif [ "$choice" = "n" ] || [ "$choice" = "N" ]; then
-        read -p "Enter file names (space separated): " files
-        git add $files
-        echo "Selected files added to staging area."
-    else
-        git add $choice
-        echo "Files added to staging area."
-    fi
+    printf "\n"
+    
+    read -rp "Add all files? (y/n) or specify files: " choice
+    
+    case "$choice" in
+        [yY]|yes)
+            git add .
+            printf "All files added to staging area.\n"
+            ;;
+        [nN]|no)
+            read -rp "Enter file names (space separated): " files
+            # Use array to handle filenames with spaces
+            read -ra files_array <<< "$files"
+            git add "${files_array[@]}"
+            printf "Selected files added to staging area.\n"
+            ;;
+        *)
+            # Handle case where user entered filenames directly
+            git add "$choice"
+            printf "Files added to staging area.\n"
+            ;;
+    esac
 }
 
 commit_changes() {
-    echo "Staged files:"
+    printf "\nStaged files:\n"
     git diff --cached --name-only
-    echo ""
-    read -p "Enter commit message: " message
-    if [ -z "$message" ]; then
-        echo "Commit message cannot be empty!"
-        return 1
-    fi
-    git commit -m "$message"
-    echo "Changes committed successfully!"
+    printf "\n"
+    
+    while true; do
+        read -rp "Enter commit message: " message
+        if [[ -n "$message" ]]; then
+            git commit -m "$message"
+            printf "Changes committed successfully!\n"
+            break
+        else
+            printf "Commit message cannot be empty! Try again.\n" >&2
+        fi
+    done
 }
 
 push_changes() {
-    echo "Pushing changes to remote repository..."
+    local current_branch
     current_branch=$(git branch --show-current)
-    read -p "Push to branch '$current_branch'? (y/n): " confirm
-    if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
-        git push origin $current_branch
-        echo "Changes pushed successfully!"
+    
+    printf "\nPushing changes to remote repository...\n"
+    read -rp "Push to branch '$current_branch'? (y/n): " confirm
+    
+    if [[ "$confirm" =~ ^[yY] ]]; then
+        git push origin "$current_branch"
     else
-        read -p "Enter branch name: " branch
-        git push origin $branch
-        echo "Changes pushed to $branch successfully!"
+        read -rp "Enter branch name: " branch
+        git push origin "$branch"
     fi
+    
+    printf "Changes pushed successfully!\n"
 }
 
 fetch_changes() {
-    echo "Fetching changes from remote repository..."
+    printf "\nFetching changes from remote repository...\n"
     git fetch
-    echo "Fetch completed!"
-    echo ""
-    echo "Remote changes summary:"
-    git log HEAD..origin/$(git branch --show-current) --oneline 2>/dev/null || echo "No new changes to fetch."
+    printf "Fetch completed!\n\n"
+    
+    printf "Remote changes summary:\n"
+    if ! git log HEAD..origin/"$(git branch --show-current)" --oneline 2>/dev/null; then
+        printf "No new changes to fetch.\n"
+    fi
 }
 
 pull_changes() {
-    echo "Pulling changes from remote repository..."
+    local current_branch
     current_branch=$(git branch --show-current)
-    git pull origin $current_branch
-    echo "Pull completed!"
+    
+    printf "\nPulling changes from remote repository...\n"
+    git pull origin "$current_branch"
+    printf "Pull completed!\n"
 }
 
 view_log() {
-    echo "Git Log (last 10 commits):"
-    echo "-------------------------"
+    printf "\nGit Log (last 10 commits):\n"
+    printf "%s\n" "-------------------------"
     git log --oneline -10
-    echo ""
-    read -p "View detailed log? (y/n): " detail
-    if [ "$detail" = "y" ] || [ "$detail" = "Y" ]; then
+    printf "\n"
+    
+    read -rp "View detailed log? (y/n): " detail
+    if [[ "$detail" =~ ^[yY] ]]; then
         git log -5 --pretty=format:"%h - %an, %ar : %s"
     fi
 }
 
 view_branches() {
-    echo "Local branches:"
-    echo "---------------"
+    printf "\nLocal branches:\n"
+    printf "%s\n" "---------------"
     git branch
-    echo ""
-    echo "Remote branches:"
-    echo "----------------"
+    printf "\nRemote branches:\n"
+    printf "%s\n" "----------------"
     git branch -r
 }
 
-# Main script execution
-clear
-check_git_repo
+wait_for_input() {
+    read -rp "Press Enter to continue..."
+}
 
-while true; do
-    show_menu
-    read -p "Please select an option (1-9): " choice
+main() {
+    check_git_repo
+    
+    while true; do
+        show_menu
+        read -rp "Please select an option (1-9): " choice
+        
+        case "$choice" in
+            1) clear; git_status; wait_for_input ;;
+            2) clear; add_files; wait_for_input ;;
+            3) clear; commit_changes; wait_for_input ;;
+            4) clear; push_changes; wait_for_input ;;
+            5) clear; fetch_changes; wait_for_input ;;
+            6) clear; pull_changes; wait_for_input ;;
+            7) clear; view_log; wait_for_input ;;
+            8) clear; view_branches; wait_for_input ;;
+            9) printf "Goodbye!\n"; exit 0 ;;
+            *) 
+                printf "Invalid option! Please select 1-9.\n" >&2
+                sleep 1
+                ;;
+        esac
+    done
+}
 
-    case $choice in
-        1)
-            clear
-            git_status
-            echo ""
-            read -p "Press Enter to continue..."
-            clear
-            ;;
-        2)
-            clear
-            add_files
-            echo ""
-            read -p "Press Enter to continue..."
-            clear
-            ;;
-        3)
-            clear
-            commit_changes
-            echo ""
-            read -p "Press Enter to continue..."
-            clear
-            ;;
-        4)
-            clear
-            push_changes
-            echo ""
-            read -p "Press Enter to continue..."
-            clear
-            ;;
-        5)
-            clear
-            fetch_changes
-            echo ""
-            read -p "Press Enter to continue..."
-            clear
-            ;;
-        6)
-            clear
-            pull_changes
-            echo ""
-            read -p "Press Enter to continue..."
-            clear
-            ;;
-        7)
-            clear
-            view_log
-            echo ""
-            read -p "Press Enter to continue..."
-            clear
-            ;;
-        8)
-            clear
-            view_branches
-            echo ""
-            read -p "Press Enter to continue..."
-            clear
-            ;;
-        9)
-            echo "Goodbye!"
-            exit 0
-            ;;
-        *)
-            echo "Invalid option! Please select 1-9."
-            sleep 2
-            clear
-            ;;
-    esac
-done
+main "$@"
