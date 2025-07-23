@@ -1,4 +1,7 @@
-# 🛡️ Security and System Administration Toolkit
+Here is the fully-corrected, production-ready README.md you can copy-paste verbatim.
+
+```markdown
+# 🛡️ Security & System Administration Toolkit
 
 > Production-ready automation scripts for offensive security, defensive operations, and Linux infrastructure management.
 
@@ -10,89 +13,88 @@
 
 ## 📌 Overview
 
-This repository provides battle-tested automation solutions for security professionals and system administrators:
+This repository provides **battle-tested automation solutions** for security professionals and system administrators:
 
-- **Red Team Operations**: Reconnaissance, exploitation, and post-exploitation workflows
-- **Blue Team Defense**: Security monitoring, log analysis, and hardening procedures
-- **Infrastructure Management**: Compliance auditing, maintenance automation, and alerting systems
+- **Red Team Operations** – Reconnaissance, exploitation & post-exploitation workflows
+- **Blue Team Defense** – Security monitoring, log analysis & hardening procedures
+- **Infrastructure Management** – Compliance auditing, maintenance automation & alerting
 
-All scripts feature:
-- POSIX shell compliance
-- Non-interactive execution
-- Production environment validation
-- Minimal dependencies
+All scripts are:
+
+- POSIX-compliant
+- Designed for **non-interactive** execution
+- Validated in **production environments**
+- Depend on **minimal external packages**
 
 ---
 
 ## ✨ Capabilities
 
-### Security Testing
-- Network reconnaissance and mapping
-- Vulnerability exploitation frameworks
-- Privilege escalation checks
-- Forensic data collection
-
-### System Management
-- Automated maintenance tasks
-- CIS benchmark compliance auditing
-- Log analysis and anomaly detection
-- Backup and recovery solutions
+| Category | Feature |
+|----------|---------|
+| **Security Testing** | • Network reconnaissance & mapping<br>• Vulnerability exploitation frameworks<br>• Privilege-escalation checks<br>• Forensic data collection |
+| **System Management** | • Automated maintenance tasks<br>• CIS benchmark compliance auditing<br>• Log analysis & anomaly detection<br>• Backup & recovery solutions |
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-1. Clone the repository:
+1. **Clone the repo**
    ```bash
    git clone https://github.com/solo2121/sysadmin-security-scripts.git
    cd sysadmin-security-scripts
+   ```
 
-⚠️ Critical Usage Notice
+2. **One-line install** *(optional)*
+   ```bash
+   ./install.sh
+   ```
 
-Operational Guidelines:
+3. **Run an example**
+   ```bash
+   ./scripts/recon/quick-nmap.sh 192.168.1.0/24
+   ```
 
-    Thoroughly review all scripts before execution
+---
 
-    Validate in isolated test environments first
+## ⚠️ Critical Usage Notice
 
-    Understand each script's functionality and potential impact
+### Operational Guidelines
+- **Review every script** before execution.
+- **Test in isolated environments** first.
+- Understand potential impact & adjust parameters for your environment.
 
-    Adjust parameters according to your specific environment
+### Legal & Ethical Requirements
+- Use **only on systems you own** or have **explicit written authorization** to test.
+- **Compliance with all applicable laws is mandatory.**
+- Maintain **comprehensive audit trails**.
+- **No warranty provided** – use at your own risk.
 
-Legal and Ethical Requirements:
+> :warning: Unauthorized use may violate computer-security laws. Proceed with **extreme caution** and proper authorization.
 
-    Use exclusively on systems you own or have explicit written authorization to test
+---
 
-    Compliance with all applicable laws is mandatory
+## 🤝 Contributing
 
-    Maintain comprehensive audit trails for all operations
+We welcome contributions via:
 
-    No warranty provided - use at your own risk
+- **Issue reporting**
+- **Feature requests**
+- **Pull requests**
 
-    :warning: Unauthorized use of these tools may violate computer security laws. Proceed with extreme caution and proper authorization.
+### Development Standards
+- POSIX shell compatibility
+- Clear header comments in every script
+- Descriptive variable & function names
+- Multi-distro validation
+- Minimal dependencies
 
-🤝 Contributing
+Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for full guidelines.
 
-We welcome contributions through:
+---
 
-    Issue reporting
+## 📄 License
 
-    Feature requests
-
-    Pull requests
-
-Development Standards:
-
-    Maintain POSIX shell compatibility
-
-    Include clear header comments in all scripts
-
-    Use descriptive variable and function names
-
-    Validate on multiple Linux distributions
-
-    Keep dependencies to a minimum
-
-📄 License
-
-Distributed under the MIT License - © 2024
+Distributed under the **MIT License**.
+Copyright © 2024 [solo2121](https://github.com/solo2121)
+```
