@@ -112,5 +112,5 @@ Thanks to all who have contributed to this project!
 
 ## 📄 License
 
-MIT License © 2024 [solo2121](https://github.com/solo2121). See [LICENSE](LICENSE) for full text.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 ```
