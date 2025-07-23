@@ -6,93 +6,96 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub stars](https://img.shields.io/github/stars/solo2121/sysadmin-security-scripts?style=social)](https://github.com/solo2121/sysadmin-security-scripts/stargazers)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/solo2121/sysadmin-security-scripts/pulls)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/solo2121/sysadmin-security-scripts/commits/main)
 
 ---
 
 ## 📌 Overview
 
-This repository provides **battle-tested automation solutions** for security professionals and system administrators:
+A curated collection of **battle-tested automation solutions** for:
 
-- **Red Team Operations** – Reconnaissance, exploitation & post-exploitation workflows
-- **Blue Team Defense** – Security monitoring, log analysis & hardening procedures
-- **Infrastructure Management** – Compliance auditing, maintenance automation & alerting
+- **Red Team Operations** – Reconnaissance, exploitation, and post-exploitation workflows
+- **Blue Team Defense** – Security monitoring, log analysis, and hardening procedures
+- **Infrastructure Management** – Compliance auditing, maintenance automation, and alerting systems
 
-All scripts are:
-
-- POSIX-compliant
-- Designed for **non-interactive** execution
-- Validated in **production environments**
-- Depend on **minimal external packages**
+**Key Features:**
+- ✅ POSIX-compliant for broad compatibility
+- ✅ Designed for **non-interactive** execution in CI/CD pipelines
+- ✅ Production-validated across multiple environments
+- ✅ Minimal external dependencies
 
 ---
 
 ## ✨ Capabilities
 
-| Category | Feature |
-|----------|---------|
-| **Security Testing** | • Network reconnaissance & mapping<br>• Vulnerability exploitation frameworks<br>• Privilege-escalation checks<br>• Forensic data collection |
-| **System Management** | • Automated maintenance tasks<br>• CIS benchmark compliance auditing<br>• Log analysis & anomaly detection<br>• Backup & recovery solutions |
+| Category               | Features |
+|------------------------|----------|
+| **Offensive Security** | • Network reconnaissance & service mapping<br>• Vulnerability exploitation frameworks<br>• Privilege escalation checks<br>• Forensic data collection |
+| **Defensive Security** | • SIEM integration templates<br>• Anomaly detection algorithms<br>• Automated patching systems<br>• Incident response playbooks |
+| **System Management**  | • CIS benchmark compliance auditing<br>• Log analysis pipelines<br>• Backup & recovery solutions<br>• Resource monitoring automation |
 
 ---
 
 ## 🚀 Quick Start
 
-1. **Clone the repo**
-   ```bash
-   git clone https://github.com/solo2121/sysadmin-security-scripts.git
-   cd sysadmin-security-scripts
-   ```
+### Basic Setup
+```bash
+git clone https://github.com/solo2121/sysadmin-security-scripts.git
+cd sysadmin-security-scripts
+```
 
-2. **One-line install** *(optional)*
-   ```bash
-   ./install.sh
-   ```
+### Installation (Optional)
+```bash
+chmod +x install.sh  # Set execute permissions
+./install.sh         # Run installer
+```
 
-3. **Run an example**
-   ```bash
-   ./scripts/recon/quick-nmap.sh 192.168.1.0/24
-   ```
+### Example Usage
+```bash
+# Run network reconnaissance scan
+./scripts/recon/quick-nmap.sh 192.168.1.0/24 --output=scan_results.xml
+
+# Perform system hardening audit
+./scripts/compliance/cis-audit.sh --level=2
+```
 
 ---
 
 ## ⚠️ Critical Usage Notice
 
-### Operational Guidelines
-- **Review every script** before execution.
-- **Test in isolated environments** first.
-- Understand potential impact & adjust parameters for your environment.
+### Operational Requirements
+- **Mandatory Pre-Execution Review** – Audit all scripts before running
+- **Isolated Testing** – Validate in non-production environments first
+- **Parameter Adjustment** – Customize for your specific infrastructure
 
-### Legal & Ethical Requirements
-- Use **only on systems you own** or have **explicit written authorization** to test.
-- **Compliance with all applicable laws is mandatory.**
-- Maintain **comprehensive audit trails**.
-- **No warranty provided** – use at your own risk.
+### Legal & Ethical Compliance
+- **Authorization Required** – Use only on systems you own or have explicit permission to test
+- **Documentation** – Maintain comprehensive audit trails of all operations
+- **Liability** – No warranties provided; users assume all risks
 
-> :warning: Unauthorized use may violate computer-security laws. Proceed with **extreme caution** and proper authorization.
+> :warning: **Legal Notice**: Unauthorized use violates computer crime laws in most jurisdictions. This toolkit is for **authorized security professionals only**.
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions via:
-
-- **Issue reporting**
-- **Feature requests**
-- **Pull requests**
+We welcome contributions through:
+- 🐛 Issue reports
+- 💡 Feature requests
+- 🔄 Pull requests
 
 ### Development Standards
-- POSIX shell compatibility
-- Clear header comments in every script
-- Descriptive variable & function names
-- Multi-distro validation
-- Minimal dependencies
+- Maintain POSIX shell compatibility
+- Include comprehensive header documentation
+- Use descriptive naming conventions
+- Validate across multiple distributions
+- Minimize external dependencies
 
-Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for full guidelines.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for complete guidelines.
 
 ---
 
 ## 📄 License
 
-Distributed under the **MIT License**.
-Copyright © 2024 [solo2121](https://github.com/solo2121)
+MIT License © 2024 [solo2121](https://github.com/solo2121). See [LICENSE](LICENSE) for full text.
 ```
