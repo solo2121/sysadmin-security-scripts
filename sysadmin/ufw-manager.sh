@@ -5,7 +5,16 @@
 # -------------------------------------------------------------
 set -euo pipefail
 IFS=$'\n\t'
+# -------------------------------------------------------------
+# This script provides a menu-driven interface to manage UFW
+# (Uncomplicated Firewall) rules, including adding, deleting,
+# and toggling the firewall status.
+# -------------------------------------------------------------
 
+# --- constants -----------------------------------------------
+readonly SCRIPT_NAME="$(basename "$0")"
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly LOG_FILE="/var/log/ufw_manager.log"
 # --- colours via tput (safe) ---------------------------------
 readonly RED=$(tput setaf 1)
 readonly GRN=$(tput setaf 2)
