@@ -1,17 +1,12 @@
-```markdown
 # 🛡️ Security & System Administration Toolkit
 
 > Production-ready automation scripts for offensive security, defensive operations, and Linux infrastructure management.
 
-<div align="center">
-
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/solo2121/sysadmin-security-scripts)](https://github.com/solo2121/sysadmin-security-scripts/stargazers)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/solo2121/sysadmin-security-scripts/pulls)
-[![Maintained](https://img.shields.io/badge/Maintained%3F-Yes-green.svg)](https://github.com/solo2121/sysadmin-security-scripts/commits/main)
-[![Contributors](https://img.shields.io/github/contributors/solo2121/sysadmin-security-scripts)](https://github.com/solo2121/sysadmin-security-scripts/graphs/contributors)
-
-</div>
+[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg?logo=opensourceinitiative&logoColor=white)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/solo2121/sysadmin-security-scripts?logo=github&color=yellow)](https://github.com/solo2121/sysadmin-security-scripts/stargazers)
+[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg?logo=git&logoColor=white)](CONTRIBUTING.md)
+[![Maintained](https://img.shields.io/badge/Maintained-Yes-2ea44f?logo=githubactions&logoColor=white)](commits/main)
+[![Contributors](https://img.shields.io/github/contributors/solo2121/sysadmin-security-scripts?logo=peopleware&logoColor=white)](https://github.com/solo2121/sysadmin-security-scripts/graphs/contributors)
 
 ---
 
