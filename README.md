@@ -3,7 +3,15 @@
 
 > Production-ready automation scripts for offensive security, defensive operations, and Linux infrastructure management.
 
-[![MIT License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE) [![GitHub Stars](https://img.shields.io/github/stars/solo2121/sysadmin-security-scripts?style=flat-square)](https://github.com/solo2121/sysadmin-security-scripts/stargazers) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-blue?style=flat-square)](CONTRIBUTING.md) [![Maintained](https://img.shields.io/badge/maintained-yes-green?style=flat-square)](commits/main)
+<div align="center">
+
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/solo2121/sysadmin-security-scripts)](https://github.com/solo2121/sysadmin-security-scripts/stargazers)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/solo2121/sysadmin-security-scripts/pulls)
+[![Maintained](https://img.shields.io/badge/Maintained%3F-Yes-green.svg)](https://github.com/solo2121/sysadmin-security-scripts/commits/main)
+[![Contributors](https://img.shields.io/github/contributors/solo2121/sysadmin-security-scripts)](https://github.com/solo2121/sysadmin-security-scripts/graphs/contributors)
+
+</div>
 
 ---
 
