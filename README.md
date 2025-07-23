@@ -2,10 +2,10 @@
 
 > Production-ready automation scripts for offensive security, defensive operations, and Linux infrastructure management.
 
-[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg?logo=opensourceinitiative&logoColor=white)](LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/solo2121/sysadmin-security-scripts?logo=github&color=yellow)](https://github.com/solo2121/sysadmin-security-scripts/stargazers)
-[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg?logo=git&logoColor=white)](CONTRIBUTING.md)
-[![Maintained](https://img.shields.io/badge/Maintained-Yes-2ea44f?logo=githubactions&logoColor=white)](commits/main)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?logo=opensourceinitiative&logoColor=white)](https://github.com/solo2121/sysadmin-security-scripts/blob/main/LICENSE)
+[![Stars](https://img.shields.io/github/stars/solo2121/sysadmin-security-scripts?logo=github&color=yellow)](https://github.com/solo2121/sysadmin-security-scripts/stargazers)
+[![PRs](https://img.shields.io/badge/PRs-Welcome-brightgreen.svg?logo=git&logoColor=white)](https://github.com/solo2121/sysadmin-security-scripts/blob/main/CONTRIBUTING.md)
+[![Maintained](https://img.shields.io/badge/Maintained-Yes-2ea44f?logo=githubactions&logoColor=white)](https://github.com/solo2121/sysadmin-security-scripts/commits/main)
 [![Contributors](https://img.shields.io/github/contributors/solo2121/sysadmin-security-scripts?logo=peopleware&logoColor=white)](https://github.com/solo2121/sysadmin-security-scripts/graphs/contributors)
 
 ---
