@@ -1,4 +1,47 @@
 #!/usr/bin/env python3
+"""
+HashCrack - Advanced Password Cracking Utility
+
+Description:
+This script provides an interactive menu-driven interface for Hashcat, the world's 
+fastest password recovery tool. It simplifies complex Hashcat commands while 
+maintaining full functionality for advanced password cracking techniques.
+
+Features:
+- User-friendly interface with ASCII banner
+- Supports multiple attack modes including:
+  * Dictionary attacks
+  * Combinator attacks
+  * Mask attacks
+  * Hybrid attacks
+  * Rule-based attacks
+  * Brute-force attacks
+- Supports numerous hash types (MD5, SHA1, SHA256, NTLM, etc.)
+- Custom hash type support for advanced users
+- Command preview before execution
+- Performance optimization options
+
+Usage:
+Run the script and follow the interactive prompts to:
+1. Select your hash file
+2. Choose the hash type
+3. Select an attack mode
+4. Configure attack parameters
+5. Review and execute the command
+
+Requirements:
+- Python 3.x
+- Hashcat installed and in PATH
+
+Security Note: 
+This tool should only be used for legitimate password recovery purposes such as: 
+- Penetration testing with proper authorization 
+- Forensic investigations 
+- Password audits on systems you own or have permission to test
+
+Disclaimer: Unauthorized use of this tool against systems you don't own is illegal.
+"""
+
 import os
 import subprocess
 import sys
