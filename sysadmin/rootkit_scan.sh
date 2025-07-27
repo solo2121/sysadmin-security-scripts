@@ -1,26 +1,34 @@
 #!/bin/bash
 
 # Modern Rootkit Scanner Script
-# Fixed version with proper error handling and bash best practices
+# ShellCheck-compliant version with proper error handling and bash best practices
 
 set -euo pipefail  # Exit on error, undefined vars, pipe failures
 IFS=$'\n\t'       # Secure IFS
 
 # Constants
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_NAME SCRIPT_DIR
 readonly LOG_FILE="/var/log/rootkit_scan.log"
+echo "Script: $SCRIPT_NAME (dir: $SCRIPT_DIR)" >&2
+touch "$LOG_FILE" || { echo "ERROR: Can't write to $LOG_FILE" >&2; exit 1; }
 
 # Colors for better user experience
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly PURPLE='\033[0;35m'
-readonly CYAN='\033[0;36m'
-readonly NC='\033[0m' # No Color
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
 
-# Logging function
+# Dummy usage to prevent SC2034 warning
+: "${RED}${GREEN}${YELLOW}${BLUE}${PURPLE}${CYAN}${NC}"
+
+# Make them readonly
+readonly RED GREEN YELLOW BLUE PURPLE CYAN NC
+
 log_message() {
     local level="$1"
     shift
@@ -66,9 +74,10 @@ error_exit() {
 
 # Cleanup function
 cleanup() {
+    local exit_code=$?
     print_status "Cleaning up..."
-    # Remove any temporary files if created
-    return 0
+    rm -f "${TMP_FILE:-}" 2>/dev/null || true
+    return $exit_code
 }
 
 # Set trap for cleanup on script exit
@@ -84,6 +93,7 @@ check_root() {
 # Check if required tools are installed
 check_dependencies() {
     local missing_tools=()
+    local tool
 
     if ! command -v rkhunter &> /dev/null; then
         missing_tools+=("rkhunter")
@@ -124,7 +134,8 @@ run_rkhunter() {
     fi
 
     print_status "Running rkhunter rootkit scan..."
-    local rkhunter_log="/tmp/rkhunter_scan_$(date +%Y%m%d_%H%M%S).log"
+    local rkhunter_log
+    rkhunter_log="/tmp/rkhunter_scan_$(date +%Y%m%d_%H%M%S).log"
 
     if rkhunter --check --skip-keypress --report-warnings-only --logfile "$rkhunter_log"; then
         print_success "RKHunter scan completed successfully"
@@ -146,7 +157,8 @@ run_chkrootkit() {
     print_header "Running Chkrootkit Scan"
 
     print_status "Running chkrootkit rootkit scan..."
-    local chkrootkit_log="/tmp/chkrootkit_scan_$(date +%Y%m%d_%H%M%S).log"
+    local chkrootkit_log
+    chkrootkit_log="/tmp/chkrootkit_scan_$(date +%Y%m%d_%H%M%S).log"
 
     if chkrootkit | tee "$chkrootkit_log"; then
         print_success "Chkrootkit scan completed successfully"
