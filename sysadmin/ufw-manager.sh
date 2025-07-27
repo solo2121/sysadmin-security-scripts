@@ -12,25 +12,36 @@ IFS=$'\n\t'
 # -------------------------------------------------------------
 
 # --- constants -----------------------------------------------
-readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly LOG_FILE="/var/log/ufw_manager.log"
+SCRIPT_NAME="$(basename "${0:-}")"
+echo "Running script: $SCRIPT_NAME"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo "Script directory: $SCRIPT_DIR"
+LOG_FILE="/var/log/ufw_manager.log"
+echo "Script: $SCRIPT_NAME (dir: $SCRIPT_DIR)" >&2
+touch "$LOG_FILE" || { echo "ERROR: Can't write to $LOG_FILE" >&2; exit 1; }
+readonly SCRIPT_NAME SCRIPT_DIR LOG_FILE
+
 # --- colours via tput (safe) ---------------------------------
-readonly RED=$(tput setaf 1)
-readonly GRN=$(tput setaf 2)
-readonly YEL=$(tput setaf 3)
-readonly BLU=$(tput setaf 4)
-readonly MAG=$(tput setaf 5)
-readonly CYN=$(tput setaf 6)
-readonly WHITE=$(tput setaf 7)
-readonly BOLD=$(tput bold)
-readonly RESET=$(tput sgr0)
+RED=$(tput setaf 1)
+GRN=$(tput setaf 2)
+YEL=$(tput setaf 3)
+BLU=$(tput setaf 4)
+MAG=$(tput setaf 5)
+CYN=$(tput setaf 6)
+WHITE=$(tput setaf 7)
+BOLD=$(tput bold)
+RESET=$(tput sgr0)
+: "${RED}${GRN}${YEL}${BLU}${MAG}${CYN}${WHITE}${BOLD}${RESET}"
+readonly RED GRN YEL BLU MAG CYN WHITE BOLD RESET
 
 # --- sanity checks -------------------------------------------
-command -v ufw >/dev/null  || { echo "${RED}ufw not found – install first${RESET}" >&2; exit 1; }
+command -v ufw >/dev/null 2>&1 || {
+    echo "${RED}ufw not found – install first${RESET}" >&2
+    exit 1
+}
 
 if [[ $EUID -ne 0 ]]; then
-    echo "${RED}${BOLD}Need root – restarting via sudo …${RESET}"
+    echo "${RED}${BOLD}Need root – restarting via sudo …${RESET}" >&2
     exec sudo "$0" "$@"
 fi
 
@@ -69,7 +80,10 @@ add_rule() {
         esac
 
         read -rp "${CYN}${BOLD}Port/service (22, 80/tcp, http): ${RESET}" port
-        [[ -z $port ]] && { echo "${RED}Port cannot be empty${RESET}"; continue; }
+        if [[ -z $port ]]; then
+            echo "${RED}Port cannot be empty${RESET}" >&2
+            continue
+        fi
 
         read -rp "${CYN}${BOLD}From IP/CIDR (blank = any): ${RESET}" src
         cmd=(ufw "$action")
@@ -80,7 +94,7 @@ add_rule() {
         if "${cmd[@]}"; then
             echo "${GRN}✔ Rule added${RESET}"
         else
-            echo "${RED}✖ Failed${RESET}"
+            echo "${RED}✖ Failed${RESET}" >&2
         fi
         break
     done
@@ -91,10 +105,16 @@ delete_rule() {
     print_rules
     read -rp "${YEL}${BOLD}Rule number to delete (c = cancel): ${RESET}" num
     [[ $num == [cC] ]] && return
-    [[ $num =~ ^[0-9]+$ ]] || { echo "${RED}Invalid number${RESET}"; return; }
+    if [[ ! $num =~ ^[0-9]+$ ]]; then
+        echo "${RED}Invalid number${RESET}" >&2
+        return 1
+    fi
 
-    ufw --force delete "$num" && echo "${GRN}✔ Rule deleted${RESET}" \
-                               || echo "${RED}✖ Could not delete${RESET}"
+    if ufw --force delete "$num"; then
+        echo "${GRN}✔ Rule deleted${RESET}"
+    else
+        echo "${RED}✖ Could not delete${RESET}" >&2
+    fi
 }
 
 # --- toggle / reset -----------------------------------------
