@@ -2,9 +2,9 @@
 
 # TimeShift Manager - Simple System Snapshot Management Tool
 # Description: Interactive shell script for managing system snapshots with TimeShift
-# Version: 3.2 (Fixed Version)
+# Version: 3.0 (Fixed Version)
 # Author: Solo
-# Last Modified: 2025-07-28
+# Last Modified: 2025-07-27
 
 set -euo pipefail
 IFS=$'\n\t'
