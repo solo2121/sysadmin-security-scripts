@@ -2,16 +2,16 @@
 
 # TimeShift Manager - Simple System Snapshot Management Tool
 # Description: Interactive shell script for managing system snapshots with TimeShift
-# Version: 3.0 (Simple Fixed Version)
+# Version: 3.2 (Fixed Version)
 # Author: Solo
-# Last Modified: 2025-07-22
+# Last Modified: 2025-07-28
 
 set -euo pipefail
 IFS=$'\n\t'
 
 # Constants
 readonly SCRIPT_NAME="$(basename "$0")"
-readonly SCRIPT_VERSION="3.0"
+readonly SCRIPT_VERSION="3.2"
 readonly LOG_FILE="/var/log/timeshift-manager.log"
 
 # Colors
@@ -87,9 +87,24 @@ check_dependencies() {
     fi
 }
 
-# Get snapshot list
+# Get snapshot count - consistent across all functions
+get_snapshot_count() {
+    timeshift --list 2>/dev/null | grep -c '^[0-9]\+[[:space:]]\+>' || echo "0"
+}
+
+# Get snapshot list - consistent across all functions
 get_snapshots() {
-    timeshift --list 2>/dev/null | grep -E '^[[:space:]]*[0-9]+[[:space:]]*:' | sed 's/^[[:space:]]*[0-9]*[[:space:]]*:[[:space:]]*//' || true
+    # First check if any snapshots exist
+    local snapshot_count
+    snapshot_count=$(get_snapshot_count)
+
+    if [[ $snapshot_count -eq 0 ]]; then
+        echo ""
+        return
+    fi
+
+    # Extract snapshot names
+    timeshift --list 2>/dev/null | awk '/^[0-9]+[[:space:]]+>/ {print $3}' || true
 }
 
 # Pause for input
@@ -328,7 +343,7 @@ show_system_info() {
     if timeshift --list &>/dev/null; then
         print_success "TimeShift is operational"
         local snapshot_count
-        snapshot_count=$(get_snapshots | wc -l)
+        snapshot_count=$(get_snapshot_count)
         echo -e "${WHITE}Available snapshots:${NC} $snapshot_count"
     else
         print_error "TimeShift is not properly configured"
@@ -415,7 +430,7 @@ show_main_menu() {
     echo -e "${BLUE}╚══════════════════════════════════════════════════╝${NC}"
 
     local snapshot_count
-    snapshot_count=$(get_snapshots 2>/dev/null | wc -l || echo "0")
+    snapshot_count=$(get_snapshot_count)
     echo -e "\n${CYAN}Status:${NC} $snapshot_count snapshots | ${CYAN}Host:${NC} $(hostname) | ${CYAN}Date:${NC} $(date '+%Y-%m-%d %H:%M')"
 }
 
