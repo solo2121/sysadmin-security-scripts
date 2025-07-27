@@ -10,7 +10,8 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # Constants
-readonly SCRIPT_NAME="$(basename "$0")"
+SCRIPT_NAME="$(basename "${0:-}")"
+readonly SCRIPT_NAME
 readonly SCRIPT_VERSION="3.2"
 readonly LOG_FILE="/var/log/timeshift-manager.log"
 
