@@ -6,38 +6,70 @@
 set -euo pipefail
 shopt -s nullglob
 
+# Colors for better output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Function to print status messages
+status() {
+    printf "==> ${GREEN}%s${NC}\n" "$1"
+}
+
+# Function to print warnings
+warning() {
+    printf "    ${YELLOW}%s${NC}\n" "$1"
+}
+
+# Function to print errors
+error() {
+    printf "    ${RED}%s${NC}\n" "$1" >&2
+}
+
 # 1. Update pacstall itself
-echo "==> Updating pacstall ..."
-pacstall -U
+status "Updating pacstall ..."
+if ! pacstall -U; then
+    error "Failed to update pacstall"
+    exit 1
+fi
 
 # 2. Upgrade all pacstall packages
-echo "==> Upgrading installed pacstall packages ..."
-pacstall -Up
+status "Upgrading installed pacstall packages ..."
+if ! pacstall -Up; then
+    error "Failed to upgrade packages"
+    exit 1
+fi
 
 # 3. Clean cached .deb files
 CACHEDIR="/var/cache/pacstall"
 if [[ -d "$CACHEDIR" ]]; then
-    echo "==> Cleaning cached .deb files ..."
-    find "$CACHEDIR" -type f -name '*.deb' -delete
-    echo "    Removed cached .deb files from $CACHEDIR"
+    status "Cleaning cached .deb files ..."
+    if ! find "$CACHEDIR" -type f -name '*.deb' -delete; then
+        error "Failed to clean cache"
+        exit 1
+    fi
+    printf "    Removed cached .deb files from %s\n" "$CACHEDIR"
 else
-    echo "    No cache directory found at $CACHEDIR - nothing to clean."
+    warning "No cache directory found at $CACHEDIR - nothing to clean."
 fi
 
 # 4. Remove orphaned Pacstall packages
-echo "==> Detecting orphaned Pacstall packages ..."
+status "Detecting orphaned Pacstall packages ..."
 
-mapfile -t installed < <(pacstall -L)
+mapfile -t installed < <(pacstall -L || { error "Failed to list installed packages"; exit 1; })
 WORKDIR=$(mktemp -d)
 trap 'rm -rf "$WORKDIR"' EXIT
 
 for pkg in "${installed[@]}"; do
-    pacstall -S "$pkg" >"$WORKDIR/$pkg" 2>/dev/null || true
+    if ! pacstall -S "$pkg" >"$WORKDIR/$pkg" 2>/dev/null; then
+        warning "Failed to get info for package $pkg"
+    fi
 done
 
 mapfile -t needed < <(grep -h '^[^#]' "$WORKDIR"/* | sort -u)
 
-# Explicitly declare associative arrays
+# Explicitly declare and initialize associative arrays
 declare -A installedSet=()
 declare -A neededSet=()
 
@@ -55,17 +87,16 @@ for p in "${installed[@]}"; do
     orphans+=("$p")
 done
 
-if ((${#orphans[@]})); then
-    echo "    Orphans detected: ${orphans[*]}"
+if ((${#orphans[@]} > 0)); then
+    printf "    Orphans detected: %s\n" "${orphans[*]}"
     for pkg in "${orphans[@]}"; do
-        echo "    Removing $pkg ..."
-        yes | pacstall -R "$pkg"
+        printf "    Removing %s ...\n" "$pkg"
+        if ! yes | pacstall -R "$pkg"; then
+            error "Failed to remove package $pkg"
+        fi
     done
 else
-    echo "    No orphaned packages found."
+    printf "    No orphaned packages found.\n"
 fi
 
-echo "==> Pacstall maintenance complete."
-
-# Cleanup temporary files and directories
-rm -rf "$WORKDIR"
+status "Pacstall maintenance complete."
