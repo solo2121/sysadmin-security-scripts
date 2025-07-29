@@ -190,4 +190,4 @@ Enhance virtualization management with additional tools.
 1. List available virtual machines: sudo virsh list --all
     
 
-By following this guide, you will successfully install and configure KVM/QEMU on Rhino Linux 24.04. For additional support, consult the official documentation or join the community forums.
+By following this guide, you will successfully install and configure KVM/QEMU on Rhino Linux. For additional support, consult the official documentation or join the community forums.
