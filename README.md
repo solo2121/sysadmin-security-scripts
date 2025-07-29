@@ -1,4 +1,4 @@
-# 🛡️ Security & System Administration Toolkit
+# 🛡️ Security & System Administration
 
 > Production-ready automation scripts for offensive security, defensive operations, and Linux infrastructure management.
 
