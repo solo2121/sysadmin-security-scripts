@@ -12,7 +12,7 @@ IFS=$'\n\t'
 # Constants
 SCRIPT_NAME="$(basename "${0:-}")"
 readonly SCRIPT_NAME
-readonly SCRIPT_VERSION="3.2"
+readonly SCRIPT_VERSION="3.0"
 readonly LOG_FILE="/var/log/timeshift-manager.log"
 
 # Colors
@@ -130,7 +130,7 @@ create_snapshot() {
     print_status "Creating snapshot: $description"
     print_status "Please wait, this may take several minutes..."
 
-    if timeshift --create --comments "$description" --tags "ondemand"; then
+    if timeshift --create --comments "$description"; then
         print_success "Snapshot created successfully!"
     else
         print_error "Failed to create snapshot"
@@ -157,7 +157,7 @@ delete_snapshot() {
 
     # Create array and display snapshots
     local snapshot_list
-    snapshot_list=$(echo "$snapshots")
+    snapshot_list=$"echo $snapshots"
 
     local -a snapshot_array
     local counter=1
@@ -228,7 +228,7 @@ restore_snapshot() {
 
     # Create array and display snapshots
     local snapshot_list
-    snapshot_list=$(echo "$snapshots")
+    snapshot_list=$"echo $snapshots"
 
     local -a snapshot_array
     local counter=1
