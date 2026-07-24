@@ -32,7 +32,7 @@ command_exists() {
 # Check for required tools
 check_dependencies() {
     local missing=0
-    local tools=("ss" "lsof" "netstat" "top" "free" "df" "uptime" "vmstat" "iostat" "mpstat")
+    local tools=("ss" "free" "df" "uptime")
 
     for tool in "${tools[@]}"; do
         if ! command_exists "$tool"; then
@@ -57,12 +57,20 @@ monitor_ports() {
     NR>1 {printf "%-20s %-10s %-20s %-20s %-25s\n", $1, $2, $5, $6, $7}'
 
     echo -e "\n${GREEN}[2] Using netstat command:${NC}"
-    netstat -tulnp 2>/dev/null | awk 'BEGIN {printf "%-10s %-10s %-20s %-20s %-25s\n", "Proto", "State", "Local Address", "Foreign Address", "PID/Program"}
-    NR>2 {printf "%-10s %-10s %-20s %-20s %-25s\n", $1, $6, $4, $5, $7}'
+    if command_exists netstat; then
+        netstat -tulnp 2>/dev/null | awk 'BEGIN {printf "%-10s %-10s %-20s %-20s %-25s\n", "Proto", "State", "Local Address", "Foreign Address", "PID/Program"}
+        NR>2 {printf "%-10s %-10s %-20s %-20s %-25s\n", $1, $6, $4, $5, $7}'
+    else
+        echo -e "${YELLOW}netstat not installed, skipping.${NC}"
+    fi
 
     echo -e "\n${GREEN}[3] Using lsof command:${NC}"
-    lsof -i -P -n 2>/dev/null | grep LISTEN | awk 'BEGIN {printf "%-10s %-10s %-15s %-10s %-15s\n", "Command", "PID", "User", "Protocol", "Ports"}
-    {split($9, a, ":"); printf "%-10s %-10s %-15s %-10s %-15s\n", $1, $2, $3, $8, a[2]}'
+    if command_exists lsof; then
+        lsof -i -P -n 2>/dev/null | grep LISTEN | awk 'BEGIN {printf "%-10s %-10s %-15s %-10s %-15s\n", "Command", "PID", "User", "Protocol", "Ports"}
+        {split($9, a, ":"); printf "%-10s %-10s %-15s %-10s %-15s\n", $1, $2, $3, $8, a[2]}'
+    else
+        echo -e "${YELLOW}lsof not installed, skipping.${NC}"
+    fi
 }
 
 # Monitor processes
@@ -105,7 +113,11 @@ monitor_resources() {
     header "SYSTEM RESOURCES"
 
     echo -e "${GREEN}[1] CPU usage:${NC}"
-    mpstat 1 1 | tail -n 2 | awk '{print "User: " $3 "%  System: " $5 "%  Idle: " $12 "%"}'
+    if command_exists mpstat; then
+        mpstat 1 1 | tail -n 2 | awk '{print "User: " $3 "%  System: " $5 "%  Idle: " $12 "%"}'
+    else
+        echo -e "${YELLOW}mpstat not installed, skipping.${NC}"
+    fi
 
     echo -e "\n${GREEN}[2] Memory usage:${NC}"
     free -h | awk '/Mem/ {print "Total: " $2 "  Used: " $3 "  Free: " $4 "  Available: " $7}'
@@ -118,7 +130,11 @@ monitor_resources() {
     uptime | awk -F': ' '{print "Load average: " $2}'
 
     echo -e "\n${GREEN}[5] I/O Statistics:${NC}"
-    iostat -dx 1 2 | tail -n +4
+    if command_exists iostat; then
+        iostat -dx 1 2 | tail -n +4
+    else
+        echo -e "${YELLOW}iostat not installed, skipping.${NC}"
+    fi
 }
 
 # Display main menu
