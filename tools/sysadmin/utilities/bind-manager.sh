@@ -8,7 +8,7 @@
 #              record management, validation, status, and logging.
 # ============================================================
 
-set -euo pipefail
+set -Eeuo pipefail
 
 # Error handling trap
 handle_error() {
@@ -18,7 +18,6 @@ handle_error() {
     exit $exit_code
 }
 trap 'handle_error' ERR
-
 
 # Check if running as root
 if [ "$(id -u)" -ne 0 ]; then
@@ -33,7 +32,6 @@ NAMED_CONF_OPTIONS="$BIND_DIR/named.conf.options"
 NAMED_CONF_LOCAL="$BIND_DIR/named.conf.local"
 ZONE_DIR="$BIND_DIR/zones"
 LOG_DIR="/var/log/bind"
-SAMPLE_ZONE="example.com"
 
 # Function to display the main menu
 show_menu() {
@@ -51,7 +49,7 @@ show_menu() {
     echo "8. View Zone Files"
     echo "9. Enable/Disable Query Logging"
     echo "10. Exit"
-    echo "====================================" 
+    echo "===================================="
     echo -n "Enter your choice [1-10]: "
 }
 
@@ -99,7 +97,7 @@ EOF
     fi
 
     echo "BIND installation completed."
-    read -rp "Press [Enter] to return to menu..."
+    read -r -p "Press [Enter] to return to menu..."
 }
 
 # Function to configure basic options
@@ -109,10 +107,9 @@ configure_basic() {
     # Backup existing config
     cp "$NAMED_CONF_OPTIONS" "$NAMED_CONF_OPTIONS.bak"
 
-    # Robustly get the primary network CIDR for the default route
-    # Example: 192.168.1.0/24
-    PRIMARY_NETWORK=$(ip -4 route get 8.8.8.8 | awk '{print $7}' | xargs ipcalc -n -p | awk '/Network/ {print $2}')
-    
+    # Get network information for allow-query
+    IP_ADDRESS=$(hostname -I | awk '{print $1}')
+    NETWORK=$(echo "$IP_ADDRESS" | awk -F. '{print $1"."$2".0.0"}')
 
     cat > "$NAMED_CONF_OPTIONS" <<EOF
 options {
@@ -133,10 +130,10 @@ options {
     // querylog yes;
 
     // Allow queries from localhost and local network
-    allow-query { localhost; $PRIMARY_NETWORK; };
+    allow-query { localhost; $NETWORK/16; 10.0.0.0/8; };
 
     // Allow recursive queries from trusted clients
-    allow-recursion { localhost; $PRIMARY_NETWORK; };
+    allow-recursion { localhost; $NETWORK/16; 10.0.0.0/8; };
 
     // Enable statistics
     statistics-file "$LOG_DIR/named.stats";
@@ -144,7 +141,7 @@ options {
 EOF
 
     echo "Basic configuration updated. Original config backed up as $NAMED_CONF_OPTIONS.bak"
-    read -rp "Press [Enter] to return to menu..."
+    read -r -p "Press [Enter] to return to menu..."
 }
 
 # Function to create a new zone
@@ -154,31 +151,32 @@ create_zone_interactive() {
     echo " Create New DNS Zone"
     echo "=============================="
 
-    read -rp "Enter zone name (e.g., example.com): " ZONE_NAME
+    read -r -p "Enter zone name (e.g., example.com): " ZONE_NAME
     if [ -z "$ZONE_NAME" ]; then
         echo "Zone name cannot be empty!"
-        read -rp "Press [Enter] to try again..."
+        read -r -p "Press [Enter] to try again..."
         return
     fi
 
-    # Security: Prevent path traversal
+    # Security: Prevent path traversal - ZONE_NAME is used directly to
+    # build a filesystem path below.
     if [[ "$ZONE_NAME" =~ \.\. || "$ZONE_NAME" =~ / ]]; then
         echo "Error: Zone name cannot contain '..' or '/'." >&2
-        read -rp "Press [Enter] to return to menu..."
+        read -r -p "Press [Enter] to return to menu..."
         return
     fi
 
     ZONE_FILE="$ZONE_DIR/db.$ZONE_NAME"
 
     if [ -f "$ZONE_FILE" ]; then
-        echo "Error: Zone $ZONE_NAME already exists!"
-        read -rp "Press [Enter] to return to menu..."
+        echo "Zone $ZONE_NAME already exists!"
+        read -r -p "Press [Enter] to return to menu..."
         return
     fi
 
-    read -rp "Enter primary nameserver (e.g., ns1.$ZONE_NAME): " PRIMARY_NS
-    read -rp "Enter admin email (e.g., admin.$ZONE_NAME): " ADMIN_EMAIL
-    read -rp "Enter default IP address for records: " DEFAULT_IP
+    read -r -p "Enter primary nameserver (e.g., ns1.$ZONE_NAME): " PRIMARY_NS
+    read -r -p "Enter admin email (e.g., admin.$ZONE_NAME): " ADMIN_EMAIL
+    read -r -p "Enter default IP address for records: " DEFAULT_IP
 
     # Create zone file
     cat > "$ZONE_FILE" <<EOF
@@ -208,7 +206,7 @@ EOF
     echo "Zone $ZONE_NAME created successfully."
     echo "Zone file: $ZONE_FILE"
     echo "Don't forget to update the serial number when making changes!"
-    read -rp "Press [Enter] to return to menu..."
+    read -r -p "Press [Enter] to return to menu..."
 }
 
 # Function to add a record to a zone
@@ -223,15 +221,15 @@ add_record_interactive() {
     grep "zone " "$NAMED_CONF_LOCAL" | awk '{print $2}' | tr -d '"' | nl
     echo "0. Return to menu"
 
-    read -rp "Select zone number: " ZONE_NUM
+    read -r -p "Select zone number: " ZONE_NUM
     if [ "$ZONE_NUM" -eq 0 ]; then
         return
     fi
 
     ZONE_NAME=$(grep "zone " "$NAMED_CONF_LOCAL" | awk '{print $2}' | tr -d '"' | sed -n "${ZONE_NUM}p")
     if [ -z "$ZONE_NAME" ]; then
-        echo "Error: Invalid zone number!"
-        read -rp "Press [Enter] to try again..."
+        echo "Invalid zone number!"
+        read -r -p "Press [Enter] to try again..."
         return
     fi
 
@@ -239,19 +237,22 @@ add_record_interactive() {
 
     if [ ! -f "$ZONE_FILE" ]; then
         echo "Zone file for $ZONE_NAME not found!"
-        read -rp "Press [Enter] to return to menu..."
+        read -r -p "Press [Enter] to return to menu..."
         return
     fi
 
     echo "Current records in $ZONE_NAME:"
     grep -vE '^\$|^;' "$ZONE_FILE" | awk '{print $1, $2, $3, $4}'
 
-    read -rp "Enter record name (e.g., www, mail, @): " RECORD_NAME
-    read -rp "Enter record type (A, CNAME, MX, etc.): " RECORD_TYPE
-    read -rp "Enter record value: " RECORD_VALUE
+    read -r -p "Enter record name (e.g., www, mail, @): " RECORD_NAME
+    read -r -p "Enter record type (A, CNAME, MX, etc.): " RECORD_TYPE
+    read -r -p "Enter record value: " RECORD_VALUE
 
     # Increment serial number
-    CURRENT_SERIAL=$(grep -Po '\d+' "$ZONE_FILE" | head -1)
+    # Increment serial number (anchored to the "; Serial" comment, not just
+    # the first digit sequence in the file - the file starts with $TTL,
+    # which is also a number and would be matched first otherwise)
+    CURRENT_SERIAL=$(grep -oP '\d+(?=\s*;\s*Serial)' "$ZONE_FILE" | head -1)
     NEW_SERIAL=$((CURRENT_SERIAL + 1))
     sed -i "s/$CURRENT_SERIAL/$NEW_SERIAL/" "$ZONE_FILE"
 
@@ -260,7 +261,7 @@ add_record_interactive() {
 
     echo "Record added successfully to zone $ZONE_NAME."
     echo "New serial number: $NEW_SERIAL"
-    read -rp "Press [Enter] to return to menu..."
+    read -r -p "Press [Enter] to return to menu..."
 }
 
 # Function to check BIND configuration
@@ -270,14 +271,13 @@ check_config() {
     echo " Checking BIND Configuration"
     echo "=============================="
 
-    named-checkconf -z "$NAMED_CONF"
-    if [ $? -eq 0 ]; then
+    if named-checkconf -z "$NAMED_CONF"; then
         echo "BIND configuration appears to be valid."
     else
         echo "BIND configuration has errors!"
     fi
 
-    read -rp "Press [Enter] to return to menu..."
+    read -r -p "Press [Enter] to return to menu..."
 }
 
 # Function to restart BIND service
@@ -300,7 +300,7 @@ restart_bind() {
         service named status || service bind9 status
     fi
 
-    read -rp "Press [Enter] to return to menu..."
+    read -r -p "Press [Enter] to return to menu..."
 }
 
 # Function to show BIND status
@@ -323,7 +323,7 @@ show_status() {
     echo -e "\nConfigured Zones:"
     grep "zone " "$NAMED_CONF_LOCAL" | awk '{print $2}' | tr -d '"'
 
-    read -rp "Press [Enter] to return to menu..."
+    read -r -p "Press [Enter] to return to menu..."
 }
 
 # Function to view zone files
@@ -338,15 +338,15 @@ view_zone_files() {
     grep "zone " "$NAMED_CONF_LOCAL" | awk '{print $2}' | tr -d '"' | nl
     echo "0. Return to menu"
 
-    read -rp "Select zone number to view: " ZONE_NUM
+    read -r -p "Select zone number to view: " ZONE_NUM
     if [ "$ZONE_NUM" -eq 0 ]; then
         return
     fi
 
     ZONE_NAME=$(grep "zone " "$NAMED_CONF_LOCAL" | awk '{print $2}' | tr -d '"' | sed -n "${ZONE_NUM}p")
     if [ -z "$ZONE_NAME" ]; then
-        echo "Error: Invalid zone number!"
-        read -rp "Press [Enter] to try again..."
+        echo "Invalid zone number!"
+        read -r -p "Press [Enter] to try again..."
         return
     fi
 
@@ -354,7 +354,7 @@ view_zone_files() {
 
     if [ ! -f "$ZONE_FILE" ]; then
         echo "Zone file for $ZONE_NAME not found!"
-        read -rp "Press [Enter] to return to menu..."
+        read -r -p "Press [Enter] to return to menu..."
         return
     fi
 
@@ -363,7 +363,7 @@ view_zone_files() {
     echo "--------------------------------"
     cat "$ZONE_FILE"
 
-    read -rp "Press [Enter] to return to menu..."
+    read -r -p "Press [Enter] to return to menu..."
 }
 
 # Function to toggle query logging
@@ -375,14 +375,14 @@ toggle_query_logging() {
 
     if grep -q "^[[:space:]]*querylog yes" "$NAMED_CONF_OPTIONS"; then
         echo "Query logging is currently ENABLED"
-        read -rp "Do you want to disable query logging? (y/n): " choice
+        read -r -p "Do you want to disable query logging? (y/n): " choice
         if [ "$choice" = "y" ]; then
             sed -i 's/querylog yes/\/\/ querylog yes/' "$NAMED_CONF_OPTIONS"
             echo "Query logging disabled"
         fi
     else
         echo "Query logging is currently DISABLED"
-        read -rp "Do you want to enable query logging? (y/n): " choice
+        read -r -p "Do you want to enable query logging? (y/n): " choice
         if [ "$choice" = "y" ]; then
             sed -i 's/\/\/ querylog yes/querylog yes/' "$NAMED_CONF_OPTIONS"
             echo "Query logging enabled"
@@ -395,7 +395,7 @@ toggle_query_logging() {
 # Main menu loop
 while true; do
     show_menu
-    read -r choice || true
+    read -r choice
 
     case $choice in
         1) install_bind ;;
