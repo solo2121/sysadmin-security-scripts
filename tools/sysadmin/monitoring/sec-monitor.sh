@@ -40,14 +40,13 @@ log_message() {
 check_network_connections() {
     log_message "INFO" "Checking network connections..."
 
-    # Use awk for a single-pass evaluation
-    netstat -tuln | awk '/LISTEN/ && !/:(22|80|443|53|631|5353)/ {
-        system("bash -c \"source "BASH_SOURCE[0]" && log_message WARNING \\"Unusual listening port: "$0"\\"\"")
-    }'
+    netstat -tuln | grep LISTEN | grep -vE ":(22|80|443|53|631|5353)" | while read -r line; do
+        log_message "WARNING" "Unusual listening port: $line"
+    done
 
-    netstat -tupln | awk '/ESTABLISHED/ && !/:(22|80|443|53)/ {
-        system("bash -c \"source "BASH_SOURCE[0]" && log_message ALERT \\"Suspicious outbound connection: "$0"\\"\"")
-    }'
+    netstat -tupln | grep ESTABLISHED | grep -vE ":(22|80|443|53)" | while read -r line; do
+        log_message "ALERT" "Suspicious outbound connection: $line"
+    done
 }
 
 # User activity monitoring
@@ -56,16 +55,16 @@ check_user_activity() {
 
     local failed_threshold=5
     grep "Failed password" /var/log/auth.log 2>/dev/null | awk '{print $1,$2,$3,$9}' | sort | uniq -c | \
-    awk -v threshold="$failed_threshold" '$1 > threshold {
-        system("bash -c \"source "BASH_SOURCE[0]" && log_message ALERT \\"Brute force attempt: "$0"\\"\"")
-    }'
+    awk -v threshold=$failed_threshold '{if ($1 > threshold) print $0}' | while read -r line; do
+        log_message "ALERT" "Brute force attempt: $line"
+    done
 
     if [ -f /tmp/last_users.txt ]; then
-        comm -23 <(cut -d: -f1 /etc/passwd | sort) <(sort /tmp/last_users.txt) | grep -vE "backup|sync|systemd-" |
-        xargs -I {} bash -c "source ${BASH_SOURCE[0]} && log_message ALERT 'New user detected: {}'" || true
+        comm -23 <(cut -d: -f1 /etc/passwd | sort) <(sort /tmp/last_users.txt) | grep -vE "backup|sync|systemd-" | \
+        while read -r user; do
+            log_message "ALERT" "New user detected: $user"
+        done
     fi
-
-    # Update the user baseline for the next run
     cut -d: -f1 /etc/passwd | sort > /tmp/last_users.txt
 }
 
@@ -73,23 +72,24 @@ check_user_activity() {
 check_file_integrity() {
     log_message "INFO" "Checking file system integrity..."
 
-    find /etc /bin /sbin -type f -mtime -1 2>/dev/null | grep -vE "/etc/ssl/certs|/var/lib/dpkg" |
-    xargs -I {} bash -c "source ${BASH_SOURCE[0]} && log_message WARNING 'Recently modified system file: {}'" || true
+    find /etc /bin /sbin -type f -mtime -1 2>/dev/null | grep -vE "/etc/ssl/certs|/var/lib/dpkg" | \
+    while read -r file; do
+        log_message "WARNING" "Recently modified system file: $file"
+    done
 
-    find /tmp /var/tmp -name ".*" -type f 2>/dev/null | grep -vE "$WHITELIST_TEMP_FILES" |
-    xargs -I {} bash -c "source ${BASH_SOURCE[0]} && log_message WARNING 'Hidden temp file: {}'" || true
+    find /tmp /var/tmp -name ".*" -type f 2>/dev/null | grep -vE "$WHITELIST_TEMP_FILES" | \
+    while read -r file; do
+        log_message "WARNING" "Hidden temp file: $file"
+    done
 }
 
 # Advanced process checking
 check_processes() {
     log_message "INFO" "Scanning running processes..."
 
-    # Use pgrep -af to get PID and full command, then filter with grep.
-    # This is more efficient and correct than the previous ps|pgrep|pgrep pipe.
-    pgrep -afE "$SUSPICIOUS_PATTERNS" | grep -vE "grep|$WHITELIST_PROCESSES|\[.*\]" | while read -r line; do
-        local pid
+    pgrep -af "$SUSPICIOUS_PATTERNS" | grep -vE "grep|$WHITELIST_PROCESSES|\[.*\]" | while read -r line; do
         pid=$(echo "$line" | awk '{print $1}')
-        local cmd=${line#* } # Get everything after the first space (the command)
+        cmd=${line#* }
 
         # Skip Flatpak and known safe paths
         if [[ "$cmd" =~ $FLATPAK_PATHS ]] || [[ "$cmd" == *"zed-cli://"* ]]; then
@@ -98,7 +98,7 @@ check_processes() {
         fi
 
         if [ -f "/proc/$pid/exe" ]; then
-            local origin=$(readlink -f "/proc/$pid/exe")
+            origin=$(readlink -f "/proc/$pid/exe")
 
             if [[ "$origin" == /usr/* || "$origin" == /lib* || "$origin" =~ $FLATPAK_PATHS ]]; then
                 log_message "DEBUG" "Verified system binary: $(basename "$origin")"
@@ -109,7 +109,7 @@ check_processes() {
         else
             log_message "ALERT" "Hidden process: $cmd"
         fi
-    done || true # Ensure script doesn't exit if pgrep finds nothing
+    done
 }
 
 # System log monitoring
@@ -117,21 +117,23 @@ check_system_logs() {
     log_message "INFO" "Checking system logs..."
 
     dmesg | grep -i "error\|warning\|fail" | grep -vE "ACPI Error|usb usb.*port.*disabled" | \
-    xargs -I {} bash -c "source ${BASH_SOURCE[0]} && log_message WARNING 'Kernel issue: {}'" || true
+    while read -r line; do
+        log_message "WARNING" "Kernel issue: $line"
+    done
 
     grep -i "authentication failure\|invalid user\|connection closed" /var/log/auth.log 2>/dev/null | \
-    xargs -I {} bash -c "source ${BASH_SOURCE[0]} && log_message INFO 'Auth event: {}'" || true
+    while read -r line; do
+        log_message "INFO" "Auth event: $line"
+    done
 }
 
 # Notification system
 send_alert_email() {
-    # Use -e "pattern" -- "$file" to handle filenames starting with a hyphen
-    if grep -q -e "ALERT:" -- "$LOG_FILE"; then
+    if grep -q "\[ALERT\]" "$LOG_FILE"; then
         local alert_count
-        alert_count=$(grep -c "ALERT:" "$LOG_FILE")
+        alert_count=$(grep -c "\[ALERT\]" "$LOG_FILE")
         log_message "INFO" "Sending alert with $alert_count issues"
-        # Use -e "pattern" -- "$file" here as well for safety
-        echo -e "Security Alerts:\n\n$(grep -A 1 -e "ALERT:" -- "$LOG_FILE" | tail -n 20)" | \
+        echo -e "Security Alerts:\n\n$(grep -A 1 "\[ALERT\]" "$LOG_FILE" | tail -n 20)" | \
         mail -s "Security Alert: $(hostname)" "$ALERT_EMAIL"
     fi
 }
@@ -180,8 +182,8 @@ show_status() {
     clear
     echo -e "${BLUE}==== Security Status ====${NC}"
     echo -e "Last scan: $(date -r "$LOG_FILE" 2>/dev/null || echo "Never")"
-    echo -e "\n${YELLOW}Recent alerts (last 5):${NC}"
-    grep "ALERT:" "$LOG_FILE" | tail -n 5
+    echo -e "\n${YELLOW}Recent alerts:${NC}"
+    grep "\[ALERT\]" "$LOG_FILE" | tail -n 5 || echo "None found"
     echo -e "\n${GREEN}Whitelisted applications:${NC}"
     echo "$WHITELIST_PROCESSES" | tr '|' '\n'
     read -rp "Press enter to continue..."
