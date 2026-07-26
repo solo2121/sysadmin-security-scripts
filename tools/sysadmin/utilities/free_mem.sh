@@ -97,20 +97,20 @@ while true; do
     read -r -p "Enter your choice [1-8]: " choice
     case $choice in
         1)
-            clear_caches 1
+            clear_caches 1 || true
             ;;
         2)
-            clear_caches 2
+            clear_caches 2 || true
             ;;
         3)
-            clear_caches 3
+            clear_caches 3 || true
             ;;
         4)
-            clear_swap
+            clear_swap || true
             ;;
         5)
-            clear_caches 3
-            clear_swap
+            clear_caches 3 || true
+            clear_swap || true
             ;;
         6)
             # Memory will be shown automatically on next loop
