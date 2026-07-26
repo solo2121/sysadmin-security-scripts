@@ -41,7 +41,7 @@ fi
 
 # Find and list files that would be deleted
 echo "The following files will be deleted:"
-mapfile -t files_to_delete < <(find "$TARGET_DIR" -type f \( -iname "*.srt" -o -iname "*.vtt" \) -print0 | xargs -0 -I {} echo "{}")
+mapfile -d '' -t files_to_delete < <(find "$TARGET_DIR" -type f \( -iname "*.srt" -o -iname "*.vtt" \) -print0)
 
 if [ ${#files_to_delete[@]} -eq 0 ]; then
     echo "No subtitle files found."
@@ -51,15 +51,15 @@ fi
 printf "%s\n" "${files_to_delete[@]}"
 
 # Ask for confirmation
+read -p "Are you sure you want to delete these files? [y/N] " -n 1 -r
 echo
-read -rp "Are you sure you want to delete these files? [y/N] " confirm
-if [[ "$confirm" != "y" ]]; then
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "Operation cancelled."
     exit 0
 fi
 
 # Delete files
 echo "Deleting files..."
-find "$TARGET_DIR" -type f \( -iname "*.srt" -o -iname "*.vtt" \) -delete
+printf '%s\0' "${files_to_delete[@]}" | xargs -0 rm -f --
 
 echo "Deletion complete."
