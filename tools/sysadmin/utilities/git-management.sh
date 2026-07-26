@@ -123,7 +123,7 @@ commit_changes() {
 }
 
 push_changes() {
-    local current_branch branch confirm proceed
+    local current_branch branch proceed
     current_branch=$(git branch --show-current)
 
     if [[ -z "$current_branch" ]]; then
@@ -230,14 +230,14 @@ main() {
         read -rp "Please select an option (1-9): " choice
 
         case "$choice" in
-            1) clear; git_status; wait_for_input ;;
-            2) clear; add_files; wait_for_input ;;
-            3) clear; commit_changes; wait_for_input ;;
-            4) clear; push_changes; wait_for_input ;;
-            5) clear; fetch_changes; wait_for_input ;;
-            6) clear; pull_changes; wait_for_input ;;
-            7) clear; view_log; wait_for_input ;;
-            8) clear; view_branches; wait_for_input ;;
+            1) clear; git_status || true; wait_for_input ;;
+            2) clear; add_files || true; wait_for_input ;;
+            3) clear; commit_changes || true; wait_for_input ;;
+            4) clear; push_changes || true; wait_for_input ;;
+            5) clear; fetch_changes || true; wait_for_input ;;
+            6) clear; pull_changes || true; wait_for_input ;;
+            7) clear; view_log || true; wait_for_input ;;
+            8) clear; view_branches || true; wait_for_input ;;
             9) printf "Goodbye!\n"; exit 0 ;;
             *)
                 printf "Invalid option! Please select 1-9.\n" >&2
