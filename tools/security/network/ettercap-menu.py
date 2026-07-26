@@ -36,7 +36,6 @@ Created: 2024
 """
 
 import asyncio
-import contextlib
 import ipaddress
 import logging
 import os
@@ -46,11 +45,10 @@ import shlex
 import signal
 import subprocess
 import sys
-import tempfile
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union, Callable, Any
+from typing import List, Optional, Tuple, Callable
 import argparse
 from datetime import datetime
 
@@ -399,6 +397,11 @@ class EttercapCommandBuilder:
             raise ValueError(f"Invalid filter file: {filter_file}")
         return self
 
+    def add_output_file(self, output_file: str) -> 'EttercapCommandBuilder':
+        """Write captured packets to a pcap file (ettercap -w/--write)."""
+        self.args.extend(["-w", output_file])
+        return self
+
     def build(self) -> str:
         """
         Build the complete ettercap command.
@@ -436,7 +439,7 @@ class EttercapMenu:
         """Set up signal handlers for graceful application shutdown."""
         def signal_handler(signum: int, frame) -> None:
             logger.info(f"Received signal {signum}, shutting down gracefully")
-            print(f"\n[!] Received interrupt signal. Shutting down gracefully...")
+            print("\n[!] Received interrupt signal. Shutting down gracefully...")
             self.running = False
             sys.exit(0)
 
@@ -461,7 +464,7 @@ class EttercapMenu:
 
     def display_system_info(self) -> None:
         """Display system information and ettercap status."""
-        print(f"\n📊 System Information:")
+        print("\n📊 System Information:")
         print(f"   Platform: {platform.system()} {platform.release()}")
         print(f"   Python: {sys.version.split()[0]}")
         print(f"   Privileges: {'✅ Elevated' if SystemUtils.check_root_privileges() else '❌ Standard'}")
@@ -635,7 +638,7 @@ class EttercapMenu:
                       .build())
 
             # Display configuration summary
-            print(f"\n📋 Attack Configuration:")
+            print("\n📋 Attack Configuration:")
             print(f"   Target 1 (Gateway): {target1}")
             print(f"   Target 2 (Victim):  {target2}")
             print(f"   Interface:          {interface}")
@@ -691,11 +694,12 @@ class EttercapMenu:
             elif option == "3":
                 output_file = input("💾 Enter output file path (optional): ").strip()
                 if output_file and InputValidator.validate_file_path(output_file, must_exist=False):
+                    builder.add_output_file(output_file)
                     print(f"💾 Output will be saved to: {output_file}")
 
             command = builder.build()
 
-            print(f"\n📋 Sniffing Configuration:")
+            print("\n📋 Sniffing Configuration:")
             print(f"   Interface: {interface}")
             print(f"   Mode:      {'Filtered' if option == '2' else 'Basic'}")
             print(f"   Command:   {command}")
@@ -769,7 +773,7 @@ class EttercapMenu:
                       .add_filter_file(dns_file)
                       .build())
 
-            print(f"\n📋 DNS Spoofing Configuration:")
+            print("\n📋 DNS Spoofing Configuration:")
             print(f"   DNS File:   {dns_file}")
             print(f"   Interface:  {interface}")
             print(f"   Command:    {command}")
@@ -808,7 +812,7 @@ class EttercapMenu:
                 return
 
         # Display command for final confirmation
-        print(f"\n📋 Command to execute:")
+        print("\n📋 Command to execute:")
         print(f"   {custom_cmd}")
 
         final_confirm = input("\n❓ Execute this command? (y/N): ").lower()
