@@ -18,6 +18,13 @@ IFS=$'\n\t'
 
 # --- constants -----------------------------------------------
 SCRIPT_NAME="$(basename "${0:-}")"
+echo "Running script: $SCRIPT_NAME"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo "Script directory: $SCRIPT_DIR"
+LOG_FILE="/var/log/ufw_manager.log"
+echo "Script: $SCRIPT_NAME (dir: $SCRIPT_DIR)" >&2
+touch "$LOG_FILE" || { echo "ERROR: Can't write to $LOG_FILE" >&2; exit 1; }
+readonly SCRIPT_NAME SCRIPT_DIR LOG_FILE
 
 # --- colours via tput (safe) ---------------------------------
 RED=$(tput setaf 1)
@@ -44,13 +51,9 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # --- helpers -------------------------------------------------
-log_info() { echo -e "${BLU}[*]${RESET} $1"; }
-log_success() { echo -e "${GRN}[+]${RESET} $1"; }
-log_warning() { echo -e "${YEL}[!]${RESET} $1"; }
-log_error() { echo -e "${RED}[-]${RESET} $1" >&2; }
-
-pause() { read -rp "${YEL}${BOLD}Press Enter to continue …${RESET}"; }
-
+pause() {
+    read -rp "${YEL}${BOLD}Press Enter to continue …${RESET}"
+}
 
 print_status() {
     echo
@@ -73,13 +76,18 @@ print_rules() {
 # --- add rule ------------------------------------------------
 add_rule() {
     echo -e "\n${BLU}${BOLD}=== ADD RULE ===${RESET}"
-    read -rp "${CYN}${BOLD}Action (allow/deny/reject/limit): ${RESET}" action
-    if [[ ! "$action" =~ ^(allow|deny|reject|limit)$ ]]; then
-        log_error "Invalid action."
-    else
+    PS3="${YEL}${BOLD}Action: ${RESET}"
+    select action in allow deny reject limit back; do
+        case $action in
+            allow|deny|reject|limit) ;;
+            back|"") return ;;
+            *) continue ;;
+        esac
+
         read -rp "${CYN}${BOLD}Port/service (22, 80/tcp, http): ${RESET}" port
         if [[ -z $port ]]; then
-            log_error "Port cannot be empty"
+            echo "${RED}Port cannot be empty${RESET}" >&2
+            continue
         fi
 
         read -rp "${CYN}${BOLD}From IP/CIDR (blank = any): ${RESET}" src
@@ -89,11 +97,12 @@ add_rule() {
 
         echo -e "\n${YEL}Running: ${cmd[*]}${RESET}"
         if "${cmd[@]}"; then
-            log_success "Rule added"
+            echo "${GRN}✔ Rule added${RESET}"
         else
-            log_error "Failed to add rule"
+            echo "${RED}✖ Failed${RESET}" >&2
         fi
-    fi
+        break
+    done
 }
 
 # --- delete rule ---------------------------------------------
@@ -102,14 +111,14 @@ delete_rule() {
     read -rp "${YEL}${BOLD}Rule number to delete (c = cancel): ${RESET}" num
     [[ $num == [cC] ]] && return
     if [[ ! $num =~ ^[0-9]+$ ]]; then
-        log_error "Invalid number"
+        echo "${RED}Invalid number${RESET}" >&2
         return 1
     fi
 
     if ufw --force delete "$num"; then
-        log_success "Rule deleted"
+        echo "${GRN}✔ Rule deleted${RESET}"
     else
-        log_error "Could not delete rule"
+        echo "${RED}✖ Could not delete${RESET}" >&2
     fi
 }
 
@@ -154,11 +163,12 @@ EOF
 
     read -rp "${YEL}${BOLD}Choice (1-5): ${RESET}" c
     case $c in
-        1) clear; print_rules; pause ;;
-        2) clear; add_rule; sleep 1 ;;
-        3) clear; delete_rule; sleep 1 ;;
-        4) clear; toggle_firewall; sleep 1 ;;
+        1) print_rules || true ;;
+        2) add_rule || true ;;
+        3) delete_rule || true ;;
+        4) toggle_firewall || true ;;
         5) echo "${BLU}${BOLD}Bye!${RESET}"; exit 0 ;;
         *) continue ;;
     esac
+    pause
 done
