@@ -770,13 +770,25 @@ class EttercapMenu:
                       .set_text_mode()
                       .set_interface(interface)
                       .add_plugin("dns_spoof")
-                      .add_filter_file(dns_file)
                       .build())
 
+            standard_locations = (
+                "/etc/ettercap/etter.dns",
+                "/usr/share/ettercap/etter.dns",
+                "/usr/local/share/ettercap/etter.dns",
+            )
             print("\n📋 DNS Spoofing Configuration:")
             print(f"   DNS File:   {dns_file}")
             print(f"   Interface:  {interface}")
             print(f"   Command:    {command}")
+            if dns_file not in standard_locations:
+                print(
+                    "⚠️  Note: ettercap's dns_spoof plugin has no command-line "
+                    "option for a custom etter.dns path - it always reads from "
+                    "one of the standard locations above. Copy your selected "
+                    "file to one of those paths (as root) before proceeding, "
+                    "or the plugin will use whatever is already there."
+                )
 
             confirm = input("\n❓ Proceed with DNS spoofing? (y/N): ").lower()
             if confirm == 'y':
