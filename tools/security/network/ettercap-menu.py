@@ -428,7 +428,6 @@ class EttercapMenu:
         self.description = __description__
         self.running = True
         self.current_config = AttackConfig("")
-        self.current_process: Optional[asyncio.subprocess.Process] = None
 
         # Set up signal handlers for graceful shutdown
         self._setup_signal_handlers()
@@ -442,6 +441,7 @@ class EttercapMenu:
             logger.info(f"Received signal {signum}, shutting down gracefully")
             print("\n[!] Received interrupt signal. Shutting down gracefully...")
             self.running = False
+            sys.exit(0)
 
         signal.signal(signal.SIGINT, signal_handler)
         if platform.system() != "Windows":
@@ -521,53 +521,64 @@ class EttercapMenu:
                 sys.exit(1)
 
     async def execute_ettercap_command(self, command: str) -> bool:
-        """Execute ettercap safely and always clean up the child process."""
+        """
+        Execute ettercap command asynchronously with proper error handling.
+
+        Args:
+            command (str): Complete ettercap command to execute
+
+        Returns:
+            bool: True if command executed successfully, False otherwise
+        """
         logger.info(f"Executing ettercap command: {command}")
         print(f"\n🚀 Executing: {command}")
         print("⚠️  Press Ctrl+C to stop the operation")
-        print("-"*60)
-        process=None
+        print("-" * 60)
+
         try:
-            cmd_args=shlex.split(command)
-            kwargs={}
-            if os.name!="nt":
-                kwargs["start_new_session"]=True
-            process=await asyncio.create_subprocess_exec(*cmd_args,stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.STDOUT,**kwargs)
-            self.current_process=process
+            # Use shlex.split for proper argument parsing
+            cmd_args = shlex.split(command)
+
+            # Create subprocess with proper handling
+            process = await asyncio.create_subprocess_exec(
+                *cmd_args,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT
+            )
+
+            # Read output line by line
             while True:
-                line=await process.stdout.readline()
+                line = await process.stdout.readline()
                 if not line:
                     break
-                print(line.decode(errors="replace").rstrip())
+                print(line.decode().rstrip())
+
+            # Wait for process completion
             await process.wait()
-            return process.returncode==0
-        except (KeyboardInterrupt,asyncio.CancelledError):
-            print("\nStopping ettercap...")
+
+            if process.returncode == 0:
+                print("\n✅ Command executed successfully")
+                logger.info("Ettercap command completed successfully")
+                return True
+            else:
+                print(f"\n❌ Command failed with exit code: {process.returncode}")
+                logger.error(f"Ettercap command failed with exit code: {process.returncode}")
+                return False
+
+        except asyncio.CancelledError:
+            print("\n⚠️  Operation cancelled by user")
+            logger.info("Ettercap command cancelled by user")
             return False
         except FileNotFoundError:
-            print("\n❌ Ettercap not found.")
+            print("\n❌ Ettercap not found. Please ensure it's installed and in PATH")
+            logger.error("Ettercap executable not found")
             return False
-        finally:
-            if process and process.returncode is None:
-                try:
-                    if os.name=="nt":
-                        process.terminate()
-                    else:
-                        import os as _os, signal as _signal
-                        _os.killpg(process.pid,_signal.SIGTERM)
-                    try:
-                        await asyncio.wait_for(process.wait(),5)
-                    except asyncio.TimeoutError:
-                        if os.name=="nt":
-                            process.kill()
-                        else:
-                            _os.killpg(process.pid,_signal.SIGKILL)
-                        await process.wait()
-                except ProcessLookupError:
-                    pass
-            self.current_process=None
+        except Exception as e:
+            print(f"\n❌ Unexpected error: {e}")
+            logger.error(f"Unexpected error executing ettercap: {e}")
+            return False
 
-    def show_available_interfacesdef show_available_interfaces(self) -> None:
+    def show_available_interfaces(self) -> None:
         """Display available network interfaces with status information."""
         interfaces = SystemUtils.get_network_interfaces()
 
