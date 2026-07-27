@@ -428,6 +428,7 @@ class EttercapMenu:
         self.description = __description__
         self.running = True
         self.current_config = AttackConfig("")
+        self._active_process: Optional[asyncio.subprocess.Process] = None
 
         # Set up signal handlers for graceful shutdown
         self._setup_signal_handlers()
@@ -441,11 +442,57 @@ class EttercapMenu:
             logger.info(f"Received signal {signum}, shutting down gracefully")
             print("\n[!] Received interrupt signal. Shutting down gracefully...")
             self.running = False
+            self._signal_active_process(signal.SIGINT)
             sys.exit(0)
 
         signal.signal(signal.SIGINT, signal_handler)
         if platform.system() != "Windows":
             signal.signal(signal.SIGTERM, signal_handler)
+
+    def _signal_active_process(self, sig: int) -> None:
+        """Forward a termination signal to the active Ettercap process."""
+        process = self._active_process
+        if process is None or process.returncode is not None:
+            return
+
+        try:
+            if os.name != "nt":
+                # The process is started in its own session, so this also
+                # stops descendants that Ettercap may have created.
+                os.killpg(process.pid, sig)
+            else:
+                process.send_signal(sig)
+        except (ProcessLookupError, OSError) as error:
+            logger.debug("Ettercap process already exited: %s", error)
+
+    async def _terminate_active_process(self, process: asyncio.subprocess.Process) -> None:
+        """Stop a subprocess and escalate if it does not exit promptly."""
+        if process.returncode is not None:
+            return
+
+        self._signal_active_process(signal.SIGINT)
+        try:
+            await asyncio.wait_for(process.wait(), timeout=3)
+            return
+        except asyncio.TimeoutError:
+            logger.warning("Ettercap did not stop after SIGINT; sending SIGTERM")
+
+        self._signal_active_process(signal.SIGTERM)
+        try:
+            await asyncio.wait_for(process.wait(), timeout=3)
+            return
+        except asyncio.TimeoutError:
+            logger.error("Ettercap did not stop after SIGTERM; killing process")
+
+        if process.returncode is None:
+            try:
+                if os.name != "nt":
+                    os.killpg(process.pid, signal.SIGKILL)
+                else:
+                    process.kill()
+            except (ProcessLookupError, OSError) as error:
+                logger.debug("Ettercap process exited during forced cleanup: %s", error)
+            await process.wait()
 
     def display_banner(self) -> None:
         """Display the application banner with version and security information."""
@@ -539,12 +586,14 @@ class EttercapMenu:
             # Use shlex.split for proper argument parsing
             cmd_args = shlex.split(command)
 
-            # Create subprocess with proper handling
+            # Isolate the process group so cleanup can include descendants.
             process = await asyncio.create_subprocess_exec(
                 *cmd_args,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT
+                stderr=asyncio.subprocess.STDOUT,
+                start_new_session=(os.name != "nt")
             )
+            self._active_process = process
 
             # Read output line by line
             while True:
@@ -577,6 +626,11 @@ class EttercapMenu:
             print(f"\n❌ Unexpected error: {e}")
             logger.error(f"Unexpected error executing ettercap: {e}")
             return False
+        finally:
+            if self._active_process is not None:
+                process = self._active_process
+                self._active_process = None
+                await self._terminate_active_process(process)
 
     def show_available_interfaces(self) -> None:
         """Display available network interfaces with status information."""
