@@ -29,7 +29,7 @@ Requirements:
     - Root/Administrator privileges (recommended)
     - Network interface access
 
-Author: Solo
+Author: Solo2121
 Version: 2.0
 License: MIT
 Created: 2024
