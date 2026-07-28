@@ -3,11 +3,12 @@
 import os
 import sys
 import subprocess
-import time
 from datetime import datetime
+
 
 def clear_screen():
     os.system('clear' if os.name == 'posix' else 'cls')
+
 
 def print_header():
     clear_screen()
@@ -17,6 +18,7 @@ def print_header():
     *      Python 3 TCP Capture Tool       *
     ***************************************
     """)
+
 
 def get_interface_list():
     try:
@@ -29,6 +31,7 @@ def get_interface_list():
     except FileNotFoundError:
         print("tcpdump not found. Please install tcpdump first.")
         sys.exit(1)
+
 
 def select_interface(interfaces):
     print_header()
@@ -45,6 +48,7 @@ def select_interface(interfaces):
                 print(f"Please enter a number between 1 and {len(interfaces)}")
         except ValueError:
             print("Please enter a valid number.")
+
 
 def select_save_location():
     print_header()
@@ -78,9 +82,11 @@ def select_save_location():
         else:
             print("Invalid choice. Please select 1, 2, or 3.")
 
+
 def generate_filename(interface):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     return f"capture_{interface}_{timestamp}.pcap"
+
 
 def select_capture_options():
     print_header()
@@ -91,7 +97,6 @@ def select_capture_options():
     print("4. Capture specific protocol")
     print("5. Advanced filter (custom)")
 
-    options = []
     while True:
         choice = input("\nSelect capture option (1-5): ")
         if choice == '1':
@@ -116,6 +121,7 @@ def select_capture_options():
         else:
             print("Invalid choice. Please select 1-5.")
 
+
 def select_packet_count():
     print_header()
     print("Packet Count Options:\n")
@@ -132,9 +138,10 @@ def select_packet_count():
         else:
             print("Invalid choice. Please select 1 or 2.")
 
+
 def run_tcpdump(interface, save_dir, filename, filter_options, count_options):
     save_path = os.path.join(save_dir, filename)
-    command = ['sudo', 'tcpdump', '-i', interface, '-w', save_path] + filter_options + count_options
+    command = ['tcpdump', '-i', interface, '-w', save_path] + filter_options + count_options
 
     print("\nStarting capture with the following command:")
     print(" ".join(command))
@@ -154,9 +161,13 @@ def run_tcpdump(interface, save_dir, filename, filter_options, count_options):
     except Exception as e:
         print(f"Error during capture: {e}")
     finally:
-        print(f"\nCapture complete. File saved to: {save_path}")
-        file_size = os.path.getsize(save_path) / (1024 * 1024)  # Convert to MB
-        print(f"File size: {file_size:.2f} MB")
+        if os.path.exists(save_path):
+            print(f"\nCapture complete. File saved to: {save_path}")
+            file_size = os.path.getsize(save_path) / (1024 * 1024)  # Convert to MB
+            print(f"File size: {file_size:.2f} MB")
+        else:
+            print(f"\nNo capture file was created at: {save_path}")
+
 
 def main():
     if os.geteuid() != 0:
@@ -175,6 +186,7 @@ def main():
     filename = generate_filename(interface)
 
     run_tcpdump(interface, save_dir, filename, filter_options, count_options)
+
 
 if __name__ == "__main__":
     main()
