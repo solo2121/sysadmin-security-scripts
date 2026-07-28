@@ -75,12 +75,65 @@ die() {
     exit 1
 }
 
+# ---------- Process Cleanup ----------
+pids=()
+active_nmap_pid=""
+
+cleanup() {
+    local exit_code=${1:-$?}
+
+    # Prevent cleanup from recursively triggering itself while terminating jobs.
+    trap - EXIT INT TERM
+
+    if ((${#pids[@]} > 0)); then
+        msg "Stopping active scans..."
+        for pid in "${pids[@]}"; do
+            kill -TERM "$pid" 2>/dev/null || true
+        done
+
+        for pid in "${pids[@]}"; do
+            wait "$pid" 2>/dev/null || true
+        done
+    fi
+
+    if [[ -n ${active_nmap_pid:-} ]]; then
+        kill -TERM "$active_nmap_pid" 2>/dev/null || true
+    fi
+
+    exit "$exit_code"
+}
+
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+run_nmap() {
+    local result=0
+
+    nmap "$@" &
+    active_nmap_pid=$!
+
+    # Ensure an interrupted wrapper also terminates its Nmap child.
+    cleanup_nmap() {
+        kill -TERM "$active_nmap_pid" 2>/dev/null || true
+    }
+
+    trap 'cleanup_nmap; cleanup 130' INT
+    trap 'cleanup_nmap; cleanup 143' TERM
+
+    wait "$active_nmap_pid" || result=$?
+    active_nmap_pid=""
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    return "$result"
+}
+
 # ---------- Initial discovery ----------
 msg "Running quick host discovery (-sn) to identify live hosts..."
-nmap -sn "$TARGET" -oG "$OUTPUT_DIR/host-discovery-$TIMESTAMP.gnmap" 2>/dev/null || true
+run_nmap -sn "$TARGET" -oG "$OUTPUT_DIR/host-discovery-$TIMESTAMP.gnmap" 2>/dev/null || true
 
 msg "Running initial port scan to detect open ports (-T4 --open)..."
-nmap -Pn -T4 --open -v -oG "$OUTPUT_DIR/initial-scan-$TIMESTAMP.gnmap" "$TARGET" || \
+run_nmap -Pn -T4 --open -v -oG "$OUTPUT_DIR/initial-scan-$TIMESTAMP.gnmap" "$TARGET" || \
     die "Initial scan failed"
 
 # Extract ports
@@ -99,13 +152,12 @@ scan() {
     local outfile="$OUTPUT_DIR/${scan_name}-${TIMESTAMP}"
 
     msg "Running $scan_name scan ($description)..."
-    nmap $opts -p "$PORTS" "$TARGET" -oA "$outfile"
+    run_nmap $opts -p "$PORTS" "$TARGET" -oA "$outfile"
     ok "$scan_name results saved to $outfile.nmap"
 }
 
 # ---------- Parallel TCP Scans ----------
 msg "Starting parallel TCP scan batch (max 3 concurrent scans)..."
-pids=()
 scan "syn-scan" "-sS -T4" "SYN stealth scan (standard TCP connect)" &
 pids+=($!)
 scan "ack-scan" "-sA -T4" "ACK scan (useful for firewall rule detection)" &
@@ -113,6 +165,7 @@ pids+=($!)
 scan "fin-scan" "-sF -T4" "FIN scan (often bypasses non-stateful firewalls)" &
 pids+=($!)
 wait "${pids[@]}" || msg "Some scans produced warnings, continuing..."
+pids=()
 
 # ---------- Additional Firewall Evasion Scans ----------
 scan "null-scan" "-sN -T4" "NULL scan (all flags cleared)"
@@ -127,13 +180,13 @@ scan "service-os-scan" "-sS -A --version-intensity 5" "Aggressive service/OS det
 
 # ---------- Traceroute and Banner Grabbing ----------
 msg "Running traceroute and service banner collection..."
-nmap -sS -p "$PORTS" --traceroute \
+run_nmap -sS -p "$PORTS" --traceroute \
      --script banner,http-headers,ssh-hostkey \
      "$TARGET" -oA "$OUTPUT_DIR/traceroute-banners-$TIMESTAMP" || true
 
 # ---------- Firewall Bypass Attempts ----------
 msg "Executing firewall bypass scripts..."
-nmap -sS -p "$PORTS" --script firewall-bypass \
+run_nmap -sS -p "$PORTS" --script firewall-bypass \
      "$TARGET" -oN "$OUTPUT_DIR/firewall-bypass-$TIMESTAMP.nmap" || true
 
 # ---------- Completion ----------
