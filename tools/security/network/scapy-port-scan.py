@@ -1,27 +1,22 @@
 #!/usr/bin/env python3
+import sys
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
 try:
-    import scapy
     from scapy.all import *
 except ImportError:
     print("Error: Scapy library not found. Please install it with: pip install scapy")
     sys.exit(1)
 
-import socket
-import subprocess
-import platform
 import time
 import random
-import sys
 import threading
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
 import argparse
-from scapy.all import *
 from scapy.all import fragment as scapy_fragment
+
 
 def banner():
     print("=" * 50)
@@ -29,17 +24,18 @@ def banner():
     print("=" * 50)
     print()
 
+
 def detect_firewall(host, open_ports, closed_ports):
-    """Detect potential firewall presence based on scan results."""
+    """Detect potential firewall presence based on scan results"""
     firewall_indicators = []
 
     # Check for consistent filtered responses
-    filtered_count = sum(1 for status in closed_ports.values() if status == "Filtered")
+    filtered_count = len([p for p in closed_ports if closed_ports[p] == "Filtered"])
     total_ports = len(open_ports) + len(closed_ports)
 
-    if total_ports > 0 and (filtered_count / total_ports) > 0.7:
+    if filtered_count / total_ports > 0.7:
         firewall_indicators.append("High percentage of filtered ports")
- 
+
     # Check for sequential open ports (unusual pattern)
     if len(open_ports) > 1:
         sorted_ports = sorted(open_ports.keys())
@@ -47,17 +43,14 @@ def detect_firewall(host, open_ports, closed_ports):
         if sequential / len(sorted_ports) > 0.8:
             firewall_indicators.append("Unusual sequential port pattern")
 
-    if firewall_indicators:
-        print("\n" + "="*50)
-        print("FIREWALL DETECTION")
-        print("="*50)
-        for indicator in firewall_indicators:
-            print(f"[!] Indicator: {indicator}")
+    return firewall_indicators
+
 
 def firewall_evasion_delay():
     """Add random delay to evade rate limiting"""
     delay = random.uniform(0.1, 0.5)
     time.sleep(delay)
+
 
 def fragment_packet(packet, fragment_size=8):
     """Fragment IP packet to evade firewalls"""
@@ -67,11 +60,12 @@ def fragment_packet(packet, fragment_size=8):
     except Exception:
         return [packet]
 
+
 def decoy_scan(host, port, scan_type, decoy_ips=None):
     """Perform scan with decoy IPs to mask real source"""
     if decoy_ips is None:
         # Generate random decoy IPs
-        decoy_ips = [f"{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}.{random.randint(1,254)}"
+        decoy_ips = [f"{random.randint(1, 254)}.{random.randint(1, 254)}.{random.randint(1, 254)}.{random.randint(1, 254)}"
                     for _ in range(3)]
 
     # Perform decoy scans (won't wait for responses)
@@ -87,6 +81,7 @@ def decoy_scan(host, port, scan_type, decoy_ips=None):
     # Perform actual scan
     firewall_evasion_delay()
     return scan_port(host, port, scan_type)
+
 
 def source_port_scan(host, port, scan_type, source_port=53):
     """Scan using specific source port (often allowed through firewalls)"""
@@ -114,6 +109,7 @@ def source_port_scan(host, port, scan_type, source_port=53):
     except Exception:
         return scan_port(host, port, scan_type)
 
+
 def timing_evasion_scan(host, port, scan_type, timing_level=3):
     """Perform scan with timing evasion"""
     timing_delays = {
@@ -129,34 +125,67 @@ def timing_evasion_scan(host, port, scan_type, timing_level=3):
 
     return scan_port(host, port, scan_type)
 
-def tcp_scan(host, port, flags):
-    """Generic TCP scan function."""
-    response = sr1(IP(dst=host)/TCP(dport=port, flags=flags), timeout=1, verbose=0)
+
+def tcp_syn_scan(host, port):
+    """TCP SYN Scan"""
+    response = sr1(IP(dst=host)/TCP(dport=port, flags="S"), timeout=1, verbose=0)
     if response is None:
-        return "Open|Filtered" if flags in ("F", "FPU", "") else "Filtered"
+        return "Filtered"
     elif response.haslayer(TCP):
-        if response.getlayer(TCP).flags == 0x12:  # SYN/ACK
+        if response[TCP].flags == 18:  # SYN-ACK
             return "Open"
-        elif response.getlayer(TCP).flags == 0x14:  # RST/ACK
+        elif response[TCP].flags == 4:  # RST
             return "Closed"
     return "Filtered"
 
-def tcp_connect_scan(host, port):
-    """TCP Connect Scan using socket for a full handshake."""
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(1)
-            s.connect((host, port))
-        return "Open"
-    except (socket.timeout, ConnectionRefusedError):
-        return "Closed"
-    except Exception:
-        return "Filtered"
 
-def tcp_syn_scan(host, port): return tcp_scan(host, port, "S")
-def tcp_fin_scan(host, port): return tcp_scan(host, port, "F")
-def tcp_xmas_scan(host, port): return tcp_scan(host, port, "FPU")
-def tcp_null_scan(host, port): return tcp_scan(host, port, "")
+def tcp_connect_scan(host, port):
+    """TCP Connect Scan"""
+    response = sr1(IP(dst=host)/TCP(dport=port, flags="S"), timeout=1, verbose=0)
+    if response is None:
+        return "Filtered"
+    elif response.haslayer(TCP):
+        if response[TCP].flags == 18:  # SYN-ACK
+            # Send ACK to complete handshake
+            sr1(IP(dst=host)/TCP(dport=port, flags="A"), timeout=1, verbose=0)
+            return "Open"
+        elif response[TCP].flags == 4:  # RST
+            return "Closed"
+    return "Filtered"
+
+
+def tcp_fin_scan(host, port):
+    """TCP FIN Scan"""
+    response = sr1(IP(dst=host)/TCP(dport=port, flags="F"), timeout=1, verbose=0)
+    if response is None:
+        return "Open|Filtered"
+    elif response.haslayer(TCP):
+        if response[TCP].flags == 4:  # RST
+            return "Closed"
+    return "Open|Filtered"
+
+
+def tcp_xmas_scan(host, port):
+    """TCP XMAS Scan"""
+    response = sr1(IP(dst=host)/TCP(dport=port, flags="FPU"), timeout=1, verbose=0)
+    if response is None:
+        return "Open|Filtered"
+    elif response.haslayer(TCP):
+        if response[TCP].flags == 4:  # RST
+            return "Closed"
+    return "Open|Filtered"
+
+
+def tcp_null_scan(host, port):
+    """TCP NULL Scan"""
+    response = sr1(IP(dst=host)/TCP(dport=port, flags=""), timeout=1, verbose=0)
+    if response is None:
+        return "Open|Filtered"
+    elif response.haslayer(TCP):
+        if response[TCP].flags == 4:  # RST
+            return "Closed"
+    return "Open|Filtered"
+
 
 def udp_scan(host, port):
     """UDP Scan"""
@@ -169,6 +198,7 @@ def udp_scan(host, port):
     elif response.haslayer(UDP):
         return "Open"
     return "Open|Filtered"
+
 
 def scan_port(host, port, scan_type):
     """Scan a single port"""
@@ -187,40 +217,38 @@ def scan_port(host, port, scan_type):
     else:
         return "Invalid scan type"
 
+
 def scan_ports(host, ports, scan_type, threads=50):
     """Scan multiple ports with threading"""
     print(f"Starting scan on {host}")
     print(f"Scan started at: {datetime.now()}")
     print("-" * 50)
 
-    open_ports = {}
-    closed_ports = {}
-
-    def worker(port):
+    def thread_scan(port):
         result = scan_port(host, port, scan_type)
-        return port, result
+        if result == "Open" or "Open" in result:
+            print(f"Port {port}: {result}")
 
-    with ThreadPoolExecutor(max_workers=threads) as executor:
-        # Map the worker function to the ports and get an iterator of futures
-        future_to_port = {executor.submit(worker, port): port for port in ports}
-        
-        for future in concurrent.futures.as_completed(future_to_port):
-            port = future_to_port[future]
-            try:
-                _, result = future.result()
-                if "Open" in result:
-                    print(f"Port {port}: {result}")
-                    open_ports[port] = result
-                else:
-                    closed_ports[port] = result
-            except Exception as exc:
-                print(f'Port {port} generated an exception: {exc}')
+    # Create and start threads
+    thread_list = []
+    for port in ports:
+        t = threading.Thread(target=thread_scan, args=(port,))
+        thread_list.append(t)
+        t.start()
+
+        # Limit concurrent threads
+        if len(thread_list) >= threads:
+            for thread in thread_list:
+                thread.join()
+            thread_list = []
+
+    # Wait for remaining threads
+    for thread in thread_list:
+        thread.join()
 
     print("-" * 50)
     print(f"Scan completed at: {datetime.now()}")
-    
-    # Now that we have results, run firewall detection
-    detect_firewall(host, open_ports, closed_ports)
+
 
 def display_menu():
     """Display scan type menu"""
@@ -234,6 +262,7 @@ def display_menu():
     print("7. Exit")
     print()
 
+
 def parse_ports(port_range):
     """Parse port range string into list of ports"""
     ports = []
@@ -245,6 +274,7 @@ def parse_ports(port_range):
             ports.append(int(part))
     return ports
 
+
 def main():
     banner()
 
@@ -253,7 +283,7 @@ def main():
         parser = argparse.ArgumentParser(description='Port Scanner with Scapy')
         parser.add_argument('host', help='Target host to scan')
         parser.add_argument('-p', '--ports', default='1-1000', help='Port range (e.g., 1-1000 or 80,443,8080)')
-        parser.add_argument('-t', '--type', default='1', choices=['1','2','3','4','5','6'],
+        parser.add_argument('-t', '--type', default='1', choices=['1', '2', '3', '4', '5', '6'],
                           help='Scan type (1-6)')
         parser.add_argument('--threads', default=50, type=int, help='Number of threads')
 
@@ -312,6 +342,7 @@ def main():
                 print(f"Error: {e}")
 
             input("\nPress Enter to continue...")
+
 
 if __name__ == "__main__":
     main()
