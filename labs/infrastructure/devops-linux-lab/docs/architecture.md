@@ -200,6 +200,6 @@ k3d-lab VM (Docker host)
 ## Related Documentation
 
 - [`README.md`](../README.md) — Quick start and access guide.
-- [`setup-guide.md`](setup-guide.md) — Detailed setup instructions.
+- [`lab-guide.md`](lab-guide.md#1-lab-setup-and-first-boot) — Detailed setup instructions.
 - [`security-hardening.md`](security-hardening.md) — Security configuration guide.
 - [`k8s-setup.md`](k8s-setup.md) — Kubernetes configuration details.

@@ -8,7 +8,6 @@ This directory contains Linux administration scripts for maintenance, monitoring
 
 | Directory | Contents |
 |-----------|----------|
-| [`automation/`](automation/) | System update helpers, Rhino Linux maintenance, and Pacstall maintenance tools |
 | [`monitoring/`](monitoring/) | System monitoring, security monitoring, and log analysis scripts |
 | [`system-hardening/`](system-hardening/) | Linux audit, user audit, network audit, ClamAV, and rootkit scan helpers |
 | [`utilities/`](utilities/) | Timeshift, UFW, BIND, memory cleanup, and subtitle-removal utilities |
@@ -56,5 +55,5 @@ Some scripts may require elevated privileges because they inspect logs, packages
 
 - [`../../docs/setup/installation.md`](../../docs/setup/installation.md)
 - [`../../docs/setup/troubleshooting.md`](../../docs/setup/troubleshooting.md)
-- [`../docs/workflows/workflows.md`](../docs/workflows/workflows.md)
-- [`../docs/architecture/security-scope.md`](../docs/architecture/security-scope.md)
+- [`../../docs/workflows/workflows.md`](../../docs/workflows/workflows.md)
+- [`../../docs/architecture/security-scope.md`](../../docs/architecture/security-scope.md)

@@ -344,7 +344,7 @@ vagrant destroy -f
 
 - [`../../../labs/security/ad-pentest/`](../../../labs/security/ad-pentest/) — Active Directory pentest lab.
 - [`../../../labs/security/ad-pentest-vlan/`](../../../labs/security/ad-pentest-vlan/) — VLAN edition.
-- [`../../../sysadmin/`](../../../sysadmin/) — Linux administration scripts.
+- [`../../../tools/sysadmin/`](../../../tools/sysadmin/) — Linux administration scripts.
 
 ---
 

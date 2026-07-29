@@ -23,22 +23,27 @@ The project is intentionally local-first: labs are designed for Vagrant, KVM/QEM
 ```text
 sysadmin-security-lab/
 ├── assets/
-│   ├── README.md
 │   └── architecture-overview.png
 ├── docs/
 │   ├── architecture/
 │   │   ├── architecture.md
-│   │   └── security-scope.md
+│   │   ├── security-scope.md
+│   │   └── threat-model.md
 │   ├── archive/
 │   │   └── reference/
 │   ├── guides/
 │   │   ├── infrastructure/
 │   │   └── security/
 │   ├── optimization/
+│   ├── setup/
+│   │   ├── installation.md
+│   │   └── troubleshooting.md
 │   ├── workflows/
 │   │   ├── lab-deployment-workflow.md
 │   │   └── workflows.md
+│   ├── learning-path.md
 │   ├── portfolio.md
+│   ├── roadmap.md
 │   └── setup-with-examples.md
 ├── labs/
 │   ├── infrastructure/
@@ -46,17 +51,17 @@ sysadmin-security-lab/
 │   └── security/
 │       ├── ad-pentest/
 │       └── ad-pentest-vlan/
-├── security/
-│   ├── audit/
-│   ├── exploitation/
-│   ├── network/
-│   ├── reconnaissance/
-│   └── wireless/
-├── sysadmin/
-│   ├── automation/
-│   ├── monitoring/
-│   ├── system-hardening/
-│   └── utilities/
+├── tools/
+│   ├── security/
+│   │   ├── audit/
+│   │   ├── exploitation/
+│   │   ├── network/
+│   │   ├── reconnaissance/
+│   │   └── wireless/
+│   └── sysadmin/
+│       ├── monitoring/
+│       ├── system-hardening/
+│       └── utilities/
 ├── scripts/
 │   └── check-prerequisites.sh
 ├── tests/
@@ -67,11 +72,8 @@ sysadmin-security-lab/
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── README.md
-├── ROADMAP.md
 ├── SECURITY.md
-├── installation.md
-├── requirements-dev.txt
-└── troubleshooting.md
+└── requirements-dev.txt
 ```
 
 ---
@@ -96,29 +98,27 @@ Expected lab contents:
 - `docs/` for architecture, workflow, credentials, or troubleshooting notes
 - `configs/` for lab-specific configuration when needed
 
-### `security/`
+### `tools/security/`
 
 Standalone security utilities and experiments.
 
 | Directory | Purpose |
 |-----------|---------|
-| `detection-engineering/` | LLM/security validation and audit tooling |
-| `network-security-analysis/` | Packet capture, firewall scanning, and network analysis helpers |
-| `security-testing-lab/` | Web/security testing scripts and educational exploit tooling |
-| `threat-reconnaissance/` | Reconnaissance and scanning helpers |
-| `wireless-security-lab/` | Wireless security lab experiments |
+| `audit/` | LLM security scanner, validator, and Cisco switch audit tooling |
+| `exploitation/` | Educational exploit, SQL injection, and hashcat assistant scripts |
+| `network/` | Firewall scan wrapper, Scapy port scanner, tcpdump wrapper, and Ettercap menu |
+| `reconnaissance/` | Amass, nmap, and port-scanning helpers |
+| `wireless/` | Wireless lab tooling, including evil-twin experimentation |
 
-### `sysadmin/`
+### `tools/sysadmin/`
 
 Linux administration and day-2 operations scripts.
 
 | Directory | Purpose |
 |-----------|---------|
-| `automation/` | Update, package maintenance, and platform automation scripts |
-| `git/` | Git workflow helper scripts |
 | `monitoring/` | System, security, and log monitoring utilities |
 | `system-hardening/` | Audit, hardening, antivirus, rootkit, user, and network checks |
-| `utilities/` | General Linux utilities for backups, firewall, memory, DNS, and media tasks |
+| `utilities/` | General Linux utilities for backups, firewall, memory, DNS, Git, and media tasks |
 
 ### `docs/`
 
@@ -180,5 +180,5 @@ New scripts should include:
 - [`security-scope.md`](security-scope.md)
 - [`../workflows/workflows.md`](../workflows/workflows.md)
 - [`../setup-with-examples.md`](../setup-with-examples.md)
-- [`../../installation.md`](../../installation.md)
-- [`../../troubleshooting.md`](../../troubleshooting.md)
+- [`../setup/installation.md`](../setup/installation.md)
+- [`../setup/troubleshooting.md`](../setup/troubleshooting.md)

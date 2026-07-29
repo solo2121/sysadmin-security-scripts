@@ -84,8 +84,8 @@ Before launching a security lab, review [`../docs/architecture/security-scope.md
 ## Recommended Learning Path
 
 1. Start with the DevOps Linux Lab to build comfort with Linux, Vagrant, virtualization, and infrastructure workflows.
-2. Practice monitoring and hardening with scripts under [`../sysadmin/`](../sysadmin/).
-3. Explore reconnaissance and validation tooling under [`../security/`](../security/).
+2. Practice monitoring and hardening with scripts under [`../tools/sysadmin/`](../tools/sysadmin/).
+3. Explore reconnaissance and validation tooling under [`../tools/security/`](../tools/security/).
 4. Move into the Active Directory Pentest Lab for controlled attack-chain practice.
 5. Use the VLAN Enterprise Lab to reason about segmentation, routing, and network isolation.
 

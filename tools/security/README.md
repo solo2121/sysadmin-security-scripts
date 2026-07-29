@@ -2,7 +2,7 @@
 
 This directory contains standalone security scripts and experiments for authorized lab use. The tools support reconnaissance, network analysis, detection engineering, wireless lab practice, and intentionally vulnerable security-testing workflows.
 
-Use these tools only on systems and lab networks you own or are explicitly authorized to test. For project-wide boundaries, read [`../docs/architecture/security-scope.md`](../docs/architecture/security-scope.md).
+Use these tools only on systems and lab networks you own or are explicitly authorized to test. For project-wide boundaries, read [`../../docs/architecture/security-scope.md`](../../docs/architecture/security-scope.md).
 
 ---
 
@@ -23,7 +23,7 @@ Use these tools only on systems and lab networks you own or are explicitly autho
 - Python and Bash tooling for practical security operations.
 - Clear separation between reconnaissance, detection, testing, and wireless experiments.
 - Lab-oriented scripts that support controlled attack-and-defense learning.
-- Integration with the larger lab environments under [`../labs/security/`](../labs/security/).
+- Integration with the larger lab environments under [`../../labs/security/`](../../labs/security/).
 
 ---
 
@@ -57,6 +57,6 @@ Check each script before execution and confirm the target is within your authori
 
 ## Related Labs
 
-- [`../labs/security/ad-pentest/`](../labs/security/ad-pentest/)
-- [`../labs/security/ad-pentest-vlan/`](../labs/security/ad-pentest-vlan/)
-- [`../docs/architecture/security-scope.md`](../docs/architecture/security-scope.md)
+- [`../../labs/security/ad-pentest/`](../../labs/security/ad-pentest/)
+- [`../../labs/security/ad-pentest-vlan/`](../../labs/security/ad-pentest-vlan/)
+- [`../../docs/architecture/security-scope.md`](../../docs/architecture/security-scope.md)

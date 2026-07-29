@@ -18,11 +18,11 @@
 
 | Component | Path | Purpose |
 |-----------|------|---------|
-| Audit | [`security/audit/`](../security/audit/) | LLM security scanner, validator, and Cisco switch audit tooling |
-| Network | [`security/network/`](../security/network/) | Traffic analysis, firewall scanning, and topology mapping |
-| Exploitation | [`security/exploitation/`](../security/exploitation/) | Educational offensive tooling and post-exploitation workflows |
-| Reconnaissance | [`security/reconnaissance/`](../security/reconnaissance/) | Nmap automation, Amass OSINT, and port scanning |
-| Wireless | [`security/wireless/`](../security/wireless/) | Wireless lab tooling and evil-twin experimentation |
+| Audit | [`tools/security/audit/`](../tools/security/audit/) | LLM security scanner, validator, and Cisco switch audit tooling |
+| Network | [`tools/security/network/`](../tools/security/network/) | Traffic analysis, firewall scanning, and topology mapping |
+| Exploitation | [`tools/security/exploitation/`](../tools/security/exploitation/) | Educational offensive tooling and post-exploitation workflows |
+| Reconnaissance | [`tools/security/reconnaissance/`](../tools/security/reconnaissance/) | Nmap automation, Amass OSINT, and port scanning |
+| Wireless | [`tools/security/wireless/`](../tools/security/wireless/) | Wireless lab tooling and evil-twin experimentation |
 
 ---
 
@@ -30,10 +30,9 @@
 
 | Component | Path | Purpose |
 |-----------|------|---------|
-| Automation | [`sysadmin/automation/`](../sysadmin/automation/) | Package management and update automation |
-| Monitoring | [`sysadmin/monitoring/`](../sysadmin/monitoring/) | Log analysis and system/security monitoring |
-| System Hardening | [`sysadmin/system-hardening/`](../sysadmin/system-hardening/) | ClamAV, rootkit scanning, and user/network audits |
-| Utilities | [`sysadmin/utilities/`](../sysadmin/utilities/) | Timeshift, UFW, BIND, memory cleanup, and Git management |
+| Monitoring | [`tools/sysadmin/monitoring/`](../tools/sysadmin/monitoring/) | Log analysis and system/security monitoring |
+| System Hardening | [`tools/sysadmin/system-hardening/`](../tools/sysadmin/system-hardening/) | ClamAV, rootkit scanning, and user/network audits |
+| Utilities | [`tools/sysadmin/utilities/`](../tools/sysadmin/utilities/) | Timeshift, UFW, BIND, memory cleanup, and Git management |
 
 ---
 
@@ -87,7 +86,7 @@ For the full documentation index, see [`docs/README.md`](README.md).
 
 1. [`labs/infrastructure/devops-linux-lab/README.md`](../labs/infrastructure/devops-linux-lab/README.md) — start with the base infrastructure.
 2. [`labs/security/ad-pentest/README.md`](../labs/security/ad-pentest/README.md) — move into the core offensive security environment.
-3. [`security/audit/`](../security/audit/) — explore the LLM and detection tooling layer.
+3. [`tools/security/audit/`](../tools/security/audit/) — explore the LLM and detection tooling layer.
 4. [`docs/architecture/architecture.md`](../docs/architecture/architecture.md) — review the full system design.
 
 ---
@@ -98,8 +97,8 @@ For the full documentation index, see [`docs/README.md`](README.md).
 |------|-------------|-----------------|
 | Penetration Tester | `labs/security/ad-pentest/` | AD enumeration, exploitation, privilege escalation |
 | Red Team Operator | `labs/security/ad-pentest-vlan/` | Adversary emulation, lateral movement, C2 concepts |
-| Security Engineer | `security/audit/` | LLM security, detection engineering, log analysis |
+| Security Engineer | `tools/security/audit/` | LLM security, detection engineering, log analysis |
 | Cloud Security Engineer | `labs/security/ad-pentest-vlan/` | AWS IAM abuse, S3 enumeration, EC2 metadata attacks |
 | DevSecOps Engineer | `labs/infrastructure/devops-linux-lab/` | Falco, Kyverno, Cert-Manager, Argo CD, Harbor |
 | Kubernetes Engineer | `labs/infrastructure/devops-linux-lab/` | k3s, Kind, K3d, Helm, GitOps workflows |
-| Linux Systems Administrator | `sysadmin/` + Linux lab nodes | Hardening, monitoring, automation, troubleshooting |
+| Linux Systems Administrator | `tools/sysadmin/` + Linux lab nodes | Hardening, monitoring, troubleshooting |

@@ -476,5 +476,5 @@ When reporting an issue, include:
 
 - [Installation Guide](installation.md)
 - [README](README.md)
-- [Architecture Design](docs/architecture/architecture.md)
-- [Security Scope](docs/architecture/security-scope.md)
+- [Architecture Design](../architecture/architecture.md)
+- [Security Scope](../architecture/security-scope.md)

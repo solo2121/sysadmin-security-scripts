@@ -63,9 +63,9 @@ Domain Admin.
 **Goal:** practice individual sysadmin/security scripts without deploying a
 full VM environment.
 
-- Browse [`security/`](../security/README.md) (recon, exploitation, audit,
-  network, wireless tooling) and [`sysadmin/`](../sysadmin/README.md)
-  (monitoring, hardening, automation, utilities). Each script is
+- Browse [`tools/security/`](../tools/security/README.md) (recon, exploitation, audit,
+  network, wireless tooling) and [`tools/sysadmin/`](../tools/sysadmin/README.md)
+  (monitoring, hardening, utilities). Each script is
   self-contained and documented independently of the labs.
 
 ## Step 2: Go deeper
