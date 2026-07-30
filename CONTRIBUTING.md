@@ -4,7 +4,7 @@ Welcome to the sysadmin-security-lab contribution guide.
 
 We appreciate your interest in helping improve this project.
 
-**Keep these in sync:** the repo, docs, and learning path for sysadmin-security-lab. If a change affects a lab's Vagrantfile, version, topology, or credentials, update that lab's own README and `docs/attack-guide.md` (or equivalent), `docs/learning-path.md` if the onboarding flow changes, and the root `README.md`/`CHANGELOG.md` in the same PR. Docs that drift from the actual lab are worse than no docs at all.
+**Keep these in sync:** the repo, docs, and learning path for sysadmin-security-lab. If a change affects a lab's Vagrantfile, version, topology, or credentials, update that lab's own README and `docs/attack-guide.md` (or equivalent), `docs/project/learning-path.md` if the onboarding flow changes, and the root `README.md`/`CHANGELOG.md` in the same PR. Docs that drift from the actual lab are worse than no docs at all.
 
 ---
 
@@ -144,7 +144,7 @@ These checks help catch issues before changes are submitted.
 
 - [ ] All scripts pass linting (`shellcheck` for Bash, `pylint` for Python).
 - [ ] Changes were tested locally in a VM or lab environment.
-- [ ] Documentation was updated to reflect the changes, including `docs/learning-path.md` if the onboarding flow or lab order changed.
+- [ ] Documentation was updated to reflect the changes, including `docs/project/learning-path.md` if the onboarding flow or lab order changed.
 - [ ] `CHANGELOG.md` was updated under `[Unreleased]`.
 - [ ] Code follows existing style and naming conventions.
 - [ ] No secrets, credentials, or personal data were committed.

@@ -8,9 +8,9 @@
 
 | Lab | Path | Focus |
 |-----|------|-------|
-| Active Directory Pentest Lab | [`labs/security/ad-pentest/`](../labs/security/ad-pentest/) | Kerberos attacks, AD CS ESC1/4/7/8/9 chains, privilege escalation, and NTLM relay |
-| VLAN Enterprise Lab | [`labs/security/ad-pentest-vlan/`](../labs/security/ad-pentest-vlan/) | Network segmentation, VLAN isolation, enterprise routing, and traffic analysis |
-| DevOps Linux Lab | [`labs/infrastructure/devops-linux-lab/`](../labs/infrastructure/devops-linux-lab/) | Kubernetes (k3s, Kind, K3d), Argo CD, Harbor, Terraform, OpenTofu, and the Prometheus/Grafana/Loki stack |
+| Active Directory Pentest Lab | [`labs/security/ad-pentest/`](../../labs/security/ad-pentest/) | Kerberos attacks, AD CS ESC1/4/7/8/9 chains, privilege escalation, and NTLM relay |
+| VLAN Enterprise Lab | [`labs/security/ad-pentest-vlan/`](../../labs/security/ad-pentest-vlan/) | Network segmentation, VLAN isolation, enterprise routing, and traffic analysis |
+| DevOps Linux Lab | [`labs/infrastructure/devops-linux-lab/`](../../labs/infrastructure/devops-linux-lab/) | Kubernetes (k3s, Kind, K3d), Argo CD, Harbor, Terraform, OpenTofu, and the Prometheus/Grafana/Loki stack |
 
 ---
 
@@ -18,11 +18,11 @@
 
 | Component | Path | Purpose |
 |-----------|------|---------|
-| Audit | [`tools/security/audit/`](../tools/security/audit/) | LLM security scanner, validator, and Cisco switch audit tooling |
-| Network | [`tools/security/network/`](../tools/security/network/) | Traffic analysis, firewall scanning, and topology mapping |
-| Exploitation | [`tools/security/exploitation/`](../tools/security/exploitation/) | Educational offensive tooling and post-exploitation workflows |
-| Reconnaissance | [`tools/security/reconnaissance/`](../tools/security/reconnaissance/) | Nmap automation, Amass OSINT, and port scanning |
-| Wireless | [`tools/security/wireless/`](../tools/security/wireless/) | Wireless lab tooling and evil-twin experimentation |
+| Audit | [`tools/security/audit/`](../../tools/security/audit/) | LLM security scanner, validator, and Cisco switch audit tooling |
+| Network | [`tools/security/network/`](../../tools/security/network/) | Traffic analysis, firewall scanning, and topology mapping |
+| Exploitation | [`tools/security/exploitation/`](../../tools/security/exploitation/) | Educational offensive tooling and post-exploitation workflows |
+| Reconnaissance | [`tools/security/reconnaissance/`](../../tools/security/reconnaissance/) | Nmap automation, Amass OSINT, and port scanning |
+| Wireless | [`tools/security/wireless/`](../../tools/security/wireless/) | Wireless lab tooling and evil-twin experimentation |
 
 ---
 
@@ -30,9 +30,9 @@
 
 | Component | Path | Purpose |
 |-----------|------|---------|
-| Monitoring | [`tools/sysadmin/monitoring/`](../tools/sysadmin/monitoring/) | Log analysis and system/security monitoring |
-| System Hardening | [`tools/sysadmin/system-hardening/`](../tools/sysadmin/system-hardening/) | ClamAV, rootkit scanning, and user/network audits |
-| Utilities | [`tools/sysadmin/utilities/`](../tools/sysadmin/utilities/) | Timeshift, UFW, BIND, memory cleanup, and Git management |
+| Monitoring | [`tools/sysadmin/monitoring/`](../../tools/sysadmin/monitoring/) | Log analysis and system/security monitoring |
+| System Hardening | [`tools/sysadmin/system-hardening/`](../../tools/sysadmin/system-hardening/) | ClamAV, rootkit scanning, and user/network audits |
+| Utilities | [`tools/sysadmin/utilities/`](../../tools/sysadmin/utilities/) | Timeshift, UFW, BIND, memory cleanup, and Git management |
 
 ---
 
@@ -78,16 +78,16 @@
 
 ## Documentation
 
-For the full documentation index, see [`docs/README.md`](README.md).
+For the full documentation index, see [`docs/README.md`](../README.md).
 
 ---
 
 ## Suggested Exploration Path
 
-1. [`labs/infrastructure/devops-linux-lab/README.md`](../labs/infrastructure/devops-linux-lab/README.md) — start with the base infrastructure.
-2. [`labs/security/ad-pentest/README.md`](../labs/security/ad-pentest/README.md) — move into the core offensive security environment.
-3. [`tools/security/audit/`](../tools/security/audit/) — explore the LLM and detection tooling layer.
-4. [`docs/architecture/architecture.md`](../docs/architecture/architecture.md) — review the full system design.
+1. [`labs/infrastructure/devops-linux-lab/README.md`](../../labs/infrastructure/devops-linux-lab/README.md) — start with the base infrastructure.
+2. [`labs/security/ad-pentest/README.md`](../../labs/security/ad-pentest/README.md) — move into the core offensive security environment.
+3. [`tools/security/audit/`](../../tools/security/audit/) — explore the LLM and detection tooling layer.
+4. [`docs/architecture/architecture.md`](../../docs/architecture/architecture.md) — review the full system design.
 
 ---
 

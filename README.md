@@ -16,7 +16,7 @@ This repository is designed to be **runnable, not static**. The environments, au
 
 ---
 
-Start here: [Learning Path](./docs/learning-path.md) provides the recommended path through the labs, from Active Directory security fundamentals to segmented environments and DevSecOps workflows.
+Start here: [Learning Path](./docs/project/learning-path.md) provides the recommended path through the labs, from Active Directory security fundamentals to segmented environments and DevSecOps workflows.
 
 ## What this project demonstrates
 
@@ -32,7 +32,7 @@ Start here: [Learning Path](./docs/learning-path.md) provides the recommended pa
 
 ## Architecture overview
 
-![Enterprise Infrastructure Architecture](assets/architecture-overview.png)
+![Enterprise Infrastructure Architecture](assets/diagrams/architecture-overview.png)
 
 The repository contains independent lab environments. Each environment can be deployed separately using its own Vagrant configuration on KVM/QEMU virtualization infrastructure.
 
@@ -221,14 +221,14 @@ sysadmin-security-lab/
 
 | Document | Purpose |
 |---|---|
-| [Learning Path](./docs/learning-path.md) | Recommended learning progression |
+| [Learning Path](./docs/project/learning-path.md) | Recommended learning progression |
 | [Architecture](./docs/architecture/architecture.md) | Infrastructure design |
 | [Security Scope](./docs/architecture/security-scope.md) | Security boundaries |
-| [Roadmap](./docs/roadmap.md) | Planned improvements and future lab development |
+| [Roadmap](./docs/project/roadmap.md) | Planned improvements and future lab development |
 | [Guides](./docs/guides/) | Security and deployment guides |
 | [Installation Guide](./docs/setup/installation.md) | Host setup |
 | [Troubleshooting](./docs/setup/troubleshooting.md) | Common issues |
-| [Minimal Resource Deployment](./docs/optimization/minimal-resource-deployment.md) | Reduced-resource deployment |
+| [Minimal Resource Deployment](./docs/guides/optimization/minimal-resource-deployment.md) | Reduced-resource deployment |
 
 ---
 

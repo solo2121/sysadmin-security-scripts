@@ -747,7 +747,7 @@ vagrant status
 ### Finding Appropriate Workflow
 
 1. Check Table of Contents above
-2. Search docs/workflows.md for relevant keyword
+2. Search docs/guides/workflows/workflows.md for relevant keyword
 3. Consult lab-specific README
 4. Check TROUBLESHOOTING.md
 5. Review [GitHub Issues](https://github.com/solo2121/sysadmin-security-lab/issues)

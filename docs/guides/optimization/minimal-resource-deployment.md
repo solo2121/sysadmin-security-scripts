@@ -5,7 +5,7 @@ configuration reflects that. This guide documents what's actually in each
 `Vagrantfile` for running on smaller hosts — nothing here is aspirational,
 every number below is pulled directly from the lab configuration.
 
-Run [`scripts/check-prerequisites.sh`](../../scripts/check-prerequisites.sh)
+Run [`scripts/check-prerequisites.sh`](../../../scripts/check-prerequisites.sh)
 first to see where your host currently stands.
 
 ---
@@ -110,6 +110,6 @@ not for the core AD kill chain.
 
 ## Related documentation
 
-- [`installation.md`](../setup/installation.md) — full setup instructions
-- [`scripts/check-prerequisites.sh`](../../scripts/check-prerequisites.sh) — validates your host before you start
-- [`troubleshooting.md`](../setup/troubleshooting.md) — common setup issues
+- [`installation.md`](../../setup/installation.md) — full setup instructions
+- [`scripts/check-prerequisites.sh`](../../../scripts/check-prerequisites.sh) — validates your host before you start
+- [`troubleshooting.md`](../../setup/troubleshooting.md) — common setup issues

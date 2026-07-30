@@ -23,7 +23,8 @@ The project is intentionally local-first: labs are designed for Vagrant, KVM/QEM
 ```text
 sysadmin-security-lab/
 ├── assets/
-│   └── architecture-overview.png
+│   └── diagrams/
+│       └── architecture-overview.png
 ├── docs/
 │   ├── architecture/
 │   │   ├── architecture.md
@@ -33,18 +34,17 @@ sysadmin-security-lab/
 │   │   └── reference/
 │   ├── guides/
 │   │   ├── infrastructure/
-│   │   └── security/
-│   ├── optimization/
-│   ├── setup/
-│   │   ├── installation.md
-│   │   └── troubleshooting.md
-│   ├── workflows/
-│   │   ├── lab-deployment-workflow.md
-│   │   └── workflows.md
-│   ├── learning-path.md
-│   ├── portfolio.md
-│   ├── roadmap.md
-│   └── setup-with-examples.md
+│   │   ├── optimization/
+│   │   ├── security/
+│   │   └── workflows/
+│   ├── project/
+│   │   ├── learning-path.md
+│   │   ├── portfolio.md
+│   │   └── roadmap.md
+│   └── setup/
+│       ├── installation.md
+│       ├── quickstart-examples.md
+│       └── troubleshooting.md
 ├── labs/
 │   ├── infrastructure/
 │   │   └── devops-linux-lab/
@@ -178,7 +178,7 @@ New scripts should include:
 - [`../../README.md`](../../README.md)
 - [`threat-model.md`](threat-model.md)
 - [`security-scope.md`](security-scope.md)
-- [`../workflows/workflows.md`](../workflows/workflows.md)
-- [`../setup-with-examples.md`](../setup-with-examples.md)
+- [`../guides/workflows/workflows.md`](../guides/workflows/workflows.md)
+- [`../setup/quickstart-examples.md`](../setup/quickstart-examples.md)
 - [`../setup/installation.md`](../setup/installation.md)
 - [`../setup/troubleshooting.md`](../setup/troubleshooting.md)

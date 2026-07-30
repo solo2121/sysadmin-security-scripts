@@ -151,10 +151,10 @@ if [ -n "${TOTAL_MEM_KB:-}" ]; then
         pass "system RAM: ${TOTAL_MEM_GB} GiB (comfortable for either lab)"
     elif [ "$TOTAL_MEM_GB" -ge 16 ]; then
         warn "system RAM: ${TOTAL_MEM_GB} GiB" \
-            "Workable for one lab at reduced VM counts — see docs/optimization/minimal-resource-deployment.md"
+            "Workable for one lab at reduced VM counts — see docs/guides/optimization/minimal-resource-deployment.md"
     else
         fail "system RAM: only ${TOTAL_MEM_GB} GiB" \
-            "Both labs are RAM-heavy (multiple concurrent VMs). See docs/optimization/minimal-resource-deployment.md for a reduced profile"
+            "Both labs are RAM-heavy (multiple concurrent VMs). See docs/guides/optimization/minimal-resource-deployment.md for a reduced profile"
     fi
 fi
 

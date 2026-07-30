@@ -7,11 +7,11 @@ you're not sure where to look.
 
 | Doc | What it covers |
 |---|---|
-| [`learning-path.md`](learning-path.md) | **Start here.** Which lab to try first, and in what order |
+| [`project/learning-path.md`](project/learning-path.md) | **Start here.** Which lab to try first, and in what order |
 | [`setup/installation.md`](setup/installation.md) | Host setup, prerequisites, deploying any of the three labs |
 | [`setup/troubleshooting.md`](setup/troubleshooting.md) | Common setup and runtime issues |
-| [`setup-with-examples.md`](setup-with-examples.md) | Worked setup examples |
-| [`optimization/minimal-resource-deployment.md`](optimization/minimal-resource-deployment.md) | Running any of the three labs on smaller hosts |
+| [`setup/quickstart-examples.md`](setup/quickstart-examples.md) | Worked setup examples |
+| [`guides/optimization/minimal-resource-deployment.md`](guides/optimization/minimal-resource-deployment.md) | Running any of the three labs on smaller hosts |
 
 ## Architecture
 
@@ -25,8 +25,8 @@ you're not sure where to look.
 
 | Doc | What it covers |
 |---|---|
-| [`workflows/workflows.md`](workflows/workflows.md) | General repo/lab workflows |
-| [`workflows/lab-deployment-workflow.md`](workflows/lab-deployment-workflow.md) | Step-by-step lab deployment flow |
+| [`guides/workflows/workflows.md`](guides/workflows/workflows.md) | General repo/lab workflows |
+| [`guides/workflows/lab-deployment-workflow.md`](guides/workflows/lab-deployment-workflow.md) | Step-by-step lab deployment flow |
 
 ## Infrastructure guides
 
@@ -64,11 +64,12 @@ against the current lab structure:
 | [`archive/reference/timeshift-cli-guide-external-drive-backups.md`](archive/reference/timeshift-cli-guide-external-drive-backups.md) | Timeshift CLI backup guide |
 | [`archive/reference/apparmor.md`](archive/reference/apparmor.md) | AppArmor reference notes |
 
-## Other
+## Project
 
 | Doc | What it covers |
 |---|---|
-| [`portfolio.md`](portfolio.md) | Portfolio-style project summary |
+| [`project/portfolio.md`](project/portfolio.md) | Portfolio-style project summary |
+| [`project/roadmap.md`](project/roadmap.md) | Planned improvements and future lab development |
 
 ---
 

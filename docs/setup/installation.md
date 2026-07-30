@@ -49,7 +49,7 @@ These are general recommendations. Exact needs depend on which lab and how many 
 - **Lab 2**: Moderate to high memory usage due to Kubernetes, observability, and registry services.
 
 If your host doesn't meet the full recommendations, see
-[`docs/optimization/minimal-resource-deployment.md`](../optimization/minimal-resource-deployment.md)
+[`docs/guides/optimization/minimal-resource-deployment.md`](../guides/optimization/minimal-resource-deployment.md)
 for tested reduced-VM profiles for both labs.
 
 ### Required tools

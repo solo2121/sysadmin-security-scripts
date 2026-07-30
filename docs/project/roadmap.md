@@ -1,8 +1,8 @@
 # Roadmap
 
-This roadmap is a working list of ideas for future improvements. It is not a commitment to dates or deadlines—priorities may change based on what is most useful next. These labs are maintained independently and shared to help others get hands-on practice. Contributions and suggestions are welcome; see [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+This roadmap is a working list of ideas for future improvements. It is not a commitment to dates or deadlines—priorities may change based on what is most useful next. These labs are maintained independently and shared to help others get hands-on practice. Contributions and suggestions are welcome; see [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
 
-For a log of what has already been released, see [`CHANGELOG.md`](../CHANGELOG.md).
+For a log of what has already been released, see [`CHANGELOG.md`](../../CHANGELOG.md).
 
 ## Near-term
 
@@ -18,7 +18,7 @@ For a log of what has already been released, see [`CHANGELOG.md`](../CHANGELOG.m
 
 ## Long-term / Exploratory
 
-- [ ] Add an optional cloud deployment path using Terraform for either lab as an alternative to local libvirt. See [`docs/optimization/minimal-resource-deployment.md`](optimization/minimal-resource-deployment.md).
+- [ ] Add an optional cloud deployment path using Terraform for either lab as an alternative to local libvirt. See [`docs/guides/optimization/minimal-resource-deployment.md`](../guides/optimization/minimal-resource-deployment.md).
 - [ ] Build advanced Kubernetes security labs beyond the current Falco/Kyverno baseline, including supply chain attack scenarios and OPA Gatekeeper policies.
 - [ ] Create a cross-lab scenario connecting the Active Directory pentest lab with the DevOps lab’s exposed services.
 
@@ -29,4 +29,4 @@ For a log of what has already been released, see [`CHANGELOG.md`](../CHANGELOG.m
 
 ---
 
-Have an idea not listed here? Open an issue or start a discussion — see [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+Have an idea not listed here? Open an issue or start a discussion — see [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
