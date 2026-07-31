@@ -5,10 +5,10 @@
 # Enterprise Cloud-Native DevSecOps Kubernetes Lab
 # =============================================================================
 #
-# Author        : Miguel Carlo (solo2121)
-# Version       : 8.1.0
+# Author        : Miguel Carlo (solo21221)
+# Version       : 8.2.0
 # Created       : 2025
-# Last Updated  : 2026-07-03
+# Last Updated  : 2026-07-31
 # Status        : Active Development
 # License       : Personal / Educational Use
 #
@@ -34,6 +34,7 @@
 #   - Ansible Management Nodes
 #   - Linux Training Nodes
 #   - Automated DevSecOps Attack Scenarios
+#   - CI/CD Server (Gitea + Jenkins + SonarQube + Vault + ZAP)
 #
 # Features:
 #   - Multi-Profile Deployment (minimal/dev/full)
@@ -54,75 +55,13 @@
 #   - Linux Host (Ubuntu 24.04 LTS Recommended)
 #   - Ruby >= 2.5 (io/console)
 #
-# -----------------------------------------------------------------------------
-# CHANGELOG (Tracked in Git)
-# -----------------------------------------------------------------------------
-#
-# v8.1.0
-#   - Added automated DevSecOps attack scenarios
-#   - Added vulnerable workload deployment
-#   - Added backdoored image build and Harbor push
-#   - Added intentionally leaked secrets for security practice
-#   - Added pre-configured attack scenarios
-#   - Preserved backward compatibility
-#
-# v8.0.1
-#   - Added environment variable overrides for NETWORK_BASE and MASTER_IP
-#   - Enabled custom network configuration without modifying core files
-#
-# v8.0.0
-#   - Added OpenTofu support
-#   - Added Kind and K3d lab environments
-#   - Fully automated cluster creation for learning VMs
-#   - Introduced environment-based Harbor authentication handling
-#   - Removed all hardcoded credentials
-#   - Added kubectl aliases for training nodes
-#   - Updated documentation and bootstrap logic
-#
-# v7.1.1
-#   - Fixed Python heredoc quoting issues (shell variable expansion)
-#   - Switched to safe heredoc mode (<<'PYEOF')
-#
-# v7.1.0
-#   - Introduced Python-based registries.yaml generation
-#
-# v7.0.9
-#   - Fixed registries.yaml generation syntax error
-#
-# v7.0.8
-#   - Migrated to line-by-line echo generation for YAML stability
-#
-# v7.0.7
-#   - Improved registry configuration templating system
-#
-# v7.0.6
-#   - Fixed YAML formatting and control character issues
-#
-# v7.0.5
-#   - Added Kyverno image rewrite rules and retry logic
-#
-# v7.0.4
-#   - Expanded registry rewrite rules for all images
-#
-# v7.0.3
-#   - Fixed regex capture issues in registry config
-#
-# v7.0.2
-#   - Fixed Docker daemon configuration for Harbor pulls
-#
-# v7.0.1
-#   - Critical stability fixes
-#
-# v7.0.0
-#   - Initial Enterprise Release
-#
 # =============================================================================
 
 LAB_NAME        = "Enterprise Cloud-Native DevSecOps Lab"
-LAB_VERSION     = "8.1.0"
-LAB_AUTHOR      = "Miguel Carlo (solo2121)"
+LAB_VERSION     = "8.2.0"
+LAB_AUTHOR      = "Miguel Carlo (solo21221)"
 LAB_CREATED     = "2025"
-LAB_UPDATED     = "2026-06-28"
+LAB_UPDATED     = "2026-07-31"
 LAB_STATUS      = "Active & Maintained"
 
 puts "=================================================="
@@ -170,6 +109,23 @@ OPENTOFU_VERSION = "1.8.0"           # OpenTofu (Terraform fork)
 KIND_VERSION = "v0.24.0"             # Kind (Kubernetes in Docker)
 K3D_VERSION = "v5.7.5"               # K3d (K3s in Docker)
 KUBECTL_VERSION = "v1.31.0"          # Kubectl for learning VMs
+
+# CI/CD Tools Versions
+GITEA_VERSION = "1.24.3"
+JENKINS_VERSION = "2.516.2-lts-jdk17"
+SONARQUBE_VERSION = "25.7"
+VAULT_VERSION = "1.18.2"
+ZAP_VERSION = "2.16.1"
+GITLEAKS_VERSION = "8.18.4"
+TRIVY_VERSION = "0.57.1"
+
+# CI/CD Ports
+GITEA_PORT = 3000
+JENKINS_PORT = 8080
+SONARQUBE_PORT = 9000
+VAULT_PORT = 8200
+ZAP_PORT = 8090
+JENKINS_AGENT_PORT = 50000
 
 # Auto-detect libvirt network
 def detect_libvirt_network
@@ -472,8 +428,19 @@ EOF
     }
   }
 
+  # CI/CD Server
+  cicd_server = {
+    "cicd-server" => {
+      box: "bento/ubuntu-24.04",
+      ip: vm_ip(50),
+      memory: 4096,
+      cpus: 2,
+      role: "cicd"
+    }
+  }
+
   # Merge all VMs
-  all_vms = cluster.merge(linux_labs).merge(ansible_nodes).merge(kind_labs).merge(k3d_labs)
+  all_vms = cluster.merge(linux_labs).merge(ansible_nodes).merge(kind_labs).merge(k3d_labs).merge(cicd_server)
   vms_to_start = all_vms.select { |name, _| should_start?(name, LAB_PROFILE, START_VMS) }
   hosts_entries = all_vms.map { |n, c| "#{c[:ip]} #{n}" }.join("\n")
 
@@ -531,6 +498,9 @@ EOF
         vm.vm.network "forwarded_port", guest: 30003, host: 30003, host_ip: "127.0.0.1"
         vm.vm.network "forwarded_port", guest: 30004, host: 30004, host_ip: "127.0.0.1"
 
+        # ============================================================
+        # PROVISIONER 1: BASE LAB + K3S + HARBOR
+        # ============================================================
         vm.vm.provision "shell", inline: <<-SHELL
           if [ "${DEBUG:-false}" = "true" ]; then set -x; fi
           set -euo pipefail
@@ -733,7 +703,6 @@ EOF
             [ "$K3S_INSTALLED" -eq 0 ] && { echo "ERROR: K3s install failed after 3 attempts"; exit 1; }
             sleep 15
           fi
-
           systemctl enable k3s || true
           systemctl start k3s || true
           transition_state "k3s_installed"
@@ -790,7 +759,7 @@ EOF
             kubectl apply -f "https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-${INGRESS_NGINX_VERSION}/deploy/static/provider/cloud/deploy.yaml"
             kubectl wait --namespace ingress-nginx --for=condition=Ready pod --selector=app.kubernetes.io/component=controller --timeout=180s 2>/dev/null || true
             check_ingress_running() { kubectl get pods -n ingress-nginx --no-headers 2>/dev/null | grep -q Running; }
-            wait_for check_ingress_running "Ingress NGINX" 180
+            wait_for check_ingress_running "Ingress NGINX" 180 || true
             transition_state "ingress_installed"
           fi
 
@@ -865,10 +834,6 @@ EOF
               exit 1
             fi
 
-            # ============================================================
-            # FIX: Reconfigure Docker daemon to trust Harbor registry
-            # This MUST happen BEFORE image seeding starts
-            # ============================================================
             echo "Reconfiguring Docker daemon to trust Harbor registry..."
             cat > /etc/docker/daemon.json <<EOF
 {
@@ -958,18 +923,41 @@ EOF
                 echo " SKIP: Already exists in Harbor"
                 continue
               fi
-              echo " Pulling..."
-              if ! docker pull "$img"; then
-                echo " WARNING: Pull failed for $img, skipping"
+              
+              echo " Pulling (up to 5 attempts)..."
+              PULL_SUCCESS=false
+              for attempt in 1 2 3 4 5; do
+                if docker pull "$img"; then
+                  PULL_SUCCESS=true
+                  break
+                fi
+                echo " Pull attempt $attempt failed. Retrying in 15 seconds..."
+                sleep 15
+              done
+              
+              if [ "$PULL_SUCCESS" = "false" ]; then
+                echo " WARNING: Pull failed for $img after 5 attempts, skipping"
                 continue
               fi
+              
               echo " Tagging..."
               docker tag "$img" "$target" || {
                 echo " WARNING: Tag failed"
                 continue
               }
+              
               echo " Pushing..."
-              if docker push "$target"; then
+              PUSH_SUCCESS=false
+              for attempt in 1 2 3; do
+                if docker push "$target"; then
+                  PUSH_SUCCESS=true
+                  break
+                fi
+                echo " Push attempt $attempt failed. Retrying in 10 seconds..."
+                sleep 10
+              done
+              
+              if [ "$PUSH_SUCCESS" = "true" ]; then
                 echo " SUCCESS: $target"
               else
                 echo " FAILED: $target"
@@ -980,11 +968,6 @@ EOF
             echo "Image seeding complete!"
             echo "=========================================="
 
-            # ============================================================
-            # FIX 9: Write registries.yaml via Python with quoted heredoc
-            # Uses <<'PYEOF' to prevent shell variable expansion
-            # Variables passed as environment variables
-            # ============================================================
             echo "Configuring K3s containerd registry via Python writer..."
             mkdir -p /etc/rancher/k3s
 
@@ -1062,25 +1045,18 @@ PYEOF
             sleep 10
             echo "K3s registry configuration applied with clean YAML"
 
-            # ============================================================
-            # STRICT ZERO CACHE CLEANUP - NO LOCAL IMAGES AT ALL
-            # ============================================================
             echo "=========================================="
             echo "Docker cache mode: ${CACHE_MODE} -> STRICT ZERO (No local images)"
             echo "=========================================="
 
-            # Aggressive cleanup - remove everything
             docker image prune -a -f 2>/dev/null || true
             docker builder prune -a -f 2>/dev/null || true
             docker system prune -a -f 2>/dev/null || true
 
             if [ "${CACHE_MODE}" = "zero" ]; then
                 echo "Removing ALL images from Docker (including Harbor ones)"
-
-                # Remove everything
                 docker images -q | xargs -r docker rmi -f 2>/dev/null || true
                 docker images -q | xargs -r docker rmi -f 2>/dev/null || true
-
                 echo "Docker is now completely clean. No images stored locally."
                 echo "All pulls will go through Harbor."
             else
@@ -1103,9 +1079,6 @@ PYEOF
             kubectl patch serviceaccount default -n default -p '{"imagePullSecrets": [{"name": "harbor-secret"}]}'
             echo "Harbor registry secret 'harbor-secret' created and configured for default service account"
 
-            # ============================================================
-            # FINAL VALIDATION - Confirm K3s pulls directly from Harbor
-            # ============================================================
             echo "Running final test: Can K3s pull directly from Harbor?"
             kubectl delete pod test-busybox --ignore-not-found=true --grace-period=1 2>/dev/null || true
             sleep 2
@@ -1172,55 +1145,36 @@ PYEOF
             echo "INSTALLING TERRAFORM ${TERRAFORM_VERSION}"
             echo "=========================================="
             
-            # Clean up any previous installations
             rm -f /usr/local/bin/terraform
-            
-            # Download and install Terraform
             TEMP_DIR=$(mktemp -d)
             cd "$TEMP_DIR"
             
-            # FIX 4: Dynamic architecture detection
             ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
             echo "Detected architecture: ${ARCH}"
             
-            echo "Downloading Terraform ${TERRAFORM_VERSION} for ${ARCH}..."
             curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${ARCH}.zip" -o terraform.zip
-            
-            echo "Extracting Terraform..."
             apt-get install -y unzip 2>/dev/null || dnf install -y unzip 2>/dev/null || zypper install -y unzip 2>/dev/null || true
             unzip -q terraform.zip
-            
-            echo "Installing Terraform to /usr/local/bin..."
             mv terraform /usr/local/bin/
             chmod +x /usr/local/bin/terraform
             
-            # Verify installation
             if command -v terraform >/dev/null 2>&1; then
               TERRAFORM_INSTALLED_VERSION=$(terraform version -json 2>/dev/null | grep -o '"terraform_version":"[^"]*"' | cut -d'"' -f4 || terraform version | head -1)
               echo "Terraform installed successfully: ${TERRAFORM_INSTALLED_VERSION}"
-              
-              # Enable bash completion
               terraform -install-autocomplete 2>/dev/null || true
-              
-              # Create marker file
               touch "$TERRAFORM_MARKER"
             else
               echo "ERROR: Terraform installation failed"
               exit 1
             fi
             
-            # Cleanup
             cd /
             rm -rf "$TEMP_DIR"
             
             echo "=========================================="
-            echo "Terraform is ready to use!"
-            echo "Run 'terraform --version' to verify"
-            echo "=========================================="
           else
             echo "Terraform already installed, skipping (FAST_BOOT=true)"
           fi
-          # ========== END TERRAFORM INSTALLATION ==========
 
           # ========== OPENTOFU INSTALLATION ==========
           OPENTOFU_MARKER="/var/lib/opentofu_installed"
@@ -1230,63 +1184,40 @@ PYEOF
             echo "INSTALLING OPENTOFU ${OPENTOFU_VERSION}"
             echo "=========================================="
             
-            # Clean up any previous installations
             rm -f /usr/local/bin/tofu
-            
-            # Download and install OpenTofu
             TEMP_DIR=$(mktemp -d)
             cd "$TEMP_DIR"
             
             ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
             echo "Detected architecture: ${ARCH}"
             
-            echo "Downloading OpenTofu ${OPENTOFU_VERSION} for ${ARCH}..."
             curl -fsSL "https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_linux_${ARCH}.zip" -o tofu.zip
-            
-            echo "Extracting OpenTofu..."
             apt-get install -y unzip 2>/dev/null || dnf install -y unzip 2>/dev/null || zypper install -y unzip 2>/dev/null || true
             unzip -q tofu.zip
-            
-            echo "Installing OpenTofu to /usr/local/bin..."
             mv tofu /usr/local/bin/
             chmod +x /usr/local/bin/tofu
             
-            # Verify installation
             if command -v tofu >/dev/null 2>&1; then
               TOFU_VERSION=$(tofu version -json 2>/dev/null | grep -o '"version":"[^"]*"' | cut -d'"' -f4 || tofu version | head -1)
               echo "OpenTofu installed successfully: ${TOFU_VERSION}"
-              
-              # Enable bash completion
               tofu -install-autocomplete 2>/dev/null || true
-              
-              # Create marker file
               touch "$OPENTOFU_MARKER"
             else
               echo "ERROR: OpenTofu installation failed"
               exit 1
             fi
             
-            # Cleanup
             cd /
             rm -rf "$TEMP_DIR"
             
             echo "=========================================="
-            echo "OpenTofu is ready to use!"
-            echo "Run 'tofu --version' to verify"
-            echo ""
-            echo "You can now use either:"
-            echo "  terraform init && terraform plan"
-            echo "  tofu init && tofu plan"
-            echo "=========================================="
           else
             echo "OpenTofu already installed, skipping (FAST_BOOT=true)"
           fi
-          # ========== END OPENTOFU INSTALLATION ==========
 
           export PATH=$PATH:/usr/local/bin
           export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
-          # Individual tool markers for granular retry capability
           ENTERPRISE_MARKER="/var/lib/enterprise_tools_installed"
           CERTS_MARKER="/var/lib/cert_manager_installed"
           KYVERNO_MARKER="/var/lib/kyverno_installed"
@@ -1294,7 +1225,6 @@ PYEOF
           PROMETHEUS_MARKER="/var/lib/prometheus_installed"
           ARGOCD_MARKER="/var/lib/argocd_installed"
 
-          # If the old marker exists, respect it for backward compatibility
           if [ -f "$ENTERPRISE_MARKER" ]; then
             echo "Enterprise tools already installed (legacy marker), skipping"
             exit 0
@@ -1306,9 +1236,7 @@ PYEOF
 
           if [ "${FAST_BOOT}" != "true" ]; then
 
-            # ============================================================
-            # 1. CERT-MANAGER (Certificate Management)
-            # ============================================================
+            # ========== CERT-MANAGER ==========
             if [ ! -f "$CERTS_MARKER" ]; then
               echo "Installing cert-manager ${CERT_MANAGER_VERSION}..."
               kubectl apply -f "https://github.com/cert-manager/cert-manager/releases/download/v${CERT_MANAGER_VERSION}/cert-manager.yaml"
@@ -1326,13 +1254,9 @@ PYEOF
               echo "cert-manager already installed, skipping"
             fi
 
-            # ============================================================
-            # 2. KYVERNO (Policy Enforcement) - Added retry logic
-            # ============================================================
+            # ========== KYVERNO ==========
             if [ ! -f "$KYVERNO_MARKER" ]; then
               echo "Installing Kyverno ${KYVERNO_VERSION}..."
-              
-              # Clean up any existing Kyverno resources
               helm uninstall kyverno -n kyverno 2>/dev/null || true
               kubectl delete namespace kyverno --ignore-not-found=true
               sleep 10
@@ -1340,7 +1264,6 @@ PYEOF
               helm repo add kyverno https://kyverno.github.io/kyverno/ --force-update
               helm repo update
               
-              # Install with retry logic for image pull issues
               INSTALL_SUCCESS=false
               for attempt in 1 2 3; do
                 echo "Kyverno install attempt $attempt/3..."
@@ -1363,7 +1286,6 @@ PYEOF
               
               if [ "$INSTALL_SUCCESS" = "false" ]; then
                 echo "WARNING: Kyverno install had issues - continuing anyway"
-                # Try one more time without waiting
                 helm upgrade --install kyverno kyverno/kyverno \
                   --namespace kyverno \
                   --create-namespace \
@@ -1387,9 +1309,7 @@ PYEOF
               echo "Kyverno already installed, skipping"
             fi
 
-            # ============================================================
-            # 3. FALCO (Runtime Security)
-            # ============================================================
+            # ========== FALCO ==========
             if [ ! -f "$FALCO_MARKER" ]; then
               echo "Installing Falco ${FALCO_VERSION}..."
               helm repo add falcosecurity https://falcosecurity.github.io/charts --force-update
@@ -1408,13 +1328,9 @@ PYEOF
               echo "Falco already installed, skipping"
             fi
 
-            # ============================================================
-            # 4. PROMETHEUS + GRAFANA (Observability) - WITH AUTO-ASSIGN PORT
-            # ============================================================
+            # ========== PROMETHEUS + GRAFANA ==========
             if [ ! -f "$PROMETHEUS_MARKER" ]; then
               echo "Installing Prometheus Stack ${PROMETHEUS_VERSION}..."
-
-              # Clean up any existing Grafana service that might be using a fixed port
               kubectl delete svc prometheus-stack-grafana -n monitoring --ignore-not-found=true
 
               helm repo add prometheus-community https://prometheus-community.github.io/helm-charts --force-update
@@ -1459,63 +1375,27 @@ EOF
                 sleep 10
               done
 
-              # Get the auto-assigned Grafana port
               GRAFANA_PORT=$(kubectl get svc -n monitoring prometheus-stack-grafana -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "30002")
               echo "Grafana will be available at: https://${MASTER_IP}:${GRAFANA_PORT} (admin/admin)"
               touch "$PROMETHEUS_MARKER"
             else
               echo "Prometheus stack already installed, skipping"
-              # Still get the port for display
               GRAFANA_PORT=$(kubectl get svc -n monitoring prometheus-stack-grafana -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "30002")
             fi
 
-            # ============================================================
-            # 5. ARGO CD (GitOps) - CLEAN INSTALL WITH FULL CLUSTER CLEANUP
-            # ============================================================
+            # ========== ARGO CD ==========
             if [ ! -f "$ARGOCD_MARKER" ]; then
               echo "Installing Argo CD ${ARGOCD_VERSION}..."
 
-              # ============================================================
-              # CLEAN OLD ARGO CD RESOURCES (VERY IMPORTANT)
-              # ============================================================
-              echo "Cleaning old Argo CD resources..."
-
               helm uninstall argocd -n argocd 2>/dev/null || true
-
               kubectl delete namespace argocd --ignore-not-found=true
-
-              # Delete applications first then CRDs with --wait=false to prevent hangs
               kubectl delete applications --all -n argocd --ignore-not-found=true --wait=false 2>/dev/null || true
-              
-              # Delete CRDs with --wait=false to prevent finalizer hangs
               kubectl delete crd applications.argoproj.io --ignore-not-found=true --wait=false 2>/dev/null || true
               kubectl delete crd appprojects.argoproj.io --ignore-not-found=true --wait=false 2>/dev/null || true
               kubectl delete crd applicationsets.argoproj.io --ignore-not-found=true --wait=false 2>/dev/null || true
-              kubectl delete crd argocdextensions.argoproj.io --ignore-not-found=true --wait=false 2>/dev/null || true
-
-              # Delete cluster roles
-              kubectl delete clusterrole argocd-application-controller --ignore-not-found=true 2>/dev/null || true
-              kubectl delete clusterrole argocd-server --ignore-not-found=true 2>/dev/null || true
-              kubectl delete clusterrole argocd-dex-server --ignore-not-found=true 2>/dev/null || true
-              kubectl delete clusterrole argocd-notifications-controller --ignore-not-found=true 2>/dev/null || true
-              kubectl delete clusterrole argocd-redis-ha-haproxy --ignore-not-found=true 2>/dev/null || true
-              kubectl delete clusterrole argocd-redis-ha-server --ignore-not-found=true 2>/dev/null || true
-
-              # Delete cluster role bindings
-              kubectl delete clusterrolebinding argocd-application-controller --ignore-not-found=true 2>/dev/null || true
-              kubectl delete clusterrolebinding argocd-server --ignore-not-found=true 2>/dev/null || true
-              kubectl delete clusterrolebinding argocd-dex-server --ignore-not-found=true 2>/dev/null || true
-              kubectl delete clusterrolebinding argocd-notifications-controller --ignore-not-found=true 2>/dev/null || true
-
-              # Delete webhook configs
-              kubectl delete validatingwebhookconfiguration argocd-application-controller --ignore-not-found=true 2>/dev/null || true
-              kubectl delete mutatingwebhookconfiguration argocd-application-controller --ignore-not-found=true 2>/dev/null || true
-
-              # Give Kubernetes time to fully clean up
+              
               sleep 30
 
-              # Install Argo CD using Helm (clean install)
-              echo "Installing Argo CD using Helm..."
               helm repo add argo https://argoproj.github.io/argo-helm --force-update
               helm repo update
 
@@ -1556,51 +1436,13 @@ EOF
               echo "Argo CD already installed, skipping"
             fi
 
-            # ============================================================
-            # CREATE INGRESS FOR GRAFANA
-            # ============================================================
-            cat > /tmp/grafana-ingress.yaml <<EOF
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: grafana
-  namespace: monitoring
-spec:
-  rules:
-  - host: grafana.local
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: prometheus-stack-grafana
-            port:
-              number: 80
-EOF
-
-            kubectl apply -f /tmp/grafana-ingress.yaml 2>/dev/null || true
-
-            # ============================================================
-            # INSTALL K9S, KUBECTX, KUBENS, STERN (Day-2 Tools)
-            # ============================================================
+            # ========== DAY-2 TOOLS ==========
             echo "Installing kubectx, kubens, stern, and k9s..."
-
-            # Install kubectx and kubens
             git clone https://github.com/ahmetb/kubectx /opt/kubectx 2>/dev/null || true
-            ln -sf /opt/kubectx/kubectx /usr/local/bin/kubectx
-            ln -sf /opt/kubectx/kubens /usr/local/bin/kubens
-
-            # Install stern
-            curl -sSLo /usr/local/bin/stern "https://github.com/stern/stern/releases/download/v1.28.0/stern_linux_amd64" && \
-              chmod +x /usr/local/bin/stern
-
-            # Install k9s
-            curl -sSLo /tmp/k9s.tar.gz "https://github.com/derailed/k9s/releases/download/v0.32.5/k9s_Linux_amd64.tar.gz" && \
-              tar -xzf /tmp/k9s.tar.gz -C /usr/local/bin k9s && \
-              chmod +x /usr/local/bin/k9s
-
-            echo "Day-2 tools installed: kubectx, kubens, stern, k9s"
+            ln -sf /opt/kubectx/kubectx /usr/local/bin/kubectx || true
+            ln -sf /opt/kubectx/kubens /usr/local/bin/kubens || true
+            curl -sSLo /usr/local/bin/stern "https://github.com/stern/stern/releases/download/v1.28.0/stern_linux_amd64" && chmod +x /usr/local/bin/stern || echo "WARNING: stern download failed"
+            curl -sSLo /tmp/k9s.tar.gz "https://github.com/derailed/k9s/releases/download/v0.32.5/k9s_Linux_amd64.tar.gz" && tar -xzf /tmp/k9s.tar.gz -C /usr/local/bin k9s && chmod +x /usr/local/bin/k9s || echo "WARNING: k9s download failed"
 
             echo "=========================================="
             echo "ENTERPRISE TOOLS INSTALLATION COMPLETE"
@@ -1609,33 +1451,18 @@ EOF
             echo "cert-manager: TLS certificate management"
             echo "Kyverno: Policy enforcement"
             echo "Falco: Runtime security"
-            echo "Prometheus: Metrics collection (port 9090 via port-forward)"
+            echo "Prometheus: Metrics collection"
             echo "Grafana: https://${MASTER_IP}:${GRAFANA_PORT} (admin/admin)"
-            echo "Argo CD: https://${MASTER_IP}:30003 (admin / password above)"
+            echo "Argo CD: https://${MASTER_IP}:30003"
             echo "Terraform: $(terraform version | head -1)"
             echo "OpenTofu: $(tofu version | head -1)"
-            echo ""
-            echo "To access services:"
-            echo " Grafana: https://${MASTER_IP}:${GRAFANA_PORT}"
-            echo " Argo CD: https://${MASTER_IP}:30003"
-            echo ""
-            echo "Port-forward alternatives:"
-            echo " kubectl port-forward -n monitoring svc/prometheus-stack-grafana 3000:80"
-            echo " kubectl port-forward -n argocd svc/argocd-server 8080:443"
             echo "=========================================="
           fi
 
-          # Keep the original marker for backward compatibility
           touch "$ENTERPRISE_MARKER"
         SHELL
 
-        # ================================================================
-        # PROVISIONER 3: AUTOMATED DEVSECOPS ATTACK VECTORS (NEW)
-        # ================================================================
-        # This provisioner runs AFTER all enterprise tools are installed
-        # It creates vulnerable workloads, backdoored images, and attack scenarios
-        # ALL existing logic is preserved - this is a NON-BREAKING addition
-        # ================================================================
+        # ========== PROVISIONER 3: DEVSECOPS ATTACK VECTORS ==========
         vm.vm.provision "shell", inline: <<-SHELL
           if [ "${DEBUG:-false}" = "true" ]; then set -x; fi
           set -euo pipefail
@@ -1644,7 +1471,6 @@ EOF
           HARBOR_PASS="#{HARBOR_PASS}"
           ATTACK_MARKER="/var/lib/devsecops_attack_vectors_installed"
 
-          # Skip if already installed or FAST_BOOT
           if [ -f "$ATTACK_MARKER" ] && [ "${FAST_BOOT}" = "true" ]; then
             echo "DevSecOps attack vectors already installed (FAST_BOOT=true)"
             exit 0
@@ -1656,12 +1482,8 @@ EOF
           echo "=========================================="
           echo "DEPLOYING DEVSECOPS ATTACK VECTORS"
           echo "=========================================="
-          echo ""
 
-          # ============================================================
-          # 1. CREATE VULNERABLE NAMESPACES
-          # ============================================================
-          echo "Creating vulnerable namespaces..."
+          echo "Creating vulnerable namespaces (with privileged policy)..."
           cat <<EOF | kubectl apply -f -
 ---
 apiVersion: v1
@@ -1670,7 +1492,9 @@ metadata:
   name: vulnerable
   labels:
     security-test: "true"
-    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
 ---
 apiVersion: v1
 kind: Namespace
@@ -1678,7 +1502,9 @@ metadata:
   name: dev
   labels:
     security-test: "true"
-    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
 ---
 apiVersion: v1
 kind: Namespace
@@ -1686,12 +1512,11 @@ metadata:
   name: insecure
   labels:
     security-test: "true"
-    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
 EOF
 
-          # ============================================================
-          # 2. DEPLOY PRIVILEGED ESCAPE POD
-          # ============================================================
           echo "Deploying privileged escape pod..."
           cat <<EOF | kubectl apply -f -
 ---
@@ -1767,9 +1592,6 @@ spec:
       path: /var/run/docker.sock
 EOF
 
-          # ============================================================
-          # 3. DEPLOY DOCKER BREAKOUT POD
-          # ============================================================
           echo "Deploying docker breakout pod..."
           cat <<EOF | kubectl apply -f -
 ---
@@ -1814,9 +1636,6 @@ spec:
       path: /var/run/docker.sock
 EOF
 
-          # ============================================================
-          # 4. DEPLOY DANGEROUS CAPABILITIES POD
-          # ============================================================
           echo "Deploying dangerous capabilities pod..."
           cat <<EOF | kubectl apply -f -
 ---
@@ -1865,9 +1684,6 @@ spec:
         - SYS_MODULE
 EOF
 
-          # ============================================================
-          # 5. DEPLOY RBAC ESCALATION SCENARIO
-          # ============================================================
           echo "Deploying RBAC escalation scenario..."
           cat <<EOF | kubectl apply -f -
 ---
@@ -1954,9 +1770,6 @@ data:
   host: cG9zdGdyZXMtZGIuZXhhbXBsZS5jb20=
 EOF
 
-          # ============================================================
-          # 6. DEPLOY CRYPTOMINER CRONJOB
-          # ============================================================
           echo "Deploying cryptominer cronjob..."
           cat <<EOF | kubectl apply -f -
 ---
@@ -2032,9 +1845,6 @@ spec:
       done
 EOF
 
-          # ============================================================
-          # 7. DEPLOY HOSTPATH EXPLOITATION POD
-          # ============================================================
           echo "Deploying hostpath exploitation pod..."
           cat <<EOF | kubectl apply -f -
 ---
@@ -2082,9 +1892,6 @@ spec:
       path: /etc/kubernetes
 EOF
 
-          # ============================================================
-          # 8. CREATE LEAKED SECRETS FILE
-          # ============================================================
           echo "Creating leaked secrets file..."
           cat > /vagrant/terraform.tfstate <<'EOF'
 {
@@ -2125,12 +1932,7 @@ STRIPE_SECRET_KEY=sk_live_4eC39HqLyjWDarjtT1zdp7dc
 JWT_SECRET=super-secret-jwt-key-1234567890
 EOF
 
-          # ============================================================
-          # 9. BUILD AND PUSH BACKDOORED IMAGE (if Harbor is ready)
-          # ============================================================
           echo "Building and pushing backdoored image to Harbor..."
-          
-          # Wait for Harbor to be fully ready
           for i in $(seq 1 30); do
             if curl -sk --max-time 5 "https://${MASTER_IP}:30001/v2/" >/dev/null 2>&1; then
               echo "Harbor is reachable"
@@ -2140,7 +1942,6 @@ EOF
             sleep 10
           done
 
-          # Create Dockerfile for backdoored image
           cat > /tmp/Dockerfile.backdoor <<'EOF'
 FROM alpine:3.20
 RUN apk add --no-cache bash curl netcat-openbsd
@@ -2175,25 +1976,15 @@ RUN chmod +x /app/start.sh
 CMD ["/app/start.sh"]
 EOF
 
-          # Build and push the backdoored image
           if command -v docker >/dev/null 2>&1; then
-            echo "Logging into Harbor..."
             echo "${HARBOR_PASS}" | docker login "${MASTER_IP}:30001" -u admin --password-stdin 2>/dev/null || true
-            
-            echo "Building backdoored image..."
             docker build -f /tmp/Dockerfile.backdoor -t "${MASTER_IP}:30001/airgap/backdoor-api:v1" /tmp/ 2>/dev/null || true
-            
-            echo "Pushing backdoored image..."
             docker push "${MASTER_IP}:30001/airgap/backdoor-api:v1" 2>/dev/null || true
-            
             echo "Backdoored image pushed to Harbor"
           else
             echo "Docker not available - skipping backdoored image build"
           fi
 
-          # ============================================================
-          # 10. DISPLAY ATTACK SUMMARY
-          # ============================================================
           echo ""
           echo "=========================================="
           echo "DEVSECOPS ATTACK VECTORS DEPLOYED"
@@ -2212,7 +2003,6 @@ EOF
           echo ""
           echo "4. Cryptominer Detection:"
           echo "   kubectl get cronjobs -n insecure"
-          echo "   kubectl logs -f job/crypto-miner-xxxxx -n insecure"
           echo ""
           echo "5. HostPath Exploitation:"
           echo "   kubectl exec -it hostpath-exploit -n vulnerable -- /bin/sh"
@@ -2230,9 +2020,7 @@ EOF
           echo ""
           echo "=========================================="
 
-          # Mark as installed
           touch "$ATTACK_MARKER"
-
           echo "DevSecOps attack vectors deployment complete!"
         SHELL
 
@@ -2307,7 +2095,6 @@ EOF
           IFACE=$(get_iface "${WORKER_IP}")
           echo "Detected interface for worker: ${IFACE}"
 
-          # FIX 3: Remove invalid --flannel-backend flag (only valid for server)
           curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="agent \
             --node-name ${WORKER_NAME} \
             --server https://$MASTER:6443 \
@@ -2338,16 +2125,13 @@ EOF
 
       # ================= KIND LAB PROVISIONING =================
       when "kind"
-        # Port forward for Kind API
         vm.vm.network "forwarded_port", guest: 6443, host: 26443, host_ip: "127.0.0.1"
 
-        # Ensure Docker is running
         vm.vm.provision "shell", inline: <<-SHELL
           systemctl enable --now docker 2>/dev/null || true
           usermod -aG docker vagrant 2>/dev/null || true
         SHELL
 
-        # Install and setup Kind (fully automated)
         vm.vm.provision "shell", inline: <<-SHELL
           set -euo pipefail
 
@@ -2365,7 +2149,6 @@ EOF
           echo "INSTALLING KIND (Kubernetes in Docker)"
           echo "=========================================="
 
-          # Install kubectl if not present
           if ! command -v kubectl >/dev/null 2>&1; then
             echo "Installing kubectl ${KUBECTL_VERSION}..."
             curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl
@@ -2373,14 +2156,11 @@ EOF
             echo 'source <(kubectl completion bash)' >> /home/vagrant/.bashrc
           fi
 
-          # Install kind
           echo "Installing kind ${KIND_VERSION}..."
           curl -fsSL "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-amd64" -o /usr/local/bin/kind
           chmod +x /usr/local/bin/kind
 
-          # Create kind configuration
           mkdir -p /opt/kind
-
           cat > /opt/kind/config.yaml <<'EOF'
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -2397,14 +2177,10 @@ EOF
           echo "Creating Kind cluster automatically..."
           echo "=========================================="
 
-          # Clean up existing cluster if any
           kind delete cluster --name lab 2>/dev/null || true
 
-          # Create new cluster
           if kind create cluster --config /opt/kind/config.yaml --name lab; then
             echo "Kind cluster 'lab' created successfully!"
-            
-            # Set up kubeconfig
             mkdir -p /home/vagrant/.kube
             kind get kubeconfig --name lab > /home/vagrant/.kube/config
             chown -R vagrant:vagrant /home/vagrant/.kube
@@ -2414,21 +2190,18 @@ EOF
             kubectl cluster-info
             kubectl get nodes
             
-            # Create convenience aliases
             cat >> /home/vagrant/.bashrc <<'EOF'
 # Kind aliases
 alias kind-kill='kind delete cluster --name lab'
 alias kind-restart='kind delete cluster --name lab && kind create cluster --config /opt/kind/config.yaml --name lab'
 alias kind-status='kubectl get nodes && kubectl get pods -A'
 EOF
-            
           else
             echo "ERROR: Kind cluster creation failed"
             exit 1
           fi
 
           touch "$MARKER_FILE"
-
           echo ""
           echo "=========================================="
           echo "Kind installed and cluster running!"
@@ -2436,27 +2209,19 @@ EOF
           echo "Access the Kind cluster:"
           echo "  kubectl get nodes"
           echo "  kubectl get pods -A"
-          echo ""
-          echo "Useful commands:"
-          echo "  kind-kill     - Delete the cluster"
-          echo "  kind-restart  - Restart the cluster"
-          echo "  kind-status   - Show cluster status"
           echo "=========================================="
         SHELL
 
       # ================= K3D LAB PROVISIONING =================
       when "k3d"
-        # Port forward for K3d API and services
         vm.vm.network "forwarded_port", guest: 6443, host: 26444, host_ip: "127.0.0.1"
         vm.vm.network "forwarded_port", guest: 8080, host: 28080, host_ip: "127.0.0.1"
 
-        # Ensure Docker is running
         vm.vm.provision "shell", inline: <<-SHELL
           systemctl enable --now docker 2>/dev/null || true
           usermod -aG docker vagrant 2>/dev/null || true
         SHELL
 
-        # Install and setup K3d (fully automated)
         vm.vm.provision "shell", inline: <<-SHELL
           set -euo pipefail
 
@@ -2474,7 +2239,6 @@ EOF
           echo "INSTALLING K3D (K3s in Docker)"
           echo "=========================================="
 
-          # Install kubectl if not present
           if ! command -v kubectl >/dev/null 2>&1; then
             echo "Installing kubectl ${KUBECTL_VERSION}..."
             curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl
@@ -2482,19 +2246,15 @@ EOF
             echo 'source <(kubectl completion bash)' >> /home/vagrant/.bashrc
           fi
 
-          # Install k3d
           echo "Installing k3d ${K3D_VERSION}..."
           curl -fsSL https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=${K3D_VERSION} bash
 
-          # Install helm (optional but useful)
           if ! command -v helm >/dev/null 2>&1; then
             echo "Installing helm..."
             curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
           fi
 
-          # Create k3d configuration
           mkdir -p /opt/k3d
-
           cat > /opt/k3d/config.yaml <<'EOF'
 apiVersion: k3d.io/v1alpha5
 kind: Simple
@@ -2520,14 +2280,10 @@ EOF
           echo "Creating K3d cluster automatically..."
           echo "=========================================="
 
-          # Clean up existing cluster if any
           k3d cluster delete lab 2>/dev/null || true
 
-          # Create new cluster
           if k3d cluster create lab --config /opt/k3d/config.yaml; then
             echo "K3d cluster 'lab' created successfully!"
-            
-            # Set up kubeconfig
             mkdir -p /home/vagrant/.kube
             k3d kubeconfig get lab > /home/vagrant/.kube/config
             chown -R vagrant:vagrant /home/vagrant/.kube
@@ -2537,21 +2293,18 @@ EOF
             kubectl cluster-info
             kubectl get nodes
             
-            # Create convenience aliases
             cat >> /home/vagrant/.bashrc <<'EOF'
 # K3d aliases
 alias k3d-kill='k3d cluster delete lab'
 alias k3d-restart='k3d cluster delete lab && k3d cluster create lab --config /opt/k3d/config.yaml'
 alias k3d-status='kubectl get nodes && kubectl get pods -A'
 EOF
-            
           else
             echo "ERROR: K3d cluster creation failed"
             exit 1
           fi
 
           touch "$MARKER_FILE"
-
           echo ""
           echo "=========================================="
           echo "K3d installed and cluster running!"
@@ -2559,12 +2312,345 @@ EOF
           echo "Access the K3d cluster:"
           echo "  kubectl get nodes"
           echo "  kubectl get pods -A"
-          echo ""
-          echo "Useful commands:"
-          echo "  k3d-kill     - Delete the cluster"
-          echo "  k3d-restart  - Restart the cluster"
-          echo "  k3d-status   - Show cluster status"
           echo "=========================================="
+        SHELL
+
+      # ================= CI/CD SERVER PROVISIONING =================
+      when "cicd"
+        vm.vm.network "forwarded_port", guest: GITEA_PORT, host: GITEA_PORT, host_ip: "127.0.0.1"
+        vm.vm.network "forwarded_port", guest: JENKINS_PORT, host: JENKINS_PORT, host_ip: "127.0.0.1"
+        vm.vm.network "forwarded_port", guest: SONARQUBE_PORT, host: SONARQUBE_PORT, host_ip: "127.0.0.1"
+        vm.vm.network "forwarded_port", guest: VAULT_PORT, host: VAULT_PORT, host_ip: "127.0.0.1"
+        vm.vm.network "forwarded_port", guest: ZAP_PORT, host: ZAP_PORT, host_ip: "127.0.0.1"
+        vm.vm.network "forwarded_port", guest: JENKINS_AGENT_PORT, host: JENKINS_AGENT_PORT, host_ip: "127.0.0.1"
+
+        vm.vm.provision "shell", inline: <<-SHELL
+          systemctl enable --now docker 2>/dev/null || true
+          usermod -aG docker vagrant 2>/dev/null || true
+        SHELL
+
+        vm.vm.provision "shell", inline: <<-SHELL
+          set -euo pipefail
+          export MASTER_IP="#{cfg[:ip]}"
+          export HARBOR_PASS="#{HARBOR_PASS}"
+          export FAST_BOOT="#{FAST_BOOT}"
+          
+          GITEA_VERSION="#{GITEA_VERSION}"
+          JENKINS_VERSION="#{JENKINS_VERSION}"
+          SONARQUBE_VERSION="#{SONARQUBE_VERSION}"
+          VAULT_VERSION="#{VAULT_VERSION}"
+          ZAP_VERSION="#{ZAP_VERSION}"
+          GITLEAKS_VERSION="#{GITLEAKS_VERSION}"
+          TRIVY_VERSION="#{TRIVY_VERSION}"
+          
+          GITEA_PORT="#{GITEA_PORT}"
+          JENKINS_PORT="#{JENKINS_PORT}"
+          SONARQUBE_PORT="#{SONARQUBE_PORT}"
+          VAULT_PORT="#{VAULT_PORT}"
+          ZAP_PORT="#{ZAP_PORT}"
+          HARBOR_PORT="30001"
+          JENKINS_AGENT_PORT="#{JENKINS_AGENT_PORT}"
+
+          MARKER_FILE="/var/lib/cicd_installed"
+
+          if [ -f "$MARKER_FILE" ] && [ "$FAST_BOOT" = "true" ]; then
+            echo "CI/CD tools already installed, skipping (FAST_BOOT=true)"
+            exit 0
+          fi
+
+          log() { echo "[$(date +%Y-%m-%d_%H:%M:%S)] $*"; }
+
+          echo "=========================================="
+          echo "INSTALLING CI/CD AND SECURITY TOOLS"
+          echo "=========================================="
+
+          log "Installing Docker Compose..."
+          curl -fsSL "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose || echo "WARNING: Docker Compose download failed"
+          chmod +x /usr/local/bin/docker-compose || true
+
+          # ============================================================
+          # 1. GITEA - Source Repository
+          # ============================================================
+          log "Installing Gitea ${GITEA_VERSION}..."
+          mkdir -p /opt/gitea
+          cat > /opt/gitea/docker-compose.yaml <<GITEA_EOF
+version: "3"
+services:
+  gitea:
+    image: gitea/gitea:${GITEA_VERSION}
+    container_name: gitea
+    environment:
+      - GITEA__database__DB_TYPE=postgres
+      - GITEA__database__HOST=db:5432
+      - GITEA__database__NAME=gitea
+      - GITEA__database__USER=gitea
+      - GITEA__database__PASSWD=gitea
+      - GITEA__server__DOMAIN=localhost
+      - GITEA__server__HTTP_PORT=${GITEA_PORT}
+      - GITEA__server__ROOT_URL=http://localhost:${GITEA_PORT}/
+    restart: always
+    volumes:
+      - ./data:/data
+      - ./conf:/etc/gitea
+    ports:
+      - "${GITEA_PORT}:${GITEA_PORT}"
+      - "2222:22"
+    depends_on:
+      - db
+    networks:
+      - cicd-net
+  db:
+    image: postgres:14
+    restart: always
+    environment:
+      - POSTGRES_USER=gitea
+      - POSTGRES_PASSWORD=gitea
+      - POSTGRES_DB=gitea
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    networks:
+      - cicd-net
+networks:
+  cicd-net:
+    driver: bridge
+GITEA_EOF
+
+          cd /opt/gitea
+          /usr/local/bin/docker-compose up -d || echo "WARNING: Gitea failed to start"
+
+          # ============================================================
+          # 2. JENKINS - CI/CD Orchestrator
+          # ============================================================
+          log "Installing Jenkins ${JENKINS_VERSION}..."
+          mkdir -p /opt/jenkins
+          cat > /opt/jenkins/Dockerfile <<'JENKINS_EOF'
+FROM jenkins/jenkins:${JENKINS_VERSION}
+USER root
+RUN apt-get update && apt-get install -y curl git docker.io python3 python3-pip && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
+RUN usermod -aG docker jenkins
+USER jenkins
+JENKINS_EOF
+
+          cd /opt/jenkins
+          docker build --build-arg JENKINS_VERSION=${JENKINS_VERSION} -t jenkins-lab . || echo "WARNING: Jenkins build failed"
+          docker rm -f jenkins 2>/dev/null || true
+          docker run -d --name jenkins \
+            -p ${JENKINS_PORT}:8080 -p ${JENKINS_AGENT_PORT}:50000 \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v jenkins_home:/var/jenkins_home \
+            -e JENKINS_OPTS="--httpPort=8080" \
+            jenkins-lab || echo "WARNING: Jenkins run failed"
+
+          # ============================================================
+          # 3. SONARQUBE - SAST
+          # ============================================================
+          log "Installing SonarQube ${SONARQUBE_VERSION}..."
+          docker rm -f sonarqube 2>/dev/null || true
+          docker run -d --name sonarqube \
+            -p ${SONARQUBE_PORT}:9000 \
+            -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
+            sonarqube:${SONARQUBE_VERSION} || echo "WARNING: SonarQube run failed"
+
+          # ============================================================
+          # 4. HASHICORP VAULT - Secrets Management (Dev Mode)
+          # ============================================================
+          log "Installing HashiCorp Vault ${VAULT_VERSION}..."
+          docker rm -f vault 2>/dev/null || true
+          docker run -d --name vault \
+            -p ${VAULT_PORT}:8200 \
+            -e VAULT_DEV_ROOT_TOKEN_ID=root \
+            --cap-add=IPC_LOCK \
+            vault:${VAULT_VERSION} || echo "WARNING: Vault run failed"
+
+          # ============================================================
+          # 5. OWASP ZAP - DAST
+          # ============================================================
+          log "Installing OWASP ZAP ${ZAP_VERSION}..."
+          docker rm -f zap 2>/dev/null || true
+          docker run -d --name zap \
+            -p ${ZAP_PORT}:8090 \
+            -v /tmp:/zap/wrk \
+            owasp/zap2docker-stable:${ZAP_VERSION} \
+            zap-daemon.sh -port 8090 || echo "WARNING: ZAP run failed"
+
+          # ============================================================
+          # 6. GITLEAKS + TRIVY CLI Tools
+          # ============================================================
+          log "Installing Gitleaks ${GITLEAKS_VERSION} and Trivy ${TRIVY_VERSION}..."
+
+          curl -sSLO "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" || echo "WARNING: Gitleaks download failed"
+          tar -xzf "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" || true
+          mv gitleaks /usr/local/bin/ || true
+          rm -f "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" LICENSE README.md || true
+
+          apt-get update -qq
+          apt-get install -y wget
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -cs) main | tee /etc/apt/sources.list.d/trivy.list
+          apt-get update -qq
+          apt-get install -y trivy || echo "WARNING: Trivy install failed"
+
+          # ============================================================
+          # 7. SAMPLE JENKINS PIPELINE
+          # ============================================================
+          log "Creating sample Jenkins pipeline..."
+          mkdir -p /opt/jenkins/pipelines
+          cat > /opt/jenkins/pipelines/DevSecOps-Pipeline.groovy <<PIPELINE_EOF
+pipeline {
+    agent any
+    
+    environment {
+        HARBOR_URL = 'https://${MASTER_IP}:30001'
+        HARBOR_PROJECT = 'airgap'
+        SONAR_HOST_URL = 'http://localhost:${SONARQUBE_PORT}'
+        VAULT_ADDR = 'http://localhost:${VAULT_PORT}'
+        VAULT_TOKEN = 'root'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'http://localhost:${GITEA_PORT}/user/repo.git'
+            }
+        }
+        
+        stage('Secret Scanning - Gitleaks') {
+            steps {
+                sh 'gitleaks detect -r . -v || true'
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                sh 'docker build -t app:\${BUILD_NUMBER} .'
+            }
+        }
+        
+        stage('Container Scanning - Trivy') {
+            steps {
+                sh 'trivy image app:\${BUILD_NUMBER} --exit-code 0 --severity HIGH,CRITICAL || true'
+            }
+        }
+        
+        stage('Push to Harbor') {
+            steps {
+                sh '''
+                    echo "${HARBOR_PASS}" | docker login ${MASTER_IP}:30001 -u admin --password-stdin
+                    docker tag app:\${BUILD_NUMBER} ${MASTER_IP}:30001/\${HARBOR_PROJECT}/app:\${BUILD_NUMBER}
+                    docker push ${MASTER_IP}:30001/\${HARBOR_PROJECT}/app:\${BUILD_NUMBER}
+                '''
+            }
+        }
+    }
+    
+    post {
+        always {
+            sh 'docker system prune -f'
+        }
+        success {
+            echo 'Pipeline executed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed! Check logs for details.'
+        }
+    }
+}
+PIPELINE_EOF
+
+          # ============================================================
+          # 8. CREATE SAMPLE APPLICATION
+          # ============================================================
+          log "Creating sample application..."
+          mkdir -p /opt/sample-app
+          cat > /opt/sample-app/Dockerfile <<'APP_EOF'
+FROM python:3.9-slim
+WORKDIR /app
+COPY app.py .
+RUN pip install flask
+EXPOSE 5000
+CMD ["python", "app.py"]
+APP_EOF
+
+          cat > /opt/sample-app/app.py <<'APP_EOF'
+from flask import Flask
+import os
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello():
+    return 'Hello from DevSecOps Pipeline!'
+
+@app.route('/health')
+def health():
+    return {'status': 'healthy'}
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+APP_EOF
+
+          cat > /opt/sample-app/requirements.txt <<'APP_EOF'
+flask==2.2.3
+APP_EOF
+
+          # ============================================================
+          # 9. HARBOR PUSH SCRIPT
+          # ============================================================
+          log "Creating Harbor integration script..."
+          cat > /usr/local/bin/harbor-push <<'HARBOR_EOF'
+#!/bin/bash
+if [ $# -lt 2 ]; then
+    echo "Usage: harbor-push <image-name> <tag>"
+    exit 1
+fi
+
+IMAGE_NAME="$1"
+TAG="$2"
+HARBOR_REGISTRY="${MASTER_IP}:30001"
+HARBOR_PROJECT="airgap"
+
+echo "Pushing ${IMAGE_NAME}:${TAG} to Harbor..."
+docker tag "${IMAGE_NAME}:${TAG}" "${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${TAG}"
+docker push "${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${TAG}"
+echo "Push complete!"
+HARBOR_EOF
+          chmod +x /usr/local/bin/harbor-push
+
+          echo ""
+          echo "=========================================="
+          echo "CI/CD AND SECURITY TOOLS INSTALLED"
+          echo "=========================================="
+          echo ""
+          echo "Services:"
+          echo "  Gitea:      http://localhost:${GITEA_PORT}"
+          echo "  Jenkins:    http://localhost:${JENKINS_PORT}"
+          echo "  SonarQube:  http://localhost:${SONARQUBE_PORT} (admin/admin)"
+          echo "  Vault:      http://localhost:${VAULT_PORT} (token: root)"
+          echo "  ZAP:        http://localhost:${ZAP_PORT}"
+          echo ""
+          echo "CLI Tools:"
+          echo "  gitleaks --version"
+          echo "  trivy --version"
+          echo ""
+          echo "Sample Files:"
+          echo "  Pipeline:     /opt/jenkins/pipelines/DevSecOps-Pipeline.groovy"
+          echo "  Sample App:   /opt/sample-app/"
+          echo "  Harbor Push:  /usr/local/bin/harbor-push"
+          echo ""
+          echo "Harbor Registry: https://${MASTER_IP}:30001"
+          echo "  Username: admin"
+          echo "  Password: ${HARBOR_PASS}"
+          echo ""
+          echo "=========================================="
+          echo "Jenkins Initial Admin Password:"
+          docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword 2>/dev/null || echo "Check Jenkins logs"
+          echo ""
+          echo "To get Jenkins password: docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword"
+          echo "=========================================="
+
+          touch "$MARKER_FILE"
         SHELL
       end
     end
