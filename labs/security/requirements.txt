@@ -3,7 +3,7 @@
 # Install with: pip install -r labs/security/requirements.txt
 
 rich>=13.0.0
-pyyaml>=6.0
+pyyaml>=6.0.3
 aiofiles>=23.0.0
 requests>=2.34.2
 
