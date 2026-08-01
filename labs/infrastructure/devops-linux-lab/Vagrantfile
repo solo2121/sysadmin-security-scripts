@@ -75,6 +75,7 @@ puts "=================================================="
 require 'ipaddr'
 require 'rexml/document'
 require 'io/console'
+require 'shellwords'
 
 ENV['LIBVIRT_DEFAULT_URI'] ||= 'qemu:///system'
 Vagrant.require_version ">= 2.2.0"
@@ -511,7 +512,7 @@ EOF
           INGRESS_NGINX_VERSION="#{INGRESS_NGINX_VERSION}"
           K3S_VERSION="#{K3S_VERSION}"
           DOCKER_VERSION="#{DOCKER_VERSION}"
-          HARBOR_PASS="#{HARBOR_PASS}"
+          HARBOR_PASS=#{Shellwords.escape(HARBOR_PASS)}
           TOKEN_PATH=/vagrant/.k3s_token
           CLUSTER_READY=/vagrant/.cluster_ready
           FAST_BOOT="#{FAST_BOOT}"
@@ -1510,7 +1511,7 @@ EOF
           set -euo pipefail
 
           MASTER_IP="#{cfg[:ip]}"
-          HARBOR_PASS="#{HARBOR_PASS}"
+          HARBOR_PASS=#{Shellwords.escape(HARBOR_PASS)}
           ATTACK_MARKER="/var/lib/devsecops_attack_vectors_installed"
 
           if [ -f "$ATTACK_MARKER" ] && [ "${FAST_BOOT}" = "true" ]; then
@@ -2374,7 +2375,7 @@ EOF
         vm.vm.provision "shell", inline: <<-SHELL
           set -euo pipefail
           export MASTER_IP="#{cfg[:ip]}"
-          export HARBOR_PASS="#{HARBOR_PASS}"
+          export HARBOR_PASS=#{Shellwords.escape(HARBOR_PASS)}
           export FAST_BOOT="#{FAST_BOOT}"
           
           GITEA_VERSION="#{GITEA_VERSION}"
@@ -2465,7 +2466,7 @@ GITEA_EOF
           # ============================================================
           log "Installing Jenkins ${JENKINS_VERSION}..."
           mkdir -p /opt/jenkins
-          cat > /opt/jenkins/Dockerfile <<'JENKINS_EOF'
+          cat > /opt/jenkins/Dockerfile <<JENKINS_EOF
 FROM jenkins/jenkins:${JENKINS_VERSION}
 USER root
 RUN apt-get update && apt-get install -y curl git docker.io python3 python3-pip && \
