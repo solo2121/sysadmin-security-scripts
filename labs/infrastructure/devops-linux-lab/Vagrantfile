@@ -5,7 +5,7 @@
 # Enterprise Cloud-Native DevSecOps Kubernetes Lab
 # =============================================================================
 #
-# Author        : Miguel Carlo (solo21221)
+# Author        : Miguel Carlo (solo2121)
 # Version       : 8.2.0
 # Created       : 2025
 # Last Updated  : 2026-07-31
@@ -59,7 +59,7 @@
 
 LAB_NAME        = "Enterprise Cloud-Native DevSecOps Lab"
 LAB_VERSION     = "8.2.0"
-LAB_AUTHOR      = "Miguel Carlo (solo21221)"
+LAB_AUTHOR      = "Miguel Carlo (solo2121)"
 LAB_CREATED     = "2025"
 LAB_UPDATED     = "2026-07-31"
 LAB_STATUS      = "Active & Maintained"
@@ -458,9 +458,9 @@ EOF
         END="# LAB END"
         sed -i "/$START/,/$END/d" /etc/hosts 2>/dev/null || true
         cat >> /etc/hosts <<EOF
-$START
+ $START
 #{hosts_entries}
-$END
+ $END
 EOF
       SHELL
 
@@ -756,7 +756,7 @@ EOF
 
           if [ "${FAST_BOOT}" != "true" ]; then
             echo "Installing Ingress NGINX ${INGRESS_NGINX_VERSION}..."
-            kubectl apply -f "https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-${INGRESS_NGINX_VERSION}/deploy/static/provider/cloud/deploy.yaml"
+            kubectl apply -f "https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-${INGRESS_NGINX_VERSION}/deploy/static/provider/cloud/deploy.yaml" || true
             kubectl wait --namespace ingress-nginx --for=condition=Ready pod --selector=app.kubernetes.io/component=controller --timeout=180s 2>/dev/null || true
             check_ingress_running() { kubectl get pods -n ingress-nginx --no-headers 2>/dev/null | grep -q Running; }
             wait_for check_ingress_running "Ingress NGINX" 180 || true
@@ -868,7 +868,7 @@ EOF
                 -X POST "https://${MASTER_IP}:30001/api/v2.0/projects" \
                 -u "admin:${HARBOR_PASS}" \
                 -H "Content-Type: application/json" \
-                -d "$PROJECT_JSON")
+                -d "$PROJECT_JSON" || echo "000")
               echo " Attempt $i/30 HTTP $HTTP_CODE"
               if [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "409" ]; then
                 echo "Project ${HARBOR_PROJECT} ready"
@@ -880,7 +880,7 @@ EOF
 
             echo "Verifying project exists in API..."
             for i in $(seq 1 30); do
-              VERIFY_PROJECT_CODE=$(curl -sk -o /dev/null -w '%{http_code}' -u "admin:${HARBOR_PASS}" "https://${MASTER_IP}:30001/api/v2.0/projects/${HARBOR_PROJECT}")
+              VERIFY_PROJECT_CODE=$(curl -sk -o /dev/null -w '%{http_code}' -u "admin:${HARBOR_PASS}" "https://${MASTER_IP}:30001/api/v2.0/projects/${HARBOR_PROJECT}" || echo "000")
               if [ "$VERIFY_PROJECT_CODE" = "200" ]; then
                 echo "Project verified"
                 PROJECT_READY="true"
@@ -918,25 +918,27 @@ EOF
               echo " Target: $target"
               repo_api="${repo//\//%252F}"
               ARTIFACT_CODE=$(curl -sk -o /dev/null -w '%{http_code}' -u "admin:${HARBOR_PASS}" \
-                "https://${MASTER_IP}:30001/api/v2.0/projects/${HARBOR_PROJECT}/repositories/${repo_api}/artifacts/${tag}")
+                "https://${MASTER_IP}:30001/api/v2.0/projects/${HARBOR_PROJECT}/repositories/${repo_api}/artifacts/${tag}" || echo "000")
               if [ "$ARTIFACT_CODE" = "200" ]; then
                 echo " SKIP: Already exists in Harbor"
                 continue
               fi
               
-              echo " Pulling (up to 5 attempts)..."
+              echo " Pulling (up to 10 attempts)..."
               PULL_SUCCESS=false
-              for attempt in 1 2 3 4 5; do
-                if docker pull "$img"; then
+              for attempt in 1 2 3 4 5 6 7 8 9 10; do
+                if docker pull "$img" >/dev/null 2>&1; then
                   PULL_SUCCESS=true
                   break
                 fi
-                echo " Pull attempt $attempt failed. Retrying in 15 seconds..."
-                sleep 15
+                echo " Pull attempt $attempt failed. Retrying in 30 seconds..."
+                sleep 30
               done
               
               if [ "$PULL_SUCCESS" = "false" ]; then
-                echo " WARNING: Pull failed for $img after 5 attempts, skipping"
+                echo " WARNING: Pull failed for $img after 10 attempts, skipping"
+                echo " --- Last error log: ---"
+                docker pull "$img" 2>&1 | tail -n 3
                 continue
               fi
               
@@ -949,7 +951,7 @@ EOF
               echo " Pushing..."
               PUSH_SUCCESS=false
               for attempt in 1 2 3; do
-                if docker push "$target"; then
+                if docker push "$target" >/dev/null 2>&1; then
                   PUSH_SUCCESS=true
                   break
                 fi
@@ -1239,14 +1241,18 @@ PYEOF
             # ========== CERT-MANAGER ==========
             if [ ! -f "$CERTS_MARKER" ]; then
               echo "Installing cert-manager ${CERT_MANAGER_VERSION}..."
-              kubectl apply -f "https://github.com/cert-manager/cert-manager/releases/download/v${CERT_MANAGER_VERSION}/cert-manager.yaml"
+              kubectl apply -f "https://github.com/cert-manager/cert-manager/releases/download/v${CERT_MANAGER_VERSION}/cert-manager.yaml" || true
               echo "Waiting for cert-manager pods..."
-              for i in $(seq 1 60); do
+              for i in $(seq 1 40); do
                 if kubectl get pods -n cert-manager --no-headers 2>/dev/null | grep -q Running; then
                   echo "cert-manager is ready"
                   break
                 fi
-                echo " Waiting for cert-manager... ($i/60)"
+                if kubectl get pods -n cert-manager --no-headers 2>/dev/null | grep -qE "ImagePullBackOff|CrashLoopBackOff|ErrImagePull"; then
+                  echo "WARNING: cert-manager pods are in a failed state. Breaking wait loop."
+                  break
+                fi
+                echo " Waiting for cert-manager... ($i/40)"
                 sleep 5
               done
               touch "$CERTS_MARKER"
@@ -1261,8 +1267,8 @@ PYEOF
               kubectl delete namespace kyverno --ignore-not-found=true
               sleep 10
               
-              helm repo add kyverno https://kyverno.github.io/kyverno/ --force-update
-              helm repo update
+              helm repo add kyverno https://kyverno.github.io/kyverno/ --force-update || true
+              helm repo update || true
               
               INSTALL_SUCCESS=false
               for attempt in 1 2 3; do
@@ -1294,14 +1300,18 @@ PYEOF
               fi
 
               echo "Waiting for Kyverno pods..."
-              for i in $(seq 1 120); do
+              for i in $(seq 1 60); do
                 RUNNING_COUNT=$(kubectl get pods -n kyverno --no-headers 2>/dev/null | grep -c Running || echo "0")
                 TOTAL_COUNT=$(kubectl get pods -n kyverno --no-headers 2>/dev/null | wc -l || echo "0")
                 if [ "$TOTAL_COUNT" -gt 0 ] && [ "$RUNNING_COUNT" -eq "$TOTAL_COUNT" ]; then
                   echo "All Kyverno pods are ready ($RUNNING_COUNT/$TOTAL_COUNT)"
                   break
                 fi
-                echo " Waiting for Kyverno... ($i/120) - $RUNNING_COUNT/$TOTAL_COUNT running"
+                if kubectl get pods -n kyverno --no-headers 2>/dev/null | grep -qE "ImagePullBackOff|CrashLoopBackOff|ErrImagePull"; then
+                  echo "WARNING: Kyverno pods are in a failed state. Breaking wait loop."
+                  break
+                fi
+                echo " Waiting for Kyverno... ($i/60) - $RUNNING_COUNT/$TOTAL_COUNT running"
                 sleep 10
               done
               touch "$KYVERNO_MARKER"
@@ -1312,8 +1322,8 @@ PYEOF
             # ========== FALCO ==========
             if [ ! -f "$FALCO_MARKER" ]; then
               echo "Installing Falco ${FALCO_VERSION}..."
-              helm repo add falcosecurity https://falcosecurity.github.io/charts --force-update
-              helm repo update
+              helm repo add falcosecurity https://falcosecurity.github.io/charts --force-update || true
+              helm repo update || true
               helm upgrade --install falco falcosecurity/falco \
                 --namespace falco \
                 --create-namespace \
@@ -1333,8 +1343,8 @@ PYEOF
               echo "Installing Prometheus Stack ${PROMETHEUS_VERSION}..."
               kubectl delete svc prometheus-stack-grafana -n monitoring --ignore-not-found=true
 
-              helm repo add prometheus-community https://prometheus-community.github.io/helm-charts --force-update
-              helm repo update
+              helm repo add prometheus-community https://prometheus-community.github.io/helm-charts --force-update || true
+              helm repo update || true
 
               cat > /tmp/prometheus-values.yaml <<EOF
 prometheus:
@@ -1362,17 +1372,21 @@ EOF
                 --timeout 15m || echo "WARNING: Prometheus stack install had issues"
 
               echo "Waiting for Prometheus and Grafana pods..."
-              for i in $(seq 1 90); do
+              for i in $(seq 1 60); do
                 if kubectl get pods -n monitoring --no-headers 2>/dev/null | grep -q Running; then
                   RUNNING_COUNT=$(kubectl get pods -n monitoring --no-headers | grep -c Running || echo "0")
                   TOTAL_COUNT=$(kubectl get pods -n monitoring --no-headers | wc -l || echo "0")
-                  echo " Monitoring pods: $RUNNING_COUNT/$TOTAL_COUNT running... ($i/90)"
+                  echo " Monitoring pods: $RUNNING_COUNT/$TOTAL_COUNT running... ($i/60)"
                   if [ "$RUNNING_COUNT" -eq "$TOTAL_COUNT" ] && [ "$TOTAL_COUNT" -gt 5 ]; then
                     echo "All monitoring pods are ready"
                     break
                   fi
                 fi
-                sleep 10
+                if kubectl get pods -n monitoring --no-headers 2>/dev/null | grep -qE "ImagePullBackOff|CrashLoopBackOff|ErrImagePull"; then
+                  echo "WARNING: Monitoring pods are in a failed state. Breaking wait loop."
+                  break
+                fi
+                sleep 5
               done
 
               GRAFANA_PORT=$(kubectl get svc -n monitoring prometheus-stack-grafana -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "30002")
@@ -1396,8 +1410,8 @@ EOF
               
               sleep 30
 
-              helm repo add argo https://argoproj.github.io/argo-helm --force-update
-              helm repo update
+              helm repo add argo https://argoproj.github.io/argo-helm --force-update || true
+              helm repo update || true
 
               helm upgrade --install argocd argo/argo-cd \
                 --namespace argocd \
@@ -1412,17 +1426,21 @@ EOF
                 --timeout 10m || echo "WARNING: Argo CD install had issues"
 
               echo "Waiting for Argo CD pods..."
-              for i in $(seq 1 120); do
+              for i in $(seq 1 60); do
                 if kubectl get pods -n argocd --no-headers 2>/dev/null | grep -q Running; then
                   RUNNING_COUNT=$(kubectl get pods -n argocd --no-headers | grep -c Running || echo "0")
                   TOTAL_COUNT=$(kubectl get pods -n argocd --no-headers | wc -l || echo "0")
-                  echo " Argo CD pods: $RUNNING_COUNT/$TOTAL_COUNT running... ($i/120)"
+                  echo " Argo CD pods: $RUNNING_COUNT/$TOTAL_COUNT running... ($i/60)"
                   if [ "$RUNNING_COUNT" -eq "$TOTAL_COUNT" ] && [ "$TOTAL_COUNT" -gt 5 ]; then
                     echo "All Argo CD pods are ready"
                     break
                   fi
                 fi
-                sleep 10
+                if kubectl get pods -n argocd --no-headers 2>/dev/null | grep -qE "ImagePullBackOff|CrashLoopBackOff|ErrImagePull"; then
+                  echo "WARNING: Argo CD pods are in a failed state. Breaking wait loop."
+                  break
+                fi
+                sleep 5
               done
 
               echo ""
@@ -1484,7 +1502,7 @@ EOF
           echo "=========================================="
 
           echo "Creating vulnerable namespaces (with privileged policy)..."
-          cat <<EOF | kubectl apply -f -
+          cat <<EOF | kubectl apply -f - || true
 ---
 apiVersion: v1
 kind: Namespace
@@ -1518,7 +1536,7 @@ metadata:
 EOF
 
           echo "Deploying privileged escape pod..."
-          cat <<EOF | kubectl apply -f -
+          cat <<EOF | kubectl apply -f - || true
 ---
 apiVersion: v1
 kind: Pod
@@ -1593,7 +1611,7 @@ spec:
 EOF
 
           echo "Deploying docker breakout pod..."
-          cat <<EOF | kubectl apply -f -
+          cat <<EOF | kubectl apply -f - || true
 ---
 apiVersion: v1
 kind: Pod
@@ -1637,7 +1655,7 @@ spec:
 EOF
 
           echo "Deploying dangerous capabilities pod..."
-          cat <<EOF | kubectl apply -f -
+          cat <<EOF | kubectl apply -f - || true
 ---
 apiVersion: v1
 kind: Pod
@@ -1685,7 +1703,7 @@ spec:
 EOF
 
           echo "Deploying RBAC escalation scenario..."
-          cat <<EOF | kubectl apply -f -
+          cat <<EOF | kubectl apply -f - || true
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -1771,7 +1789,7 @@ data:
 EOF
 
           echo "Deploying cryptominer cronjob..."
-          cat <<EOF | kubectl apply -f -
+          cat <<EOF | kubectl apply -f - || true
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -1846,7 +1864,7 @@ spec:
 EOF
 
           echo "Deploying hostpath exploitation pod..."
-          cat <<EOF | kubectl apply -f -
+          cat <<EOF | kubectl apply -f - || true
 ---
 apiVersion: v1
 kind: Pod
@@ -2487,7 +2505,7 @@ JENKINS_EOF
 
           apt-get update -qq
           apt-get install -y wget
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add - || true
           echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -cs) main | tee /etc/apt/sources.list.d/trivy.list
           apt-get update -qq
           apt-get install -y trivy || echo "WARNING: Trivy install failed"
