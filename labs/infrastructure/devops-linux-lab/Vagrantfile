@@ -458,9 +458,9 @@ EOF
         END="# LAB END"
         sed -i "/$START/,/$END/d" /etc/hosts 2>/dev/null || true
         cat >> /etc/hosts <<EOF
- $START
+$START
 #{hosts_entries}
- $END
+$END
 EOF
       SHELL
 
@@ -658,19 +658,37 @@ EOF
             RESTART_DOCKER=1
           fi
 
+          # ============================================================
+          # FIX: Docker daemon configuration with multiple insecure registries
+          # ============================================================
           if [ ! -f /etc/docker/daemon.json ] || [ "$RESTART_DOCKER" -eq 1 ]; then
             cat > /etc/docker/daemon.json <<EOF
 {
   "storage-driver": "overlay2",
   "log-driver": "json-file",
   "log-opts": {"max-size": "10m", "max-file": "3"},
-  "insecure-registries": ["${MASTER_IP}:30001"]
+  "insecure-registries": [
+    "${MASTER_IP}:30001",
+    "quay.io",
+    "ghcr.io",
+    "registry.k8s.io"
+  ]
 }
 EOF
             RESTART_DOCKER=1
           fi
           [ "$RESTART_DOCKER" -eq 1 ] && systemctl restart docker || true
           transition_state "docker_installed"
+
+          # Wait for Docker to be fully ready
+          echo "Waiting for Docker to be ready..."
+          for i in $(seq 1 30); do
+            if docker info >/dev/null 2>&1; then
+              echo "Docker is ready"
+              break
+            fi
+            sleep 2
+          done
 
           if ! command -v k3s >/dev/null 2>&1; then
             echo "Installing K3s ${K3S_VERSION}..."
@@ -840,7 +858,12 @@ EOF
   "storage-driver": "overlay2",
   "log-driver": "json-file",
   "log-opts": {"max-size": "10m", "max-file": "3"},
-  "insecure-registries": ["${MASTER_IP}:30001"]
+  "insecure-registries": [
+    "${MASTER_IP}:30001",
+    "quay.io",
+    "ghcr.io",
+    "registry.k8s.io"
+  ]
 }
 EOF
             systemctl restart docker
@@ -906,6 +929,7 @@ EOF
               norm="${img#docker.io/}"
               norm="${norm#registry.k8s.io/}"
               norm="${norm#quay.io/}"
+              norm="${norm#ghcr.io/}"
               if [[ "$norm" == *":"* ]]; then
                 repo="${norm%:*}"
                 tag="${norm##*:}"
