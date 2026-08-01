@@ -1,0 +1,45 @@
+# =============================================================================
+# CODEOWNERS — sysadmin-security-lab
+# =============================================================================
+# Each line assigns ownership for a path. The last matching pattern wins,
+# so more specific paths are listed after broader ones.
+#
+# Owners are automatically requested for review when a pull request
+# touches a matching path. See:
+# https://docs.github.com/articles/about-code-owners
+# =============================================================================
+
+# Default owner for anything not matched below
+*                           @solo2121
+
+# Root configuration and project metadata
+/README.md                  @solo2121
+/CHANGELOG.md                @solo2121
+/CONTRIBUTING.md             @solo2121
+/SECURITY.md                  @solo2121
+/CODE_OF_CONDUCT.md           @solo2121
+/LICENSE                       @solo2121
+/.pre-commit-config.yaml       @solo2121
+/.secrets.baseline               @solo2121
+/requirements-dev.txt             @solo2121
+
+# CI/CD, issue templates, automation
+/.github/                          @solo2121
+
+# Documentation
+/docs/                               @solo2121
+
+# Lab environments (Vagrantfiles, provisioning, topology)
+/labs/                                 @solo2121
+
+# Supporting scripts (prerequisite checks, helper tooling)
+/scripts/                               @solo2121
+
+# Security and sysadmin tooling
+/tools/                                  @solo2121
+
+# Test suites
+/tests/                                   @solo2121
+
+# Diagrams and static assets
+/assets/                                   @solo2121

@@ -170,7 +170,10 @@ This repository demonstrates practical hands-on experience with:
 ```text
 sysadmin-security-lab/
 ├── .github/
-│   └── workflows/
+│   ├── ISSUE_TEMPLATE/
+│   ├── workflows/
+│   ├── CODEOWNERS
+│   └── dependabot.yml
 ├── assets/
 ├── docs/
 │   ├── architecture/
@@ -191,6 +194,7 @@ sysadmin-security-lab/
 ├── CHANGELOG.md
 ├── CONTRIBUTING.md
 ├── LICENSE
+├── Makefile
 ├── SECURITY.md
 └── README.md
 ```
@@ -257,6 +261,25 @@ Unauthorized access, testing, or exploitation of external systems is prohibited.
 - Third-party Vagrant boxes may change independently.
 - CI validates repository quality but does not fully deploy every environment.
 - Designed for a single-host laboratory architecture.
+
+---
+
+## Development quickstart
+
+Common local commands (wrapped in a `Makefile` for convenience):
+
+```bash
+pip install -r requirements-dev.txt
+pre-commit install
+
+make lint       # shellcheck (errors) + flake8 (informational)
+make test       # pytest + bats unit tests
+make validate   # vagrant validate on all three lab Vagrantfiles
+make security   # bandit (informational) + detect-secrets
+```
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full contributor workflow,
+and [tests/README.md](./tests/README.md) for what the test suites cover.
 
 ---
 

@@ -244,10 +244,15 @@ jobs:
           python-version: '3.11'
 
       - name: Install pytest
-        run: pip install pytest --quiet
+        run: pip install pytest pytest-cov --quiet
 
       - name: Run Python unit tests
         run: pytest tests/python/ -v
+
+      - name: Python coverage report (informational)
+        run: |
+          echo "Generating coverage report (does not affect pass/fail above)..."
+          pytest tests/python/ --cov=. --cov-report=term-missing || true
 
       - name: Install bats
         run: sudo apt-get update -qq && sudo apt-get install -y bats

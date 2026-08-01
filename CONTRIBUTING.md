@@ -81,11 +81,18 @@ pylint path/to/script.py
 vagrant validate
 ```
 
+A `Makefile` at the repo root wraps these same commands for convenience
+(`make lint`, `make test`, `make validate`, `make security`, `make docs`).
+Run `make help` to see all available targets.
+
 ### Running the Test Suite
 
 ```bash
 # Python tests
 pytest tests/python/ -v
+
+# Python tests with coverage report
+pytest tests/python/ -v --cov=. --cov-report=term-missing
 
 # Bash tests (requires bats-core: sudo apt-get install -y bats)
 bats tests/bash/
