@@ -2,7 +2,7 @@
 # Used by: labs/security/ad-pentest/ and labs/security/ad-pentest-vlan/
 # Install with: pip install -r labs/security/requirements.txt
 
-rich>=13.0.0
+rich>=15.0.0
 pyyaml>=6.0.3
 aiofiles>=25.1.0
 requests>=2.34.2
