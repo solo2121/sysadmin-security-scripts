@@ -8,17 +8,18 @@
 # Requires: pip install -r requirements-dev.txt
 # =============================================================================
 
-.PHONY: help lint test validate security docs coverage prereq
+.PHONY: help lint test validate validate-repo security docs coverage prereq
 
 help:
 	@echo "Available targets:"
-	@echo "  make lint      - shellcheck (errors) + flake8 (informational)"
-	@echo "  make test      - run pytest and bats unit test suites"
-	@echo "  make coverage  - run pytest with coverage report"
-	@echo "  make validate  - vagrant validate on all three lab Vagrantfiles"
-	@echo "  make security  - bandit (informational) + detect-secrets scan"
-	@echo "  make docs      - markdown link check across the repo"
-	@echo "  make prereq    - run scripts/check-prerequisites.sh"
+	@echo "  make lint          - shellcheck (errors) + flake8 (informational)"
+	@echo "  make test          - run pytest and bats unit test suites"
+	@echo "  make coverage      - run pytest with coverage report"
+	@echo "  make validate      - vagrant validate on all three lab Vagrantfiles"
+	@echo "  make validate-repo - repository structure/docs/Vagrantfile health check (scripts/validate_lab.py)"
+	@echo "  make security      - bandit (informational) + detect-secrets scan"
+	@echo "  make docs          - markdown link check across the repo"
+	@echo "  make prereq        - run scripts/check-prerequisites.sh"
 
 lint:
 	@echo "==> shellcheck (errors only)"
@@ -47,6 +48,10 @@ validate:
 	cd labs/security/ad-pentest-vlan && vagrant validate
 	@echo "==> vagrant validate (devops-linux-lab)"
 	cd labs/infrastructure/devops-linux-lab && vagrant validate
+
+validate-repo:
+	@echo "==> repository health validation (scripts/validate_lab.py)"
+	python3 scripts/validate_lab.py
 
 security:
 	@echo "==> bandit (informational only — see SECURITY.md for intentional findings)"

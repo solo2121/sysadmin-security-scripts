@@ -7,7 +7,7 @@
 #   lint-shell-scripts     — shellcheck errors only (not warnings)
 #   lint-python-scripts    — syntax check only (flake8 informational)
 #   security-scan          — bandit informational only (never blocks)
-#   run-tests              — pytest (Python) and bats (Bash) unit tests
+#   run-tests              — pytest (Python), bats (Bash), and repo health checks
 #   check-doc-links        — markdown link check, informational only (never blocks)
 #
 # Philosophy:
@@ -141,7 +141,8 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v7
         with:
-          python-version: '3.11'
+          python-version: '3.12'
+          cache: 'pip'
 
       - name: Install tools
         run: pip install flake8 --quiet
@@ -197,7 +198,8 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v7
         with:
-          python-version: '3.11'
+          python-version: '3.12'
+          cache: 'pip'
 
       - name: Install bandit
         run: pip install bandit --quiet
@@ -241,7 +243,8 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v7
         with:
-          python-version: '3.11'
+          python-version: '3.12'
+          cache: 'pip'
 
       - name: Install pytest
         run: pip install pytest pytest-cov --quiet
@@ -259,6 +262,11 @@ jobs:
 
       - name: Run Bash unit tests
         run: bats tests/bash/
+
+      - name: Repository health validation
+        run: |
+          echo "Running scripts/validate_lab.py (Vagrant checks skipped — covered by the validate-vagrantfiles job)"
+          python3 scripts/validate_lab.py --skip-vagrant
 
   # ---------------------------------------------------------------------------
   # Job 6: Markdown link check — catch broken internal doc references

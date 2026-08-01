@@ -6,6 +6,7 @@ Standalone scripts and utilities that are useful on their own, independent of an
 |-----------|----------|
 | [`security/`](security/README.md) | Reconnaissance, network analysis, exploitation, audit, and wireless security scripts for authorized lab use |
 | [`sysadmin/`](sysadmin/README.md) | Linux administration scripts for monitoring, hardening, and day-2 operations utilities |
+| [`lib/`](lib/README.md) | Shared, standard-library-only CLI utilities (argparse scaffolding, logging, safe subprocess execution, input validation, banners) used by scripts in `security/` and `sysadmin/` |
 
 ## Contributing
 

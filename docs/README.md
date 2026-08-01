@@ -12,6 +12,7 @@ you're not sure where to look.
 | [`setup/troubleshooting.md`](setup/troubleshooting.md) | Common setup and runtime issues |
 | [`setup/quickstart-examples.md`](setup/quickstart-examples.md) | Worked setup examples |
 | [`guides/optimization/minimal-resource-deployment.md`](guides/optimization/minimal-resource-deployment.md) | Running any of the three labs on smaller hosts |
+| [`dependencies.md`](dependencies.md) | Supported OS, Python/Kubernetes versions, external tool and package dependencies |
 
 ## Architecture
 
