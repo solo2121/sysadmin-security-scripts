@@ -2,10 +2,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/platform-KVM%2Flibvirt-blue)](https://www.linux-kvm.org/)
-[![Version](https://img.shields.io/badge/version-8.1.0-green)](https://github.com/solo2121/sysadmin-security-lab)
+[![Version](https://img.shields.io/badge/version-8.2.0-green)](https://github.com/solo2121/sysadmin-security-lab)
 [![Vagrant](https://img.shields.io/badge/Vagrant-%3E%3D2.4-1563FF)](https://www.vagrantup.com/)
 
-**Version 8.1.0 — Enterprise DevSecOps Lab with Realistic Attack Scenarios**
+**Version 8.2.0 — Enterprise DevSecOps Lab with Integrated CI/CD Platform**
 
 A full enterprise-grade cloud-native lab built with Vagrant and KVM/libvirt. Designed for hands-on learning, certification practice, and portfolio development across Kubernetes, GitOps, IaC, observability, and runtime security.
 
@@ -13,10 +13,30 @@ A full enterprise-grade cloud-native lab built with Vagrant and KVM/libvirt. Des
 
 ## Recent Additions
 
+- **Integrated CI/CD Platform:** Added a dedicated `cicd-server` VM running Gitea, Jenkins, SonarQube, Vault, and OWASP ZAP for end-to-end DevSecOps pipeline practice.
 - **Realistic Attack Scenarios:** Expanded the lab with modern, realistic attack scenarios and intentionally vulnerable deployments to bridge the gap between infrastructure engineering and security.
 - **IaC Security Practice:** Added a Terraform state file with exposed secrets to practice secret management and IaC security scanning.
 - **AI Security Testing:** Added an indirect prompt injection (RAG) scenario to practice securing AI/LLM pipelines integrated with enterprise infrastructure.
 - **Active Directory Threat Coverage:** Added modern enterprise attack scenarios to reflect current real-world Active Directory threats.
+
+---
+
+## What Changed in v8.2.0
+
+- Added an integrated **CI/CD server** (`cicd-server`) running Gitea, Jenkins, SonarQube, HashiCorp Vault, and OWASP ZAP for a complete DevSecOps pipeline.
+- Provisioned the CI/CD environment with a sample Jenkins pipeline (`DevSecOps-Pipeline.groovy`) and a sample Flask application, both wired to Harbor, Gitleaks, and Trivy.
+- Added Gitleaks and Trivy CLI tools on `cicd-server` for automated secret and container image scanning.
+- Added port forwarding for Gitea (3000), Jenkins (8080), Jenkins agent (50000), SonarQube (9000), Vault (8200), and ZAP (8090).
+- `cicd-server` is included in the `full` lab profile, or can be started independently with `START_VMS=cicd-server` without affecting the rest of the lab.
+- Existing K3s, Harbor, Argo CD, and lab infrastructure are unaffected.
+
+> **Known issue — host port 8080 conflict:** `devops-1` forwards its Ingress
+> NGINX HTTP endpoint (guest `80`) to host port `8080`, and Jenkins on
+> `cicd-server` also forwards to host port `8080`. Running both VMs together
+> (e.g. `LAB_PROFILE=full`) will fail with a Vagrant port-collision error.
+> Until this is fixed upstream, avoid starting both at once, or edit the
+> `JENKINS_PORT` constant near the top of the Vagrantfile to a free host
+> port (e.g. `18080`) before running `vagrant up`.
 
 ---
 
@@ -65,6 +85,9 @@ Host (Linux, KVM/libvirt)
 │   ├── alma-lab    (AlmaLinux 10)
 │   └── suse-lab    (openSUSE Leap 15.6)
 │
+├── CI/CD Server
+│   └── cicd-server (Gitea + Jenkins + SonarQube + Vault + OWASP ZAP)
+│
 └── Ansible Management Nodes
     ├── node1 (Ubuntu 24.04)
     └── node2 (Ubuntu 24.04)
@@ -87,6 +110,7 @@ Host (Linux, KVM/libvirt)
 | suse-lab | auto-detected .23 | Linux practice | 1024 MB | 1 |
 | node1 | auto-detected .30 | Ansible managed node | 1024 MB | 1 |
 | node2 | auto-detected .31 | Ansible managed node | 1024 MB | 1 |
+| cicd-server | auto-detected .50 | Gitea + Jenkins + SonarQube + Vault + ZAP | 4096 MB | 2 |
 
 IPs are auto-detected from your libvirt network at runtime.
 
@@ -109,6 +133,13 @@ IPs are auto-detected from your libvirt network at runtime.
 | Kind | v0.24.0 | Kubernetes in Docker |
 | K3d | v5.7.5 | K3s in Docker |
 | Ingress NGINX | v1.11.3 | Kubernetes ingress controller |
+| Gitea | 1.24.3 | Git server / CI trigger source |
+| Jenkins | 2.516.2-lts-jdk17 | CI/CD automation server |
+| SonarQube | 25.7 | Static analysis (SAST) |
+| HashiCorp Vault | 1.18.2 | Secrets management (dev mode) |
+| OWASP ZAP | 2.16.1 | Dynamic analysis (DAST) |
+| Gitleaks | 8.18.4 | Secret scanning CLI |
+| Trivy (CI/CD host) | 0.57.1 | Container image scanning CLI |
 
 ---
 
@@ -164,7 +195,7 @@ LAB_PROFILE=full vagrant up
 |---|---|
 | `minimal` | devops-1, worker-1 |
 | `dev` | devops-1, worker-1, node1, node2 |
-| `full` | All 11 VMs |
+| `full` | All 12 VMs |
 
 ### Start specific VMs
 
@@ -200,6 +231,11 @@ Groups available from the menu:
 | Grafana | `https://MASTER_IP:<auto-detected-port>` | admin / admin |
 | Prometheus | kubectl port-forward | — |
 | K3s API | `https://MASTER_IP:16443` | kubeconfig at `/vagrant/kubeconfig.yaml` |
+| Gitea | `http://localhost:3000` | Set on first visit |
+| Jenkins | `http://localhost:8080` | See "Jenkins Initial Admin Password" below |
+| SonarQube | `http://localhost:9000` | admin / admin |
+| Vault | `http://localhost:8200` | token: `root` (dev mode) |
+| OWASP ZAP | `http://localhost:8090` | — |
 
 `MASTER_IP` is auto-detected at boot and printed to the console.
 
@@ -247,6 +283,36 @@ kubectl get nodes
 # Create additional clusters for practice
 k3d cluster create test-cluster --servers 1 --agents 2
 k3d cluster list
+```
+
+---
+
+## CI/CD Server
+
+The `cicd-server` VM hosts a self-contained DevSecOps pipeline stack: Gitea (source control), Jenkins (automation), SonarQube (SAST), Vault (secrets), and OWASP ZAP (DAST), plus Gitleaks and Trivy CLI tools.
+
+```bash
+vagrant ssh cicd-server
+
+# Get the Jenkins initial admin password
+docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+
+# Scan the sample app for leaked secrets
+gitleaks detect -r /opt/sample-app -v
+
+# Scan a built image for vulnerabilities
+trivy image app:latest --severity HIGH,CRITICAL
+
+# Push an image to the lab's Harbor registry
+harbor-push my-app 1.0
+```
+
+A sample pipeline (`/opt/jenkins/pipelines/DevSecOps-Pipeline.groovy`) and sample Flask app (`/opt/sample-app/`) are provisioned automatically, wired to Gitea checkout, Gitleaks secret scanning, Trivy image scanning, and a Harbor push.
+
+Only start the CI/CD server on its own with:
+
+```bash
+START_VMS=cicd-server vagrant up
 ```
 
 ---
@@ -337,6 +403,9 @@ vagrant destroy -f
 | K3d cluster not ready | SSH into k3d-lab and check `k3d cluster list`. |
 | Harbor password prompt | Set `export HARBOR_PASS='yourpassword'` before `vagrant up`. |
 | Out of memory | Use `LAB_PROFILE=minimal` or `START_VMS=` to deploy only needed VMs. |
+| CI/CD service unreachable | SSH into `cicd-server` and check `docker ps`; restart with `docker restart <service>`. |
+| Jenkins password unknown | Run `docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword` from inside `cicd-server`. |
+| Port 8080 already in use | `devops-1` (Ingress) and `cicd-server` (Jenkins) both default to host port 8080. Don't start both at once, or change `JENKINS_PORT` in the Vagrantfile. |
 
 ---
 

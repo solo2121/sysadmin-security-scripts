@@ -19,7 +19,7 @@ Lab 2's `Vagrantfile` already supports three resource profiles via the
 |---|---|---|
 | `minimal` (default) | `devops-1` (k3s control plane) + `worker-1` | ~10 GiB |
 | `dev` | `minimal` + `node1` + `node2` (Ansible targets) | ~12 GiB |
-| `full` | every defined VM (control plane, 2 workers, 4 OS labs, 2 Ansible nodes, kind lab, k3d lab) | ~26 GiB |
+| `full` | every defined VM (control plane, 2 workers, 4 OS labs, 2 Ansible nodes, kind lab, k3d lab, CI/CD server) | ~30 GiB |
 
 ```bash
 cd labs/infrastructure/devops-linux-lab
@@ -52,6 +52,7 @@ build a custom subset:
 | `node1`, `node2` | Ansible targets | 1024 MB each |
 | `kind-lab` | Kind cluster | 4096 MB |
 | `k3d-lab` | k3d cluster | 4096 MB |
+| `cicd-server` | Gitea + Jenkins + SonarQube + Vault + ZAP | 4096 MB |
 
 ## Lab 1 (Active Directory pentest lab) — selective VM startup
 
@@ -64,13 +65,12 @@ documents a tested minimal set for 32 GiB hosts:
 | `dc01` | Domain Controller | 4096 MB |
 | `win10` | Domain-joined workstation | 2048 MB |
 | `ca01-esc` | AD CS (certificate services) | 4096 MB |
-| `llm01` | Vulnerable LLM platform | 8192 MB |
+| `llm01` | Vulnerable LLM platform | 4096 MB |
 | `cloud-pentest` | LocalStack cloud simulation | 2048 MB |
 
-**Total for this subset: ~24 GiB.** The full lab (all 14 VMs — adds
-`db01`, `exch01`, `sp01`, `linux01`, `print01`, `pnpt-internal`,
-`metasploitable2`, `juice-shop`) totals **~43.5 GiB** and is recommended
-only on hosts with 64 GiB+.
+**Total for this subset: ~20 GiB.** The full lab (all 11 VMs — adds
+`db01`, `linux01`, `print01`, `metasploitable2`, `juice-shop`) totals
+**~29.5 GiB** and is recommended on hosts with 32 GiB+.
 
 Start only the subset you need with `vagrant up <name>`:
 
@@ -81,7 +81,7 @@ vagrant up kali dc01 win10 ca01-esc llm01 cloud-pentest
 
 If you're primarily practicing AD attack paths (Kerberoasting, ACL abuse,
 ESC1/ESC8) rather than the full enterprise simulation, you likely don't
-need `exch01`, `sp01`, or the legacy targets (`metasploitable2`,
+need `db01`, `print01`, or the legacy targets (`metasploitable2`,
 `juice-shop`) at all — those exist for broader attack-surface practice,
 not for the core AD kill chain.
 

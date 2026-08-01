@@ -8,8 +8,8 @@ This directory contains enterprise-focused Active Directory penetration testing 
 
 | Lab                    | Path                             | Focus                                                                                                                     | Version                                                | Hosts |
 |------------------------|----------------------------------|---------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------|-------|
-| Active Directory Lab   | [`ad-pentest/`](ad-pentest/)     | Complete AD attack chain from recon to Domain Admin; Kerberos attacks, AD CS exploits, lateral movement, cloud and LLM attacks | v1.11 – Enterprise Edition (FLAT NETWORK – OPTIMIZED) | 12    |
-| VLAN Enterprise AD Lab | [`ad-pentest-vlan/`](ad-pentest-vlan/) | Multi-subnet enterprise topology with VLAN segmentation, routing, inter-VLAN attacks, and network isolation testing       | v2.1.4                                                 | 12    |
+| Active Directory Lab   | [`ad-pentest/`](ad-pentest/)     | Complete AD attack chain from recon to Domain Admin; Kerberos attacks, AD CS exploits, lateral movement, cloud and LLM attacks | v1.12 – Enterprise Edition (FLAT NETWORK – OPTIMIZED) | 11    |
+| VLAN Enterprise AD Lab | [`ad-pentest-vlan/`](ad-pentest-vlan/) | Multi-subnet enterprise topology with VLAN segmentation, routing, inter-VLAN attacks, and network isolation testing       | v2.1.5                                                 | 12    |
 
 ---
 
@@ -52,7 +52,7 @@ For full VLAN topology and subnets, see [`ad-pentest-vlan/README.md`](ad-pentest
 
 ## Lab Architecture (AD Pentest Lab)
 
-The **flat AD Pentest Lab** uses a shared `172.28.128.0/24` network with 12 hosts:
+The **flat AD Pentest Lab** uses a shared `172.28.128.0/24` network with 11 hosts:
 
 | Host            | IP             | OS                    | Lab Use                      |
 |-----------------|----------------|------------------------|------------------------------|
@@ -128,7 +128,7 @@ See [`ad-pentest-vlan/README.md`](ad-pentest-vlan/README.md) and `docs/attack-gu
 - **`docs/attack-guide.md`** – Complete attack reference (14+ sections).
 - **`docs/lab-credentials.md`** – All seeded credentials and service accounts.
 - **`docs/network-map.md`** – Network topology and host details.
-- **`Vagrantfile`** – Full provisioning (v1.11 – FLAT NETWORK – OPTIMIZED).
+- **`Vagrantfile`** – Full provisioning (v1.12 – FLAT NETWORK – OPTIMIZED).
 - **`scripts/lab_attack_automation.py`** – Optional automated attack chain.
 
 ### VLAN Enterprise Lab (`ad-pentest-vlan/`)
@@ -136,7 +136,7 @@ See [`ad-pentest-vlan/README.md`](ad-pentest-vlan/README.md) and `docs/attack-gu
 - **`README.md`** – Lab overview, VLAN topology, setup guide.
 - **`docs/attack-guide.md`** – VLAN-specific attack paths and scenarios.
 - **`docs/lab-credentials.md`** – Credentials for the VLAN environment.
-- **`Vagrantfile`** – Provisioning with VLAN configuration (v2.1.4).
+- **`Vagrantfile`** – Provisioning with VLAN configuration (v2.1.5).
 
 ---
 

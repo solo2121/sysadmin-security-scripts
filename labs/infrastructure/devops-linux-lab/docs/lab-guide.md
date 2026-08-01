@@ -1,6 +1,6 @@
 # DevOps / DevSecOps Lab — Practical Guide
 
-**Lab version:** 8.0.0  
+**Lab version:** 8.2.0  
 **Author:** Miguel A. Carlo
 
 ---
@@ -23,6 +23,7 @@
 14. [Day-2 Operations Tools](#14-day-2-operations-tools)
 15. [Lab Validation](#15-lab-validation)
 16. [Common Workflows](#16-common-workflows)
+17. [CI/CD Server](#17-cicd-server)
 
 ---
 
@@ -43,6 +44,7 @@
 | suse-lab | .23 | openSUSE Leap 15.6 practice node | 1024 MB | 1 |
 | node1 | .30 | Ansible managed node | 1024 MB | 1 |
 | node2 | .31 | Ansible managed node | 1024 MB | 1 |
+| cicd-server | .50 | Gitea + Jenkins + SonarQube + Vault + ZAP | 4096 MB | 2 |
 
 IPs are based on the libvirt network. The actual `MASTER_IP` is printed at `vagrant up` time.
 
@@ -63,6 +65,13 @@ IPs are based on the libvirt network. The actual `MASTER_IP` is printed at `vagr
 | Kind | v0.24.0 |
 | K3d | v5.7.5 |
 | Ingress NGINX | v1.11.3 |
+| Gitea | 1.24.3 |
+| Jenkins | 2.516.2-lts-jdk17 |
+| SonarQube | 25.7 |
+| HashiCorp Vault | 1.18.2 |
+| OWASP ZAP | 2.16.1 |
+| Gitleaks | 8.18.4 |
+| Trivy (CI/CD host) | 0.57.1 |
 
 ### Service Access
 
@@ -72,6 +81,11 @@ IPs are based on the libvirt network. The actual `MASTER_IP` is printed at `vagr
 | Argo CD | `https://MASTER_IP:30003` | `admin` / see `argocd-initial-admin-secret` |
 | Grafana | `https://MASTER_IP:<auto-port>` | `admin` / `admin` |
 | k3s API | `https://MASTER_IP:16443` | kubeconfig at `/vagrant/kubeconfig.yaml` |
+| Gitea | `http://localhost:3000` | Set on first visit |
+| Jenkins | `http://localhost:8080` | See section 17 for the initial admin password |
+| SonarQube | `http://localhost:9000` | `admin` / `admin` |
+| Vault | `http://localhost:8200` | token: `root` (dev mode) |
+| OWASP ZAP | `http://localhost:8090` | — |
 
 ---
 
@@ -1503,6 +1517,64 @@ vagrant destroy -f
 rm -f .cluster_ready .k3s_token .cluster_state.json \
       kubeconfig.yaml ansible_key.pub lab.env
 ```
+
+---
+
+## 17. CI/CD Server
+
+`cicd-server` hosts a self-contained DevSecOps pipeline: Gitea for source
+control, Jenkins for automation, SonarQube for static analysis, Vault for
+secrets, and OWASP ZAP for dynamic analysis, alongside Gitleaks and Trivy
+CLI tools.
+
+### First Boot
+
+```bash
+START_VMS=cicd-server vagrant up
+# or, as part of:
+LAB_PROFILE=full vagrant up
+```
+
+> Note: `devops-1`'s Ingress endpoint and Jenkins on `cicd-server` both
+> default to host port 8080. Don't run both VMs at once until this is
+> resolved, or edit `JENKINS_PORT` in the Vagrantfile.
+
+### Get the Jenkins Admin Password
+
+```bash
+vagrant ssh cicd-server
+docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+```
+
+### Run the Sample Pipeline
+
+The sample pipeline lives at `/opt/jenkins/pipelines/DevSecOps-Pipeline.groovy`
+and exercises: Gitea checkout → Gitleaks secret scan → Docker build → Trivy
+image scan → Harbor push.
+
+```bash
+vagrant ssh cicd-server
+
+# Inspect the sample app the pipeline builds
+cat /opt/sample-app/app.py
+
+# Run the scanning stages manually
+gitleaks detect -r /opt/sample-app -v
+docker build -t app:test /opt/sample-app
+trivy image app:test --exit-code 0 --severity HIGH,CRITICAL
+```
+
+### Push to Harbor from the CI/CD VM
+
+```bash
+vagrant ssh cicd-server
+harbor-push my-app 1.0
+```
+
+### Service URLs
+
+See [Service Access](#service-access) above for Gitea, Jenkins, SonarQube,
+Vault, and ZAP URLs and credentials.
 
 ---
 

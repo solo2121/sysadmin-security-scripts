@@ -20,10 +20,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Broken relative links in `docs/architecture/architecture.md`, `docs/workflows/WORKFLOWS.md`, `docs/guides/infrastructure/proxmox-host-setup.md`, and `labs/security/ad-pentest/README.md` left over from the docs reorganization.
+- Removed unresolved git merge-conflict markers (`<<<<<<<`/`=======`/`>>>>>>>`) that had been committed into `labs/security/ad-pentest/docs/attack-guide.md` and `docs/guides/security/domain-compromise-walkthrough.md`, along with the stale `exch01`/`sp01`/`pnpt-internal` content on the losing side of each conflict.
+- Removed leftover editorial placeholder text from `labs/security/ad-pentest-vlan/docs/attack-guide.md`.
+- Synced `labs/infrastructure/devops-linux-lab/README.md`, `docs/lab-guide.md`, `labs/security/ad-pentest/README.md` (+ `docs/attack-guide.md`, `docs/lab-credentials.md`), `labs/security/ad-pentest-vlan/README.md` (+ `docs/attack-guide.md`), `labs/security/README.md`, and the top-level `README.md` with the current state of all three Vagrantfiles.
 
 ### Planned
 - Additional AD CS attack scenarios.
 - Ansible role automation for the DevOps lab.
+
+---
+
+## [8.2.0] - 2026-07-31 — DevOps / DevSecOps Lab
+
+### Added
+- Integrated CI/CD server (`cicd-server`) running Gitea, Jenkins, SonarQube, HashiCorp Vault, and OWASP ZAP for a complete DevSecOps pipeline.
+- Gitleaks and Trivy CLI tools on `cicd-server` for automated secret and container image scanning.
+- Sample Jenkins pipeline (`DevSecOps-Pipeline.groovy`) and sample Flask app, wired to Gitea checkout, Gitleaks, Trivy, and a Harbor push.
+- Port forwarding for Gitea (3000), Jenkins (8080), Jenkins agent (50000), SonarQube (9000), Vault (8200), and ZAP (8090).
+
+### Known Issues
+- `devops-1`'s Ingress NGINX forward (guest `80`) and Jenkins on `cicd-server` both default to host port `8080`. Running both VMs together (e.g. `LAB_PROFILE=full`) fails with a Vagrant port-collision error. Workaround: don't start both at once, or change `JENKINS_PORT` in the Vagrantfile before `vagrant up`.
+
+---
+
+## [1.12] - 2026-07-31 — AD Pentest Lab
+
+### Fixed
+- Moved plugin validation inside the `Vagrant.configure` block to prevent false-positive failures.
+- Added error handling for a missing or unloadable `config.rb`.
+- Fixed `vagrant-hostmanager` alias syntax (aliases are now a proper array of strings).
+- `configure_windows_comm` now accepts `boot_timeout` and `winrm_timeout` parameters; DC01 keeps extended 7200s timeouts for AD promotion while other Windows VMs use the 3600s default.
+- Added CPU/memory validation with warnings for out-of-range values.
+- Fixed duplicate `/etc/hosts` entries on `kali` and `linux01`.
+- Added SSH key management for `linux01`, `metasploitable2`, and `juice-shop`.
+- Juice Shop's Docker container now runs with `--restart=always` and pulls the image explicitly before first run.
+- Polkit CVE-2021-3560 provisioning on `linux01` no longer aborts if the service restart fails.
+
+---
+
+## [2.1.5] - 2026-07-31 — AD Pentest VLAN Lab
+
+### Fixed
+- Added named WinRM timeout constants; `DC01` keeps extended timeouts (10800s boot, 7200s communication) for AD promotion, while other Windows VMs use 7200s / 3600s defaults.
+- `configure_windows_comm` now accepts optional `boot_timeout` / `winrm_timeout` parameters instead of hardcoding DC01-specific values inline.
+- Plugin installation now fails loudly if `vagrant plugin install` does not succeed, instead of continuing silently.
+- Resolved an undefined variable (`ca01_ip` → `vm_ip`) in the `CA01-ESC` DNS record that could cause DNS registration to silently no-op.
 
 ---
 

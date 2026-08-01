@@ -92,6 +92,7 @@ Focus areas:
 - Runtime security.
 - Policy enforcement.
 - Platform engineering workflows.
+- Integrated CI/CD pipelines (Gitea, Jenkins, SonarQube, Vault, OWASP ZAP).
 
 ---
 

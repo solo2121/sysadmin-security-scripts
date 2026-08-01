@@ -24,7 +24,7 @@ For blue-team detections mapped to these exact techniques, see
 
 ## The environment
 
-Fourteen hosts, one domain, `lab.local`:
+Eleven hosts, one domain, `lab.local`:
 
 | Host | IP | OS | Role |
 |------|----|----|------|
@@ -32,28 +32,20 @@ Fourteen hosts, one domain, `lab.local`:
 | metasploitable2 | 172.28.128.12 | Ubuntu 8.04 | Legacy vulnerable target |
 | juice-shop | 172.28.128.15 | Node.js | OWASP Juice Shop |
 | dc01 | 172.28.128.21 | Windows Server 2022 | Domain Controller |
-<<<<<<< HEAD
 | db01 | 172.28.128.23 | Windows Server 2022 | SQL Server *(simulated)* |
-| ca01-esc | 172.28.128.24 | Windows Server 2022 | AD CS — misconfigured |
-| win10 | 172.28.128.30 | Windows 10 | Domain workstation |
-| pnpt-internal | 172.28.128.50 | Ubuntu 22.04 | Internal server |
-| llm01 | 172.28.128.60 | Ubuntu 22.04 | LLM platform |
-| exch01 | 172.28.128.70 | Windows Server 2022 | Exchange *(simulated)* |
-| sp01 | 172.28.128.71 | Windows Server 2022 | SharePoint *(simulated)* |
-=======
-| db01 | 172.28.128.23 | Windows Server 2022 | SQL Server |
 | ca01-esc | 172.28.128.25 | Windows Server 2022 | AD CS — misconfigured |
 | win10 | 172.28.128.30 | Windows 10 | Domain workstation |
-| pnpt-internal | 172.28.128.50 | Ubuntu 22.04 | Internal server |
 | llm01 | 172.28.128.60 | Ubuntu 22.04 | LLM platform |
-| exch01 | 172.28.128.70 | Windows Server 2022 | Exchange |
-| sp01 | 172.28.128.71 | Windows Server 2022 | SharePoint |
->>>>>>> chore/repository-standardization
 | linux01 | 172.28.128.72 | Ubuntu 22.04 | Linux domain member |
 | print01 | 172.28.128.73 | Windows Server 2022 | Print Server |
 | cloud-pentest | 172.28.128.80 | Ubuntu 22.04 | LocalStack AWS simulation |
 
-> **Note:** `db01`, `exch01`, and `sp01` are simulated targets — domain-joined Windows Server 2022 hosts with product-like config files and weak settings for post-exploitation practice, not full SQL Server / Exchange / SharePoint installs.
+> **Note:** `db01` is a simulated target — a domain-joined Windows Server 2022
+> host with product-like config files and weak settings for post-exploitation
+> practice, not a full SQL Server installation.
+>
+> **Removed in v1.11:** `exch01` (Exchange), `sp01` (SharePoint), and
+> `pnpt-internal` were retired and are no longer deployed.
 
 **Starting position:** no domain credentials, only network access from kali.
 **Attack chain focus:** dc01, ca01-esc, and win10.

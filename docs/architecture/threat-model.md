@@ -22,7 +22,7 @@ Each lab below is modeled the same way:
 
 **Assets:** Domain Admin credentials on `dc01`; the `LAB-ESC-CA` certificate authority on `ca01-esc`; SQL data on `db01`; the LLM API keys/data on `llm01`; the simulated AWS credentials/Terraform state on `cloud-pentest`.
 
-**Trust boundaries:** All 14 hosts share a single flat `172.28.128.0/24` network — there is no internal segmentation in this lab by design (that's what Lab 2 adds). The only boundary that exists is between this internal network and the outside world: it's NAT-isolated from the real internet, and isolated from the other two labs (each lab is its own libvirt network with no bridging between them).
+**Trust boundaries:** All 11 hosts share a single flat `172.28.128.0/24` network — there is no internal segmentation in this lab by design (that's what Lab 2 adds). The only boundary that exists is between this internal network and the outside world: it's NAT-isolated from the real internet, and isolated from the other two labs (each lab is its own libvirt network with no bridging between them).
 
 **Assumed attacker:** Starts as `kali`, an already-present box on the same flat network with no credentials — i.e., this models an attacker who has already gained a foothold on the internal network (e.g., a compromised workstation or a dropped implant), not an external attacker breaching the perimeter. Perimeter breach is out of scope for this lab.
 
@@ -32,7 +32,6 @@ Each lab below is modeled the same way:
 - Resource-Based Constrained Delegation, Shadow Credentials
 - AD CS abuse: ESC1, ESC4, ESC7, ESC8, ESC9 against `LAB-ESC-CA`
 - gMSA password readable by Domain Users; ADIDNS wildcard record writable by any authenticated user
-- WSUS-over-HTTP mock service on `pnpt-internal` (WSUSpect-style)
 - LLM01–LLM15 vulnerable endpoints on `llm01`: prompt injection, RAG poisoning, embedding inversion
 - Exposed Terraform state (`cloud-pentest`) simulating leaked AWS credentials via LocalStack
 - CVE-2021-3560 (Polkit) local privilege escalation on `linux01`
@@ -44,7 +43,7 @@ Each lab below is modeled the same way:
 
 ## Lab 2 — AD Pentest VLAN / Enterprise Segmentation Lab
 
-**Assets:** Same as Lab 1 — this lab reuses the same 14-host attack surface. The asset that's *added* is the segmentation itself: proving lateral movement across VLAN boundaries, not just within one flat network.
+**Assets:** Same as Lab 1 — this lab reimplements an equivalent attack surface across its own 12-host VLAN-segmented inventory (which also adds an `opnsense` router/firewall VM not present in Lab 1). The asset that's *added* is the segmentation itself: proving lateral movement across VLAN boundaries, not just within one flat network.
 
 **Trust boundaries:** Five isolated libvirt networks (VLAN 10 – management/AD, VLAN 20 – workstations, VLAN 30 – servers, VLAN 40 – DMZ, VLAN 99 – attacker), each `libvirt__forward_mode: "none"` — meaning libvirt itself does not route between them. `kali` is deliberately given reachability into all four target VLANs for recon/exercise purposes; this is a **lab convenience, not a modeled router or firewall**. There is no real Layer-3 device in this lab standing between VLANs the way there would be in a production network — see the note in each lab's own README.
 
@@ -60,9 +59,9 @@ Each lab below is modeled the same way:
 
 ## Lab 3 — DevOps / DevSecOps Lab
 
-**Assets:** The k3s cluster's ability to run arbitrary workloads (the thing every scenario below tries to abuse); the Harbor container registry and its image supply chain; secrets mounted into cluster workloads; the integrity of Kyverno admission policies and Falco runtime alerting (i.e., can a workload evade or disable the controls meant to catch it).
+**Assets:** The k3s cluster's ability to run arbitrary workloads (the thing every scenario below tries to abuse); the Harbor container registry and its image supply chain; the CI/CD pipeline itself (Gitea source control, Jenkins automation, SonarQube/Gitleaks/Trivy scanning stages) on the `cicd-server` VM; secrets mounted into cluster workloads or held in Vault; the integrity of Kyverno admission policies and Falco runtime alerting (i.e., can a workload evade or disable the controls meant to catch it).
 
-**Trust boundaries:** All 11 hosts sit on a single network (`192.168.121.0/24` by default, auto-detected from the host's libvirt configuration — see [`devops-linux-lab/README.md`](../../labs/infrastructure/devops-linux-lab/README.md) for the profile-gated deployment options). The meaningful trust boundary in this lab isn't network segmentation — it's **inside vs. outside the k3s cluster**, and **inside vs. outside an individual container**. Harbor, ArgoCD, Prometheus, Grafana, Loki, Falco, and Kyverno all run as workloads on the cluster, not as separate VMs.
+**Trust boundaries:** All 12 hosts sit on a single network (`192.168.121.0/24` by default, auto-detected from the host's libvirt configuration — see [`devops-linux-lab/README.md`](../../labs/infrastructure/devops-linux-lab/README.md) for the profile-gated deployment options). The meaningful trust boundary in this lab isn't network segmentation — it's **inside vs. outside the k3s cluster**, and **inside vs. outside an individual container**. Harbor, ArgoCD, Prometheus, Grafana, Loki, Falco, and Kyverno all run as workloads on the cluster, not as separate VMs. The CI/CD server (`cicd-server`) is the one exception — Gitea, Jenkins, SonarQube, Vault, and ZAP run as Docker containers on a standalone VM, not inside the k3s cluster.
 
 **Assumed attacker:** Two distinct profiles, deliberately different from the AD labs:
 1. A malicious or compromised **supply-chain artifact** — a backdoored container image that reaches the registry or cluster.
