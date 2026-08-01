@@ -5,7 +5,7 @@
 rich>=13.0.0
 pyyaml>=6.0
 aiofiles>=23.0.0
-requests>=2.31.0
+requests>=2.34.2
 
 # lab_attack_automation.py dependencies
 # Used by: labs/security/ad-pentest/scripts/lab_attack_automation.py
