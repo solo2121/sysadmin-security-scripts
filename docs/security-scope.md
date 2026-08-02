@@ -226,8 +226,10 @@ If you're unsure about authorized use, **ask first**:
 
 ## Acknowledgment
 
-By using this repository, you acknowledge:
-- You understand the security implications
-- You will use this content ethically and legally
-- You take responsibility for your actions
-- You will report security issues responsibly
+By using this repository, you acknowledge that:
+
+- You understand the security implications of the included material.
+- You will use this repository only in authorized environments.
+- You accept responsibility for your actions.
+- You will comply with applicable laws and organizational policies.
+- You will report any security issues responsibly.
