@@ -236,6 +236,40 @@ jobs:
           exit 0
 
   # ---------------------------------------------------------------------------
+  # Job 4b: Modern Python tooling — ruff/black/mypy, informational only
+  #
+  # flake8 (Job 3) remains the tool that's actually tuned and relied on.
+  # ruff/black/mypy are offered as opt-in developer tooling (see `make
+  # format` / `make typecheck`, config in pyproject.toml) and reported here
+  # for visibility, but — like bandit — never block the pipeline.
+  # ---------------------------------------------------------------------------
+  modern-python-tooling:
+    name: Ruff / Black / Mypy (informational — never blocks)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install tools
+        run: pip install ruff black mypy --quiet
+
+      - name: ruff check (informational)
+        run: ruff check . || true
+
+      - name: black --check (informational)
+        run: black --check . || true
+
+      - name: mypy on tools/lib (informational — the only module held to a typed standard so far)
+        run: mypy tools/lib || true
+
+  # ---------------------------------------------------------------------------
   # Job 5: Automated test suites — pytest (Python) and bats (Bash)
   # ---------------------------------------------------------------------------
   run-tests:

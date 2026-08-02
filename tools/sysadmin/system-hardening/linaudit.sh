@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -Eeuo pipefail
 #####################################################################
 # Script Name: Ultimate Linux Audit Tool
 # Author     : Miguel A. Carlo
@@ -65,7 +66,7 @@ audit_users() {
     # Detect high-risk users
     log "High-risk users (UID 0 or no password):"
     awk -F: '($3==0) {print $1 " (UID=0)"}' /etc/passwd >> "$REPORT"
-    awk -F: '($2=="!") {print $1 " (locked)" }' /etc/shadow 2>/dev/null >> "$REPORT"
+    awk -F: '($2=="!") {print $1 " (locked)" }' /etc/shadow 2>/dev/null >> "$REPORT" || true
     echo -e "${GREEN}User info collected.${NC}"
 }
 
@@ -80,7 +81,7 @@ audit_network_ports() {
     if command -v nmap >/dev/null; then
         log ""
         log "Nmap localhost scan (top 1000 ports):"
-        nmap -F 127.0.0.1 >> "$REPORT"
+        nmap -F 127.0.0.1 >> "$REPORT" || log "nmap scan failed or was interrupted"
     fi
     echo -e "${GREEN}Network ports info collected.${NC}"
 }
@@ -88,7 +89,7 @@ audit_network_ports() {
 audit_services() {
     echo -e "${BLUE}Checking running services...${NC}"
     log ">>> RUNNING SERVICES"
-    systemctl list-units --type=service --state=running >> "$REPORT"
+    systemctl list-units --type=service --state=running >> "$REPORT" || log "systemctl unavailable (no systemd?)"
     log ""
     echo -e "${GREEN}Services info collected.${NC}"
 }
@@ -104,7 +105,7 @@ audit_disk() {
 audit_processes() {
     echo -e "${BLUE}Checking top processes and suspicious processes...${NC}"
     log ">>> TOP PROCESSES"
-    ps aux --sort=-%mem | head -n 20 >> "$REPORT"
+    { ps aux --sort=-%mem | head -n 20 >> "$REPORT"; } || true
     log ""
     log "Suspicious processes (no parent or rootless high privileges):"
     ps -eo pid,ppid,user,cmd,%mem,%cpu --sort=-%mem | awk '$2==0 || $3=="root"{print}' >> "$REPORT"
@@ -115,8 +116,8 @@ audit_processes() {
 audit_suid_files() {
     echo -e "${BLUE}Searching for SUID/SGID files...${NC}"
     log ">>> SUID / SGID FILES"
-    find / \( -path /proc -o -path /sys -o -path /dev -o -path /run \) -prune -o -perm /4000 -type f -print 2>/dev/null >> "$REPORT"
-    find / \( -path /proc -o -path /sys -o -path /dev -o -path /run \) -prune -o -perm /2000 -type f -print 2>/dev/null >> "$REPORT"
+    find / \( -path /proc -o -path /sys -o -path /dev -o -path /run \) -prune -o -perm /4000 -type f -print 2>/dev/null >> "$REPORT" || true
+    find / \( -path /proc -o -path /sys -o -path /dev -o -path /run \) -prune -o -perm /2000 -type f -print 2>/dev/null >> "$REPORT" || true
     log ""
     echo -e "${GREEN}SUID/SGID files audit completed.${NC}"
 }
@@ -125,9 +126,9 @@ audit_firewall() {
     echo -e "${BLUE}Checking firewall status...${NC}"
     log ">>> FIREWALL STATUS"
     if command -v ufw >/dev/null; then
-        ufw status verbose >> "$REPORT"
+        ufw status verbose >> "$REPORT" || true
     elif command -v firewall-cmd >/dev/null; then
-        firewall-cmd --state >> "$REPORT"
+        firewall-cmd --state >> "$REPORT" || true
     else
         log "No recognized firewall tool found."
     fi
@@ -140,7 +141,7 @@ audit_ssh_security() {
     log ">>> SSH CONFIGURATION"
     SSH_CONFIG="/etc/ssh/sshd_config"
     if [ -f "$SSH_CONFIG" ]; then
-        grep -E "PermitRootLogin|PasswordAuthentication|PubkeyAuthentication" "$SSH_CONFIG" >> "$REPORT"
+        grep -E "PermitRootLogin|PasswordAuthentication|PubkeyAuthentication" "$SSH_CONFIG" >> "$REPORT" || log "None of the tracked directives are set explicitly"
     else
         log "SSH configuration file not found."
     fi
@@ -152,9 +153,9 @@ audit_password_policy() {
     echo -e "${BLUE}Checking password policies...${NC}"
     log ">>> PASSWORD POLICY"
     if command -v chage >/dev/null; then
-        awk -F: '{print $1}' /etc/shadow | while read -r user; do
-            chage -l "$user" >> "$REPORT" 2>/dev/null
-        done
+        { awk -F: '{print $1}' /etc/shadow 2>/dev/null | while read -r user; do
+            chage -l "$user" >> "$REPORT" 2>/dev/null || true
+        done; } || true
     fi
     log ""
     echo -e "${GREEN}Password policy audit completed.${NC}"
@@ -165,7 +166,7 @@ audit_cron_jobs() {
     log ">>> CRON JOBS"
     cut -f1 -d: /etc/passwd | while read -r user; do
         log "User: $user"
-        crontab -l -u "$user" 2>/dev/null >> "$REPORT"
+        crontab -l -u "$user" >> "$REPORT" 2>/dev/null || true
         log ""
     done
     echo -e "${GREEN}Cron jobs collected.${NC}"

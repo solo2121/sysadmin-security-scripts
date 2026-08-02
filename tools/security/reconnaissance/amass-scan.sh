@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Amass Automation Script - Comprehensive domain enumeration tool
 
 ###############################################################################

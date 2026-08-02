@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from typing import TextIO
 
 _CONFIGURED_LOGGERS: set[str] = set()
 
@@ -57,7 +58,7 @@ def get_logger(
     *,
     verbose: bool = False,
     quiet: bool = False,
-    stream: object | None = None,
+    stream: TextIO | None = None,
 ) -> logging.Logger:
     """
     Return a configured logger for a CLI tool.

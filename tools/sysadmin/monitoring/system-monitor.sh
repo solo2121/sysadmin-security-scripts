@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -Eeuo pipefail
 # ============================================================
 # Linux System Monitoring Script
 # Author: Miguel A. Carlo
@@ -67,7 +68,7 @@ monitor_ports() {
     echo -e "\n${GREEN}[3] Using lsof command:${NC}"
     if command_exists lsof; then
         lsof -i -P -n 2>/dev/null | grep LISTEN | awk 'BEGIN {printf "%-10s %-10s %-15s %-10s %-15s\n", "Command", "PID", "User", "Protocol", "Ports"}
-        {split($9, a, ":"); printf "%-10s %-10s %-15s %-10s %-15s\n", $1, $2, $3, $8, a[2]}'
+        {split($9, a, ":"); printf "%-10s %-10s %-15s %-10s %-15s\n", $1, $2, $3, $8, a[2]}' || echo -e "${YELLOW}No listening sockets found via lsof.${NC}"
     else
         echo -e "${YELLOW}lsof not installed, skipping.${NC}"
     fi
@@ -78,12 +79,12 @@ monitor_processes() {
     header "PROCESS MONITORING"
 
     echo -e "${GREEN}[1] Top 10 CPU consuming processes:${NC}"
-    ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%cpu | head -n 11 | awk 'BEGIN {printf "%-10s %-10s %-50s %-8s %-8s\n", "PID", "PPID", "COMMAND", "%MEM", "%CPU"}
-    NR>1 {printf "%-10s %-10s %-50s %-8s %-8s\n", $1, $2, $3, $4, $5}'
+    { ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%cpu | head -n 11 | awk 'BEGIN {printf "%-10s %-10s %-50s %-8s %-8s\n", "PID", "PPID", "COMMAND", "%MEM", "%CPU"}
+    NR>1 {printf "%-10s %-10s %-50s %-8s %-8s\n", $1, $2, $3, $4, $5}'; } || true
 
     echo -e "\n${GREEN}[2] Top 10 memory consuming processes:${NC}"
-    ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 11 | awk 'BEGIN {printf "%-10s %-10s %-50s %-8s %-8s\n", "PID", "PPID", "COMMAND", "%MEM", "%CPU"}
-    NR>1 {printf "%-10s %-10s %-50s %-8s %-8s\n", $1, $2, $3, $4, $5}'
+    { ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 11 | awk 'BEGIN {printf "%-10s %-10s %-50s %-8s %-8s\n", "PID", "PPID", "COMMAND", "%MEM", "%CPU"}
+    NR>1 {printf "%-10s %-10s %-50s %-8s %-8s\n", $1, $2, $3, $4, $5}'; } || true
 
     echo -e "\n${GREEN}[3] Process count by user:${NC}"
     ps -eo user=|sort|uniq -c | sort -rn | awk '{printf "%-15s %-10s\n", $2, $1}'
@@ -94,7 +95,7 @@ monitor_network() {
     header "NETWORK CONNECTIONS"
 
     echo -e "${GREEN}[1] Active connections summary:${NC}"
-    ss -s | head -n 5
+    { ss -s | head -n 5; } || true
 
     echo -e "\n${GREEN}[2] TCP connections:${NC}"
     ss -t -a | awk 'BEGIN {printf "%-10s %-25s %-25s %-15s\n", "State", "Local Address", "Remote Address", "Process"}
@@ -105,7 +106,7 @@ monitor_network() {
     NR>1 {printf "%-25s %-25s %-15s\n", $4, $5, $6}'
 
     echo -e "\n${GREEN}[4] Interface statistics:${NC}"
-    ip -s link | grep -v "lo:" | awk '/^[0-9]+:/ {print $2; getline; print $0; getline; print $0; print ""}'
+    ip -s link | grep -v "lo:" | awk '/^[0-9]+:/ {print $2; getline; print $0; getline; print $0; print ""}' || echo -e "${YELLOW}No non-loopback interfaces found.${NC}"
 }
 
 # Monitor system resources

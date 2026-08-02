@@ -8,3 +8,6 @@ flake8
 bandit
 pre-commit
 detect-secrets
+ruff
+black
+mypy

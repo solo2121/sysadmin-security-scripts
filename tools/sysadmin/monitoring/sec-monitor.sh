@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -Eeuo pipefail
 # ============================================================
 # Security Monitoring Script
 # Author: Miguel A. Carlo
@@ -40,13 +41,13 @@ log_message() {
 check_network_connections() {
     log_message "INFO" "Checking network connections..."
 
-    netstat -tuln | grep LISTEN | grep -vE ":(22|80|443|53|631|5353)" | while read -r line; do
+    { netstat -tuln | grep LISTEN | grep -vE ":(22|80|443|53|631|5353)" | while read -r line; do
         log_message "WARNING" "Unusual listening port: $line"
-    done
+    done } || true
 
-    netstat -tupln | grep ESTABLISHED | grep -vE ":(22|80|443|53)" | while read -r line; do
+    { netstat -tupln | grep ESTABLISHED | grep -vE ":(22|80|443|53)" | while read -r line; do
         log_message "ALERT" "Suspicious outbound connection: $line"
-    done
+    done } || true
 }
 
 # User activity monitoring
@@ -54,16 +55,16 @@ check_user_activity() {
     log_message "INFO" "Checking user activity..."
 
     local failed_threshold=5
-    grep "Failed password" /var/log/auth.log 2>/dev/null | awk '{print $1,$2,$3,$9}' | sort | uniq -c | \
+    { grep "Failed password" /var/log/auth.log 2>/dev/null | awk '{print $1,$2,$3,$9}' | sort | uniq -c | \
     awk -v threshold=$failed_threshold '{if ($1 > threshold) print $0}' | while read -r line; do
         log_message "ALERT" "Brute force attempt: $line"
-    done
+    done } || true
 
     if [ -f /tmp/last_users.txt ]; then
-        comm -23 <(cut -d: -f1 /etc/passwd | sort) <(sort /tmp/last_users.txt) | grep -vE "backup|sync|systemd-" | \
+        { comm -23 <(cut -d: -f1 /etc/passwd | sort) <(sort /tmp/last_users.txt) | grep -vE "backup|sync|systemd-" | \
         while read -r user; do
             log_message "ALERT" "New user detected: $user"
-        done
+        done } || true
     fi
     cut -d: -f1 /etc/passwd | sort > /tmp/last_users.txt
 }
@@ -72,22 +73,22 @@ check_user_activity() {
 check_file_integrity() {
     log_message "INFO" "Checking file system integrity..."
 
-    find /etc /bin /sbin -type f -mtime -1 2>/dev/null | grep -vE "/etc/ssl/certs|/var/lib/dpkg" | \
+    { find /etc /bin /sbin -type f -mtime -1 2>/dev/null | grep -vE "/etc/ssl/certs|/var/lib/dpkg" | \
     while read -r file; do
         log_message "WARNING" "Recently modified system file: $file"
-    done
+    done } || true
 
-    find /tmp /var/tmp -name ".*" -type f 2>/dev/null | grep -vE "$WHITELIST_TEMP_FILES" | \
+    { find /tmp /var/tmp -name ".*" -type f 2>/dev/null | grep -vE "$WHITELIST_TEMP_FILES" | \
     while read -r file; do
         log_message "WARNING" "Hidden temp file: $file"
-    done
+    done } || true
 }
 
 # Advanced process checking
 check_processes() {
     log_message "INFO" "Scanning running processes..."
 
-    pgrep -af "$SUSPICIOUS_PATTERNS" | grep -vE "grep|$WHITELIST_PROCESSES|\[.*\]" | while read -r line; do
+    { pgrep -af "$SUSPICIOUS_PATTERNS" | grep -vE "grep|$WHITELIST_PROCESSES|\[.*\]" | while read -r line; do
         pid=$(echo "$line" | awk '{print $1}')
         cmd=${line#* }
 
@@ -98,7 +99,7 @@ check_processes() {
         fi
 
         if [ -f "/proc/$pid/exe" ]; then
-            origin=$(readlink -f "/proc/$pid/exe")
+            origin=$(readlink -f "/proc/$pid/exe" 2>/dev/null) || origin="unknown (process may have exited)"
 
             if [[ "$origin" == /usr/* || "$origin" == /lib* || "$origin" =~ $FLATPAK_PATHS ]]; then
                 log_message "DEBUG" "Verified system binary: $(basename "$origin")"
@@ -109,22 +110,22 @@ check_processes() {
         else
             log_message "ALERT" "Hidden process: $cmd"
         fi
-    done
+    done } || true
 }
 
 # System log monitoring
 check_system_logs() {
     log_message "INFO" "Checking system logs..."
 
-    dmesg | grep -i "error\|warning\|fail" | grep -vE "ACPI Error|usb usb.*port.*disabled" | \
+    { dmesg | grep -i "error\|warning\|fail" | grep -vE "ACPI Error|usb usb.*port.*disabled" | \
     while read -r line; do
         log_message "WARNING" "Kernel issue: $line"
-    done
+    done } || true
 
-    grep -i "authentication failure\|invalid user\|connection closed" /var/log/auth.log 2>/dev/null | \
+    { grep -i "authentication failure\|invalid user\|connection closed" /var/log/auth.log 2>/dev/null | \
     while read -r line; do
         log_message "INFO" "Auth event: $line"
-    done
+    done } || true
 }
 
 # Notification system
@@ -134,7 +135,7 @@ send_alert_email() {
         alert_count=$(grep -c "\[ALERT\]" "$LOG_FILE")
         log_message "INFO" "Sending alert with $alert_count issues"
         echo -e "Security Alerts:\n\n$(grep -A 1 "\[ALERT\]" "$LOG_FILE" | tail -n 20)" | \
-        mail -s "Security Alert: $(hostname)" "$ALERT_EMAIL"
+        mail -s "Security Alert: $(hostname)" "$ALERT_EMAIL" || log_message "WARNING" "mail command unavailable — alert not emailed"
     fi
 }
 

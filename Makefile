@@ -8,11 +8,13 @@
 # Requires: pip install -r requirements-dev.txt
 # =============================================================================
 
-.PHONY: help lint test validate validate-repo security docs coverage prereq
+.PHONY: help lint test validate validate-repo security docs coverage prereq format typecheck
 
 help:
 	@echo "Available targets:"
 	@echo "  make lint          - shellcheck (errors) + flake8 (informational)"
+	@echo "  make format        - ruff check + black --check (informational, opt-in)"
+	@echo "  make typecheck     - mypy (informational, opt-in)"
 	@echo "  make test          - run pytest and bats unit test suites"
 	@echo "  make coverage      - run pytest with coverage report"
 	@echo "  make validate      - vagrant validate on all three lab Vagrantfiles"
@@ -30,6 +32,16 @@ lint:
 	@flake8 --max-line-length=120 \
 		--extend-ignore=E501,W503,E302,E303,W291,W293,E711,E712,E128,W292,F401,E722,F811,E305 \
 		--exclude=.git,__pycache__ $$(find . -name "*.py" -not -path "./.git/*") || true
+
+format:
+	@echo "==> ruff check (informational)"
+	@ruff check . || true
+	@echo "==> black --check (informational)"
+	@black --check . || true
+
+typecheck:
+	@echo "==> mypy (informational — opt-in, not yet enforced repo-wide)"
+	@mypy tools/lib || true
 
 test:
 	@echo "==> pytest"

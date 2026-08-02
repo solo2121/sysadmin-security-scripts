@@ -1,0 +1,62 @@
+# =============================================================================
+# pyproject.toml — Security Engineering Lab
+# =============================================================================
+# Centralized configuration for modern Python tooling (ruff, black, mypy).
+#
+# This repo's CI/pre-commit already enforce flake8 (informational) and
+# bandit (informational) — see .pre-commit-config.yaml and
+# .github/workflows/ci.yml. ruff/black/mypy are provided here as
+# *additional, opt-in* developer tooling (`make format`, `make typecheck`)
+# and do not replace or block on top of the existing checks.
+#
+# Philosophy mirrors the rest of the repo: real errors matter, style
+# preferences don't, and offensive-security tooling intentionally uses
+# patterns (subprocess calls, broad excepts, dynamic imports) that strict
+# linting would otherwise flag. Configs below are deliberately lenient.
+# =============================================================================
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = [
+    ".git",
+    "__pycache__",
+    "assets",
+]
+
+[tool.ruff.lint]
+# Keep this aligned with the flake8 --extend-ignore list in
+# .pre-commit-config.yaml / .github/workflows/ci.yml so ruff and flake8
+# don't disagree about what's "real" vs. stylistic.
+select = ["E", "F", "W"]
+ignore = [
+    "E501", # line too long — handled by formatter, not a hard rule here
+    "E711", # comparison to None — some tooling intentionally uses ==
+    "E712", # comparison to True/False — same as above
+    "E722", # bare except — intentional in some security/monitoring scripts
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F401", "F811"]
+
+[tool.black]
+line-length = 120
+target-version = ["py311"]
+extend-exclude = "assets|docs"
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+# Start lenient (opt-in, non-blocking) — tighten incrementally per-module
+# via `[[tool.mypy.overrides]]` rather than repo-wide strict mode, since
+# much of tools/security and tools/sysadmin predates type hints.
+disallow_untyped_defs = false
+warn_unused_ignores = true
+warn_redundant_casts = true
+exclude = "^(assets/|docs/)"
+
+# tools/lib is the shared, well-tested library layer — hold it to a
+# higher bar since everything else imports it.
+[[tool.mypy.overrides]]
+module = "tools.lib.*"
+disallow_untyped_defs = true
