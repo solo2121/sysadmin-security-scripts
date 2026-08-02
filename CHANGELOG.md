@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `scripts/README.md` — index for `check-prerequisites.sh` and `validate_lab.py`, matching the README convention already used by `assets/`, `docs/`, `labs/`, `tests/`, and `tools/`. Linked from the root `README.md` documentation hub table.
+- `## Lab Documentation` section in each lab's `README.md` (`labs/infrastructure/devops-linux-lab/`, `labs/security/ad-pentest/`, `labs/security/ad-pentest-vlan/`), linking to every file under that lab's own `docs/`. Previously `devops-linux-lab/docs/*.md` (6 files) and `ad-pentest/docs/attack-guide.md` + `docs/lab-credentials.md` were not linked from their lab README at all, and `ad-pentest-vlan/docs/*.md` only appeared inside an ASCII directory tree rather than as clickable links.
+- `quickstart-examples.md` entry in `docs/setup/README.md` — the file was already linked from `docs/README.md` and `docs/architecture/architecture.md`, but missing from its own section's index.
 - **CI:** Added caching for apt packages and Vagrant plugins to the `validate-vagrantfiles` job, significantly reducing its runtime.
 - `tests/python/` — pytest unit tests for Python tooling logic (argument parsing, data structures).
 - `tests/bash/` — bats unit tests for Bash script helper functions and configuration tables.

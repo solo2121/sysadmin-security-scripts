@@ -409,6 +409,21 @@ vagrant destroy -f
 
 ---
 
+## Lab Documentation
+
+In-depth docs for this lab live under [`docs/`](docs/):
+
+| Doc | What it covers |
+|---|---|
+| [`docs/lab-guide.md`](docs/lab-guide.md) | Practical, task-by-task guide to working the lab |
+| [`docs/architecture.md`](docs/architecture.md) | Lab architecture and VM/service topology |
+| [`docs/k8s-setup.md`](docs/k8s-setup.md) | K3s cluster provisioning details |
+| [`docs/devops-workflow.md`](docs/devops-workflow.md) | Terraform → Ansible → Kubernetes → GitOps pipeline |
+| [`docs/linux-labs.md`](docs/linux-labs.md) | Linux administration practice exercises |
+| [`docs/security-hardening.md`](docs/security-hardening.md) | Kubernetes RBAC and system hardening steps |
+
+---
+
 ## Related Labs
 
 - [`../../../labs/security/ad-pentest/`](../../../labs/security/ad-pentest/) — Active Directory pentest lab.
