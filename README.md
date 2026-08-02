@@ -233,6 +233,7 @@ sysadmin-security-lab/
 | [Installation Guide](./docs/setup/installation.md) | Host setup |
 | [Troubleshooting](./docs/setup/troubleshooting.md) | Common issues |
 | [Minimal Resource Deployment](./docs/guides/optimization/minimal-resource-deployment.md) | Reduced-resource deployment |
+| [Scripts](./scripts/) | Repo-wide host readiness and validation helpers |
 
 ---
 
