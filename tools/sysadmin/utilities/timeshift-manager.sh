@@ -119,9 +119,9 @@ delete_snapshot() {
     for i in "${!snapshot_array[@]}"; do echo -e "  ${WHITE}$((i+1)))${NC} ${snapshot_array[i]}"; done
     echo -e "  ${WHITE}0)${NC} Cancel"
     while true; do
-        read -rp "Select snapshot to delete [0-$((counter-1))]: " choice
+        read -rp "Select snapshot to delete [0-$((${#snapshot_array[@]}-1))]: " choice
         [[ "$choice" == "0" ]] && print_status "Cancelled" && return
-        if [[ "$choice" =~ ^[0-9]+$ && $choice -ge 1 && $choice -lt $counter ]]; then
+        if [[ "$choice" =~ ^[0-9]+$ && $choice -ge 1 && $choice -lt ${#snapshot_array[@]} ]]; then
             break
         else
             print_error "Invalid choice"
@@ -150,9 +150,9 @@ restore_snapshot() {
     for i in "${!snapshot_array[@]}"; do echo -e "  ${WHITE}$((i+1)))${NC} ${snapshot_array[i]}"; done
     echo -e "  ${WHITE}0)${NC} Cancel"
     while true; do
-        read -rp "Select snapshot to restore [0-$((counter-1))]: " choice
+        read -rp "Select snapshot to restore [0-$((${#snapshot_array[@]}-1))]: " choice
         [[ "$choice" == "0" ]] && print_status "Cancelled" && return
-        if [[ "$choice" =~ ^[0-9]+$ && $choice -ge 1 && $choice -lt $counter ]]; then
+        if [[ "$choice" =~ ^[0-9]+$ && $choice -ge 1 && $choice -lt ${#snapshot_array[@]} ]]; then
             break
         else
             print_error "Invalid choice"

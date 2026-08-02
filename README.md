@@ -178,8 +178,7 @@ sysadmin-security-lab/
 ├── docs/
 │   ├── architecture/
 │   ├── guides/
-│   ├── workflows/
-│   └── archive/
+│   └── workflows/
 ├── labs/
 │   ├── infrastructure/
 │   │   └── devops-linux-lab/

@@ -18,7 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.pre-commit-config.yaml` — shellcheck, flake8, detect-secrets, and markdown-link-check hooks for local commit-time validation. Unlike the CI job, the local `markdown-link-check` hook blocks the commit so broken internal links are caught before they're pushed.
 - `.secrets.baseline` — audited baseline of intentional lab credentials (AD pentest creds, Vagrantfile test passwords, LocalStack fake AWS key) so `detect-secrets` only flags genuinely new findings.
 
+### Changed
+- `assets/README.md` now documents the expected purpose of each asset category (diagrams, screenshots, icons, banners, logos) so contributors know where new asset types belong before adding a subfolder.
+
 ### Fixed
+- Removed the "Reference archive" section from `docs/README.md` and the `docs/archive/` entry from the repository structure tree in the root `README.md`; both pointed at `docs/archive/`, which was deleted in a prior commit but never unlinked from the index.
+- Fixed an undefined `counter` variable in `tools/sysadmin/utilities/timeshift-manager.sh` (`delete_snapshot`/`restore_snapshot`) that caused the script to abort under `set -u` when selecting a snapshot to delete or restore; now derived from `${#snapshot_array[@]}`.
 - Broken relative links in `docs/architecture/architecture.md`, `docs/workflows/WORKFLOWS.md`, `docs/guides/infrastructure/proxmox-host-setup.md`, and `labs/security/ad-pentest/README.md` left over from the docs reorganization.
 - Removed unresolved git merge-conflict markers (`<<<<<<<`/`=======`/`>>>>>>>`) that had been committed into `labs/security/ad-pentest/docs/attack-guide.md` and `docs/guides/security/domain-compromise-walkthrough.md`, along with the stale `exch01`/`sp01`/`pnpt-internal` content on the losing side of each conflict.
 - Removed leftover editorial placeholder text from `labs/security/ad-pentest-vlan/docs/attack-guide.md`.

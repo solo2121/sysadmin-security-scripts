@@ -53,18 +53,6 @@ you're not sure where to look.
 | [`guides/security/ad-mitre-log-source-playbook.md`](guides/security/ad-mitre-log-source-playbook.md) | Mapping AD log sources to MITRE ATT&CK |
 | [`guides/security/llm-security-compliance-lab.md`](guides/security/llm-security-compliance-lab.md) | LLM platform vulnerability/compliance testing |
 
-## Reference archive
-
-Older reference material, kept for continuity but not actively maintained
-against the current lab structure:
-
-| Doc | What it covers |
-|---|---|
-| [`archive/reference/complete-git-tutorial-linux-users.md`](archive/reference/complete-git-tutorial-linux-users.md) | Git tutorial for Linux users |
-| [`archive/reference/complete-pacstall-tutorial-aur-ubuntu.md`](archive/reference/complete-pacstall-tutorial-aur-ubuntu.md) | Pacstall/AUR-on-Ubuntu tutorial |
-| [`archive/reference/timeshift-cli-guide-external-drive-backups.md`](archive/reference/timeshift-cli-guide-external-drive-backups.md) | Timeshift CLI backup guide |
-| [`archive/reference/apparmor.md`](archive/reference/apparmor.md) | AppArmor reference notes |
-
 ## Project
 
 | Doc | What it covers |
