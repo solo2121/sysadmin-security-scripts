@@ -44,7 +44,7 @@ This lab contains intentional vulnerabilities for educational and authorized res
 
 Please do not report the following as security issues:
 
-- Weak credentials in `LAB_CREDENTIALS.md`.
+- Weak credentials in [`lab-credentials.md`](labs/security/ad-pentest/docs/lab-credentials.md).
 - AD CS misconfigurations such as ESC1–ESC9.
 - Intentional ACL abuse paths.
 - LLM endpoints without authentication.

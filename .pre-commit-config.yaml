@@ -55,7 +55,6 @@ repos:
       - id: detect-secrets
         name: detect-secrets (block accidental credential commits)
         args: ["--baseline", ".secrets.baseline"]
-        exclude: ^docs/archive/
 
   - repo: https://github.com/tcort/markdown-link-check
     rev: v3.13.6
