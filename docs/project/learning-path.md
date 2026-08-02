@@ -1,6 +1,6 @@
 # Learning Path
 
-Start here if you're new to **sysadmin-security-lab**. This page tells you
+Start here if you're new to **security-engineering-lab**. This page tells you
 which lab to deploy first based on what you want to learn, in what order,
 and which docs to read at each step. Full reference material lives in the
 [Documentation Hub](../README.md) — this page is just the on-ramp.
@@ -77,5 +77,5 @@ and every guide referenced above.
 ## If you get stuck
 
 Check [`troubleshooting.md`](../setup/troubleshooting.md) first, then
-[open an issue](https://github.com/solo2121/sysadmin-security-lab/issues) if
+[open an issue](https://github.com/solo2121/security-engineering-lab/issues) if
 your problem isn't covered.

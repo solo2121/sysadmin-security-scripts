@@ -2,7 +2,7 @@
 
 ## Our Pledge
 
-We are committed to providing a welcoming and inspiring community for everyone. We pledge that all participants in the **sysadmin-security-lab** project and community will be treated with respect and dignity, regardless of age, body size, caste, disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation.
+We are committed to providing a welcoming and inspiring community for everyone. We pledge that all participants in the **security-engineering-lab** project and community will be treated with respect and dignity, regardless of age, body size, caste, disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation.
 
 We are committed to building and maintaining a safe, inclusive, and respectful community.
 
@@ -99,7 +99,7 @@ For answers to common questions about this Code of Conduct, see the [FAQ](https:
 For questions or to report violations:
 
 - **Email**: [security@solo2121.com](mailto:security@solo2121.com)
-- **GitHub Issues**: [Report an Issue](https://github.com/solo2121/sysadmin-security-lab/issues)
+- **GitHub Issues**: [Report an Issue](https://github.com/solo2121/security-engineering-lab/issues)
 
 ---
 

@@ -1,5 +1,5 @@
 """
-tools.lib — Shared utilities for sysadmin-security-lab command-line tools.
+tools.lib — Shared utilities for security-engineering-lab command-line tools.
 
 This package centralizes cross-cutting concerns that were previously
 duplicated across the individual scripts in ``tools/security/`` and

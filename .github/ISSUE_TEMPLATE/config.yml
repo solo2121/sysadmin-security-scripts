@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: Report a security vulnerability
-    url: https://github.com/solo2121/sysadmin-security-lab/security/advisories/new
+    url: https://github.com/solo2121/security-engineering-lab/security/advisories/new
     about: Please do not report security issues as public bugs. See SECURITY.md.
   - name: Ask a question / start a discussion
-    url: https://github.com/solo2121/sysadmin-security-lab/discussions
+    url: https://github.com/solo2121/security-engineering-lab/discussions
     about: General questions and discussion about the labs.

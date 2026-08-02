@@ -1,6 +1,6 @@
 # Security Policy
 
-This document explains the security support scope for the sysadmin-security-lab and how to report vulnerabilities responsibly.
+This document explains the security support scope for the security-engineering-lab and how to report vulnerabilities responsibly.
 
 ---
 
@@ -26,7 +26,7 @@ Please do not open a public issue for security-sensitive reports.
 
 1. Send a detailed report to **security@solo2121.com**.
    Include your name, a description of the issue, and steps to reproduce it.
-2. If email is unavailable, submit a confidential [GitHub Security Advisory](https://github.com/solo2121/sysadmin-security-lab/security/advisories/new).
+2. If email is unavailable, submit a confidential [GitHub Security Advisory](https://github.com/solo2121/security-engineering-lab/security/advisories/new).
 
 ---
 

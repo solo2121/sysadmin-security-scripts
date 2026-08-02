@@ -1,5 +1,5 @@
 # =============================================================================
-# Pre-commit hooks — Sysadmin Security Lab
+# Pre-commit hooks — Security Engineering Lab
 # =============================================================================
 # Install once:
 #   pip install pre-commit --break-system-packages

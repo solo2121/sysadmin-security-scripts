@@ -1,5 +1,5 @@
 """
-Shared logging configuration for sysadmin-security-lab CLI tools.
+Shared logging configuration for security-engineering-lab CLI tools.
 
 Provides one function, :func:`get_logger`, that every tool in
 ``tools/security/`` and ``tools/sysadmin/`` can call to get a

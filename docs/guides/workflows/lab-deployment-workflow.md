@@ -1,6 +1,6 @@
 # Lab Deployment Workflow Guide
 
-Detailed workflows and best practices for deploying and managing the sysadmin-security-lab.
+Detailed workflows and best practices for deploying and managing the security-engineering-lab.
 
 ---
 
@@ -74,7 +74,7 @@ virsh nodeinfo                 # Hypervisor info
 
 ```bash
 # 1. Navigate to lab
-cd ~/labs/sysadmin-security-lab/labs/infrastructure/devops-linux-lab
+cd ~/labs/security-engineering-lab/labs/infrastructure/devops-linux-lab
 
 # 2. Review configuration
 cat Vagrantfile | head -50
@@ -189,7 +189,7 @@ Phase 3: Client/Attacker Systems (Once DC is ready)
 ### Phase 1: Domain Controller Deployment (30-45 minutes)
 
 ```bash
-cd ~/labs/sysadmin-security-lab/labs/security/ad-pentest
+cd ~/labs/security-engineering-lab/labs/security/ad-pentest
 
 # 1. Start ONLY the Domain Controller
 vagrant up dc01

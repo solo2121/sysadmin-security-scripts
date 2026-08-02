@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Common issues and fixes for the sysadmin-security-lab environment.
+Common issues and fixes for the security-engineering-lab environment.
 
 ## How to use this guide
 

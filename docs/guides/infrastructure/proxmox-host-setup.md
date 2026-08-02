@@ -1,6 +1,6 @@
 # Proxmox Host Setup for Vagrant Labs
 
-This guide walks through running the sysadmin-security-lab on a Proxmox VE host. Since Proxmox runs KVM/QEMU natively and exposes libvirt, the Vagrantfiles work without modification — you just need to set up the host environment correctly inside a Proxmox VM.
+This guide walks through running the security-engineering-lab on a Proxmox VE host. Since Proxmox runs KVM/QEMU natively and exposes libvirt, the Vagrantfiles work without modification — you just need to set up the host environment correctly inside a Proxmox VM.
 
 ---
 
@@ -252,8 +252,8 @@ vagrant plugin list
 
 ```bash
 # Clone the repository
-git clone https://github.com/solo2121/sysadmin-security-lab.git
-cd sysadmin-security-lab
+git clone https://github.com/solo2121/security-engineering-lab.git
+cd security-engineering-lab
 
 # Run the AD pentest lab
 cd labs/security/ad-pentest
@@ -517,16 +517,16 @@ vagrant box repackage bento/ubuntu-24.04 libvirt 0.1.0
 ```bash
 # Take a snapshot of a running Vagrant VM
 virsh snapshot-create-as \
-  sysadmin-security-lab_dc01 \
+  security-engineering-lab_dc01 \
   "domain-joined" \
   "DC01 after domain join" \
   --atomic
 
 # List snapshots
-virsh snapshot-list sysadmin-security-lab_dc01
+virsh snapshot-list security-engineering-lab_dc01
 
 # Restore
-virsh snapshot-revert sysadmin-security-lab_dc01 "domain-joined"
+virsh snapshot-revert security-engineering-lab_dc01 "domain-joined"
 ```
 
 ---
@@ -625,7 +625,7 @@ virt-host-validate
 # Should show PASS for all KVM checks
 
 # Verify the VM CPU type is host
-virsh dominfo sysadmin-security-lab_dc01 | grep cpu
+virsh dominfo security-engineering-lab_dc01 | grep cpu
 
 # Check for memory ballooning (disable it for lab VMs)
 # In Proxmox UI: VM → Hardware → Memory → uncheck Ballooning

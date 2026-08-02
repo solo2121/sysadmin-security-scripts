@@ -24,8 +24,8 @@ Before proceeding, run the `check-prerequisites.sh` script from the repository r
 
 ```bash
 # First, clone the repository if you haven't already
-git clone https://github.com/solo2121/sysadmin-security-lab.git
-cd sysadmin-security-lab
+git clone https://github.com/solo2121/security-engineering-lab.git
+cd security-engineering-lab
 
 # Run the check
 ./scripts/check-prerequisites.sh --all
@@ -191,8 +191,8 @@ vagrant plugin install vagrant-winrm
 ### Clone the repository
 
 ```bash
-git clone https://github.com/solo2121/sysadmin-security-lab.git
-cd sysadmin-security-lab/labs/security/ad-pentest
+git clone https://github.com/solo2121/security-engineering-lab.git
+cd security-engineering-lab/labs/security/ad-pentest
 ```
 
 ### Start the lab
@@ -248,7 +248,7 @@ vagrant plugin install vagrant-libvirt
 ### Enter the lab directory
 
 ```bash
-cd sysadmin-security-lab/labs/infrastructure/devops-linux-lab
+cd security-engineering-lab/labs/infrastructure/devops-linux-lab
 ```
 
 ### Start the lab

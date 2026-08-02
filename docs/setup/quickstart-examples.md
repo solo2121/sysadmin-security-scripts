@@ -1,6 +1,6 @@
 # Complete Setup Guide with Examples
 
-This guide provides step-by-step examples for setting up and running the sysadmin-security-lab, including command examples, verification steps, troubleshooting, and common workflows.
+This guide provides step-by-step examples for setting up and running the security-engineering-lab, including command examples, verification steps, troubleshooting, and common workflows.
 
 ---
 
@@ -204,7 +204,7 @@ end
 #### Step 1: Navigate to Lab Directory
 
 ```bash
-cd sysadmin-security-lab/labs/infrastructure/devops-linux-lab
+cd security-engineering-lab/labs/infrastructure/devops-linux-lab
 ls -la
 ```
 
@@ -258,7 +258,7 @@ Services may then be accessible if configured, such as Grafana and Prometheus.
 #### Step 1: Navigate to AD Lab
 
 ```bash
-cd sysadmin-security-lab/labs/security/ad-pentest
+cd security-engineering-lab/labs/security/ad-pentest
 ls -la
 ```
 

@@ -190,7 +190,7 @@ def run_all_checks(skip_vagrant: bool) -> list[CheckResult]:
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="validate_lab.py",
-        description="Safe, read-only health validation for the sysadmin-security-lab repository.",
+        description="Safe, read-only health validation for the security-engineering-lab repository.",
     )
     parser.add_argument(
         "--skip-vagrant",

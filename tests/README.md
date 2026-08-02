@@ -1,6 +1,6 @@
 # Tests
 
-Automated test suites for the sysadmin-security-lab. These run in CI via
+Automated test suites for the security-engineering-lab. These run in CI via
 the `run-tests` job in `.github/workflows/ci.yml`, and can also be run
 locally before committing.
 

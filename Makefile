@@ -1,5 +1,5 @@
 # =============================================================================
-# Makefile — sysadmin-security-lab developer convenience wrapper
+# Makefile — security-engineering-lab developer convenience wrapper
 # =============================================================================
 # These targets wrap the existing tooling documented in CONTRIBUTING.md and
 # used in .github/workflows/ci.yml. They do not change project behavior —

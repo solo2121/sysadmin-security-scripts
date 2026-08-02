@@ -1,6 +1,6 @@
 # Common Workflows & Procedures
 
-This document provides step-by-step workflows for common tasks in the sysadmin-security-lab.
+This document provides step-by-step workflows for common tasks in the security-engineering-lab.
 
 ---
 
@@ -750,7 +750,7 @@ vagrant status
 2. Search docs/guides/workflows/workflows.md for relevant keyword
 3. Consult lab-specific README
 4. Check TROUBLESHOOTING.md
-5. Review [GitHub Issues](https://github.com/solo2121/sysadmin-security-lab/issues)
+5. Review [GitHub Issues](https://github.com/solo2121/security-engineering-lab/issues)
 
 ### Reporting Workflow Issues
 

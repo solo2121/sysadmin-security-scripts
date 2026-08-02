@@ -35,8 +35,8 @@ See [`../docs/setup/installation.md`](../docs/setup/installation.md) for full se
 Clone the repository:
 
 ```bash
-git clone https://github.com/solo2121/sysadmin-security-lab.git
-cd sysadmin-security-lab
+git clone https://github.com/solo2121/security-engineering-lab.git
+cd security-engineering-lab
 ```
 
 Change into the lab directory you want to use, then validate the Vagrantfile:

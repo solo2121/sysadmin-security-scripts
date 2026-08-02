@@ -316,7 +316,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 To report a bug, request a feature, or suggest improvements:
 
-1. Check [GitHub Issues](https://github.com/solo2121/sysadmin-security-lab/issues).
+1. Check [GitHub Issues](https://github.com/solo2121/security-engineering-lab/issues).
 2. If it is not already reported, create a new issue with reproduction steps and environment details.
 
 ---
@@ -329,6 +329,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on contributing changes.
 
 ## License
 
-[MIT License](https://github.com/solo2121/sysadmin-security-lab/blob/main/LICENSE)
+[MIT License](https://github.com/solo2121/security-engineering-lab/blob/main/LICENSE)
 
 Copyright (c) 2023–2026 Miguel A. Carlo

@@ -1,1 +1,1 @@
-"""tools — top-level namespace package for sysadmin-security-lab CLI tools and shared libraries."""
+"""tools — top-level namespace package for security-engineering-lab CLI tools and shared libraries."""

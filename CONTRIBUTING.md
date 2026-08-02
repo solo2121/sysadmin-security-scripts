@@ -1,10 +1,10 @@
 # Contribution Guidelines
 
-Welcome to the sysadmin-security-lab contribution guide.
+Welcome to the security-engineering-lab contribution guide.
 
 We appreciate your interest in helping improve this project.
 
-**Keep these in sync:** the repo, docs, and learning path for sysadmin-security-lab. If a change affects a lab's Vagrantfile, version, topology, or credentials, update that lab's own README and `docs/attack-guide.md` (or equivalent), `docs/project/learning-path.md` if the onboarding flow changes, and the root `README.md`/`CHANGELOG.md` in the same PR. Docs that drift from the actual lab are worse than no docs at all.
+**Keep these in sync:** the repo, docs, and learning path for security-engineering-lab. If a change affects a lab's Vagrantfile, version, topology, or credentials, update that lab's own README and `docs/attack-guide.md` (or equivalent), `docs/project/learning-path.md` if the onboarding flow changes, and the root `README.md`/`CHANGELOG.md` in the same PR. Docs that drift from the actual lab are worse than no docs at all.
 
 ---
 
@@ -24,10 +24,10 @@ We appreciate your interest in helping improve this project.
 ### Issue Reporting
 
 - **Bug Reports**  
-  Use the [bug report template](https://github.com/solo2121/sysadmin-security-lab/issues/new?template=bug_report.md).
+  Use the [bug report template](https://github.com/solo2121/security-engineering-lab/issues/new?template=bug_report.md).
 
 - **Feature Requests**  
-  Use the [feature request template](https://github.com/solo2121/sysadmin-security-lab/issues/new?template=feature_request.md).
+  Use the [feature request template](https://github.com/solo2121/security-engineering-lab/issues/new?template=feature_request.md).
 
 - **Documentation Improvements**  
   Open a regular issue with the `[Docs]` prefix in the title.
@@ -181,8 +181,8 @@ docs(readme): update repository structure diagram
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/solo2121/sysadmin-security-lab.git
-cd sysadmin-security-lab
+git clone https://github.com/solo2121/security-engineering-lab.git
+cd security-engineering-lab
 ```
 
 2. Install development Python dependencies:
@@ -216,7 +216,7 @@ Please review:
 - [Security Policy](SECURITY.md)
 - [Security Scope](docs/architecture/security-scope.md)
 
-For questions or discussions, visit our [GitHub Discussions](https://github.com/solo2121/sysadmin-security-lab/discussions).
+For questions or discussions, visit our [GitHub Discussions](https://github.com/solo2121/security-engineering-lab/discussions).
 
 ---
 
