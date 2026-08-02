@@ -77,7 +77,7 @@ vagrant destroy -f
 
 Security labs may include intentionally vulnerable services, weak credentials, exploitation workflows, and attack-chain documentation. Run them only in isolated lab networks you own or are authorized to test.
 
-Before launching a security lab, review [`../docs/architecture/security-scope.md`](../docs/architecture/security-scope.md).
+Before launching a security lab, review [`../docs/security-scope.md`](../docs/security-scope.md).
 
 ---
 

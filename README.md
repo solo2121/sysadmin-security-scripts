@@ -39,7 +39,7 @@ The repository contains independent lab environments. Each environment can be de
 See:
 
 - [Architecture Overview](./docs/architecture/architecture.md)
-- [Security Scope](./docs/architecture/security-scope.md)
+- [Security Scope](./docs/security-scope.md)
 
 for architecture details, trust boundaries, and design decisions.
 
@@ -227,7 +227,7 @@ security-engineering-lab/
 |---|---|
 | [Learning Path](./docs/project/learning-path.md) | Recommended learning progression |
 | [Architecture](./docs/architecture/architecture.md) | Infrastructure design |
-| [Security Scope](./docs/architecture/security-scope.md) | Security boundaries |
+| [Security Scope](./docs/security-scope.md) | Security boundaries |
 | [Roadmap](./docs/project/roadmap.md) | Planned improvements and future lab development |
 | [Guides](./docs/guides/) | Security and deployment guides |
 | [Installation Guide](./docs/setup/installation.md) | Host setup |

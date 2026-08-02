@@ -214,7 +214,7 @@ Please review:
 
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Security Policy](SECURITY.md)
-- [Security Scope](docs/architecture/security-scope.md)
+- [Security Scope](docs/security-scope.md)
 
 For questions or discussions, visit our [GitHub Discussions](https://github.com/solo2121/security-engineering-lab/discussions).
 

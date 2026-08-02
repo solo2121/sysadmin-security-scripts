@@ -227,7 +227,7 @@ These labs are **intentionally vulnerable** and are designed for:
 - Reuse lab credentials on real systems.
 - Run these techniques against systems you do not own or control.
 
-See [`../../docs/architecture/security-scope.md`](../../docs/architecture/security-scope.md) for a full security boundary discussion.
+See [`../../docs/security-scope.md`](../../docs/security-scope.md) for a full security boundary discussion.
 
 ---
 
