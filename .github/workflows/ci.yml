@@ -28,6 +28,12 @@ on:
     branches:
       - main
 
+# Least-privilege default: this pipeline only needs to read the repo.
+# Individual jobs can widen this if a future job needs to write (e.g.
+# posting a check run or comment) — none currently do.
+permissions:
+  contents: read
+
 jobs:
 
   # ---------------------------------------------------------------------------
