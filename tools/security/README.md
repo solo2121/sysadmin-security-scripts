@@ -10,9 +10,9 @@ Use these tools only on systems and lab networks you own or are explicitly autho
 
 | Directory | Contents |
 |-----------|----------|
-| [`audit/`](audit/) | LLM security scanner, validator, and Cisco switch audit tooling |
+| [`audit/`](audit/) | Cisco switch audit tooling (SSH/Telnet credential checks, reporting) |
 | [`network/`](network/) | Firewall scan wrapper, Scapy port scanner, tcpdump wrapper, and Ettercap menu |
-| [`exploitation/`](exploitation/) | Educational exploit, SQL injection, and hashcat assistant scripts |
+| [`exploitation/`](exploitation/) | Educational exploit script covering SQLi, XSS, directory bruteforce, and SSRF testing |
 | [`reconnaissance/`](reconnaissance/) | Amass, nmap, and port-scanning helpers |
 | [`wireless/`](wireless/) | Wireless lab tooling, including evil-twin experimentation |
 

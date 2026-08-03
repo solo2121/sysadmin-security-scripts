@@ -373,7 +373,7 @@ For Lab 1, make sure the Windows-specific plugins are installed and that you sta
 
 - [README](README.md)
 - [Architecture Design](../architecture/architecture.md)
-- [Security Scope](../architecture/security-scope.md)
+- [Security Scope](../security-scope.md)
 - [Troubleshooting](troubleshooting.md)
 
 ---

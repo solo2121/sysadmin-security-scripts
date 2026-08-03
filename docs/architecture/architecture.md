@@ -28,10 +28,8 @@ security-engineering-lab/
 ├── docs/
 │   ├── architecture/
 │   │   ├── architecture.md
-│   │   ├── security-scope.md
 │   │   └── threat-model.md
-│   ├── archive/
-│   │   └── reference/
+│   ├── security-scope.md
 │   ├── guides/
 │   │   ├── infrastructure/
 │   │   ├── optimization/
@@ -58,10 +56,11 @@ security-engineering-lab/
 │   │   ├── network/
 │   │   ├── reconnaissance/
 │   │   └── wireless/
-│   └── sysadmin/
-│       ├── monitoring/
-│       ├── system-hardening/
-│       └── utilities/
+│   ├── sysadmin/
+│   │   ├── monitoring/
+│   │   ├── system-hardening/
+│   │   └── utilities/
+│   └── lib/
 ├── scripts/
 │   └── check-prerequisites.sh
 ├── tests/
@@ -136,7 +135,7 @@ Required controls:
 - Keep lab networks isolated from production and employer systems.
 - Do not bridge intentionally vulnerable systems onto public networks.
 - Treat credentials in lab documentation as throwaway training material.
-- Review [`security-scope.md`](security-scope.md) before running offensive scenarios.
+- Review [`../security-scope.md`](../security-scope.md) before running offensive scenarios.
 
 ---
 
@@ -177,7 +176,7 @@ New scripts should include:
 
 - [`../../README.md`](../../README.md)
 - [`threat-model.md`](threat-model.md)
-- [`security-scope.md`](security-scope.md)
+- [`../security-scope.md`](../security-scope.md)
 - [`../guides/workflows/workflows.md`](../guides/workflows/workflows.md)
 - [`../setup/quickstart-examples.md`](../setup/quickstart-examples.md)
 - [`../setup/installation.md`](../setup/installation.md)

@@ -2,7 +2,7 @@
 
 This document describes the assets, trust boundaries, and assumed attacker capabilities for each lab in security-engineering-lab. It exists to make explicit *why* each lab is vulnerable the way it is, rather than leaving that to be inferred from the Vagrantfiles.
 
-For legal/ethical scope (who is authorized to run this, and how), see [`security-scope.md`](security-scope.md). This document is about attack surface and trust boundaries, not authorization.
+For legal/ethical scope (who is authorized to run this, and how), see [`../security-scope.md`](../security-scope.md). This document is about attack surface and trust boundaries, not authorization.
 
 ---
 

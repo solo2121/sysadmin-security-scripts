@@ -20,7 +20,7 @@ you're not sure where to look.
 |---|---|
 | [`architecture/architecture.md`](architecture/architecture.md) | Overall infrastructure design for all three labs |
 | [`architecture/threat-model.md`](architecture/threat-model.md) | Assets, trust boundaries, and assumed attacker per lab |
-| [`architecture/security-scope.md`](architecture/security-scope.md) | What's authorized/isolated for the offensive-security content |
+| [`security-scope.md`](security-scope.md) | What's authorized/isolated for the offensive-security content |
 
 ## Workflows
 
