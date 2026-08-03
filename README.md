@@ -32,7 +32,7 @@ Start here: [Learning Path](./docs/project/learning-path.md) provides the recomm
 
 ## Architecture overview
 
-[![Security Engineering Lab Architecture Overview](assets/diagrams/architecture-overview.png)](assets/diagrams/architecture-overview.png)
+[![Security Engineering Lab Architecture Overview](assets/diagrams/architecture-overview.png)
 
 The repository contains independent lab environments. Each environment can be deployed separately using its own Vagrant configuration on KVM/QEMU virtualization infrastructure.
 
