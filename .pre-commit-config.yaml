@@ -62,3 +62,12 @@ repos:
       - id: markdown-link-check
         name: markdown-link-check (catch broken internal doc links)
         args: ["--quiet", "--config", ".markdown-link-check.json"]
+
+  - repo: local
+    hooks:
+      - id: check-doc-references
+        name: check-doc-references (catch dangling filenames in doc bullets/tables)
+        entry: python3 scripts/check_doc_references.py
+        language: system
+        pass_filenames: false
+        files: \.md$

@@ -17,7 +17,10 @@
 
 [tool.ruff]
 line-length = 120
-target-version = "py311"
+# Kept in sync with the Python version actually required (see
+# docs/dependencies.md: "Required: Python 3.12+") and installed in CI
+# (.github/workflows/ci.yml uses python-version: '3.12').
+target-version = "py312"
 exclude = [
     ".git",
     "__pycache__",
@@ -41,11 +44,13 @@ ignore = [
 
 [tool.black]
 line-length = 120
-target-version = ["py311"]
+target-version = ["py312"]
 extend-exclude = "assets|docs"
 
 [tool.mypy]
-python_version = "3.11"
+# See the target-version note under [tool.ruff] above — 3.12 is the
+# repo's actual required/installed version.
+python_version = "3.12"
 ignore_missing_imports = true
 # Start lenient (opt-in, non-blocking) — tighten incrementally per-module
 # via `[[tool.mypy.overrides]]` rather than repo-wide strict mode, since

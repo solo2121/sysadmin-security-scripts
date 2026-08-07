@@ -8,7 +8,8 @@
 #   lint-python-scripts    — syntax check only (flake8 informational)
 #   security-scan          — bandit informational only (never blocks)
 #   run-tests              — pytest (Python), bats (Bash), and repo health checks
-#   check-doc-links        — markdown link check, informational only (never blocks)
+#   check-doc-links        — markdown link check (informational) + doc-index
+#                            reference check (blocks — local, no network)
 #
 # Philosophy:
 #   Only REAL errors block the build. Style warnings and security
@@ -312,12 +313,24 @@ jobs:
   # Job 6: Markdown link check — catch broken internal doc references
   # ---------------------------------------------------------------------------
   check-doc-links:
-    name: Check Markdown Links (informational — never blocks)
+    name: Check Doc Links and References
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Check doc-index bullets/tables for dangling filenames (blocks)
+        run: |
+          echo "Checking backtick-quoted filenames in doc bullets/tables —"
+          echo "this is local and deterministic, so unlike link-check below"
+          echo "it blocks the build on a real finding."
+          python3 scripts/check_doc_references.py
 
       - name: Install markdown-link-check
         run: npm install -g markdown-link-check@3.13.6

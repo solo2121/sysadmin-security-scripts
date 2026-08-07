@@ -125,6 +125,45 @@ Project-level documentation for architecture, safe use, setup, and workflows. Lo
 
 ---
 
+## Provisioning Philosophy
+
+Each lab is provisioned by a single Vagrantfile with inline shell/PowerShell
+provisioners rather than a separate Ansible (or other config-management)
+control layer. This is a deliberate choice for this project, not an
+oversight:
+
+- **Single-host home lab, not a fleet.** There is one control point
+  (`vagrant up`) and no persistent inventory of machines to manage over
+  time, so a dedicated control-node/inventory/role structure would add
+  process without solving a problem this repo actually has.
+- **Fewer moving parts to install and keep working.** A contributor only
+  needs Vagrant, KVM/libvirt, and their host package manager. Adding
+  Ansible as a hard dependency would mean another tool, another version to
+  pin, and another thing that can drift from what's documented.
+- **Provisioning logic stays next to what it provisions.** Everything a VM
+  needs is defined in one file per lab (`labs/*/*/Vagrantfile`), which
+  keeps the "what does this VM actually run at boot" answer in one place
+  instead of split across a Vagrantfile, an inventory file, and a set of
+  roles.
+
+The trade-off is real and intentional: the Vagrantfiles are long
+(1,000–2,700 lines) and provisioning steps are procedural bash rather than
+declarative, idempotent roles. That's an acceptable cost here because each
+VM is rebuilt from scratch (`vagrant destroy && vagrant up`) far more often
+than it's incrementally reconfigured — the properties Ansible is best at
+(idempotent, incremental convergence on long-lived hosts) aren't the
+properties this repo needs.
+
+This is why `docs/guides/infrastructure/ansible-automation.md` exists as a
+**stand-alone practice guide** (run Ansible manually against the already-up
+lab nodes) rather than as documentation of how the labs themselves are
+built. Replacing the Vagrant shell provisioners with real Ansible roles is
+tracked as a mid-term idea in [`../project/roadmap.md`](../project/roadmap.md)
+if the labs grow enough VMs, or enough repeated reconfiguration, to justify
+the added layer.
+
+---
+
 ## Safety Model
 
 The repository contains intentionally vulnerable configurations, weak lab credentials, and offensive security workflows. These are acceptable only because they are scoped to isolated labs.

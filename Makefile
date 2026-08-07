@@ -8,7 +8,7 @@
 # Requires: pip install -r requirements-dev.txt
 # =============================================================================
 
-.PHONY: help lint test validate validate-repo security docs coverage prereq format typecheck
+.PHONY: help lint test validate validate-repo security docs docs-refs coverage prereq format typecheck
 
 help:
 	@echo "Available targets:"
@@ -21,6 +21,7 @@ help:
 	@echo "  make validate-repo - repository structure/docs/Vagrantfile health check (scripts/validate_lab.py)"
 	@echo "  make security      - bandit (informational) + detect-secrets scan"
 	@echo "  make docs          - markdown link check across the repo"
+	@echo "  make docs-refs     - catch dangling filenames in doc index bullets/tables (scripts/check_doc_references.py)"
 	@echo "  make prereq        - run scripts/check-prerequisites.sh"
 
 lint:
@@ -76,6 +77,10 @@ docs:
 	@echo "==> markdown-link-check (informational only)"
 	@find . -name "*.md" -not -path "./.git/*" -print0 | \
 		xargs -0 -n1 -I{} markdown-link-check --config .markdown-link-check.json {} || true
+
+docs-refs:
+	@echo "==> doc reference check (blocks — catches dangling filenames markdown-link-check can't see)"
+	python3 scripts/check_doc_references.py
 
 prereq:
 	./scripts/check-prerequisites.sh
