@@ -99,7 +99,14 @@ flake8
 bandit
 pre-commit
 detect-secrets
+ruff
+black
+mypy
 ```
+
+`ruff`, `black`, and `mypy` are opt-in/informational only (`make format`,
+`make typecheck`) and are configured in [`pyproject.toml`](../pyproject.toml);
+they are not part of the blocking `make lint` target.
 
 Install with:
 

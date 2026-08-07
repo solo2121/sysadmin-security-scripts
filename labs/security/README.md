@@ -127,7 +127,7 @@ See [`ad-pentest-vlan/README.md`](ad-pentest-vlan/README.md) and `docs/attack-gu
 - **`README.md`** – Lab overview, setup, prerequisites.
 - **`docs/attack-guide.md`** – Complete attack reference (14+ sections).
 - **`docs/lab-credentials.md`** – All seeded credentials and service accounts.
-- **`docs/network-map.md`** – Network topology and host details.
+- **`docs/dc01-deployment-validation.md`** – Recorded validation of a successful `dc01` deployment (static IP, AD promotion, scenario configuration).
 - **`Vagrantfile`** – Full provisioning (v1.12 – FLAT NETWORK – OPTIMIZED).
 - **`scripts/lab_attack_automation.py`** – Optional automated attack chain.
 

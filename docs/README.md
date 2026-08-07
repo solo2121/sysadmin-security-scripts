@@ -36,7 +36,7 @@ you're not sure where to look.
 | [`guides/infrastructure/devops-platform-overview.md`](guides/infrastructure/devops-platform-overview.md) | Quick start: Vagrant → Docker → Minikube → Jenkins → Prometheus/Grafana |
 | [`guides/infrastructure/complete-devops-platform-guide.md`](guides/infrastructure/complete-devops-platform-guide.md) | Full depth: adds Terraform, ArgoCD/GitOps, image scanning, canary deployments |
 | [`guides/infrastructure/kubernetes-security-hardening.md`](guides/infrastructure/kubernetes-security-hardening.md) | k3s cluster hardening |
-| [`guides/infrastructure/ansible-automation.md`](guides/infrastructure/ansible-automation.md) | Ansible roles used in the lab |
+| [`guides/infrastructure/ansible-automation.md`](guides/infrastructure/ansible-automation.md) | Hands-on Ansible practice guide for the lab's Linux nodes (lab provisioning itself still uses Vagrant shell provisioners; see [`roadmap.md`](project/roadmap.md)) |
 | [`guides/infrastructure/vagrant-management-tutorial.md`](guides/infrastructure/vagrant-management-tutorial.md) | Vagrant commands and workflows |
 | [`guides/infrastructure/managing-kvm-qemu-cli-tutorial.md`](guides/infrastructure/managing-kvm-qemu-cli-tutorial.md) | KVM/QEMU CLI reference |
 | [`guides/infrastructure/proxmox-host-setup.md`](guides/infrastructure/proxmox-host-setup.md) | Running the host virtualization layer on Proxmox |
