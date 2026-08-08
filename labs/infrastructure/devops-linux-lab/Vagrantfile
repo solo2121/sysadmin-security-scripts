@@ -328,7 +328,12 @@ AIRGAP_IMAGES = [
 
   # ========== ARGO CD ECOSYSTEM (FULL SET) ==========
   "quay.io/argoproj/argocd-applicationset:v0.4.1",
-  "quay.io/argoproj/argocd-notifications:stable",
+  # NOTE: "quay.io/argoproj/argocd-notifications:stable" removed.
+  # The argocd-notifications project was merged into Argo CD core
+  # (notifications-engine); the standalone image/tag is no longer
+  # published on quay.io, so the pull always returns "unauthorized".
+  # The notifications controller now ships inside the main
+  # "quay.io/argoproj/argocd" image already listed above.
   "quay.io/argoproj/argo-rollouts:v1.7.2",
   "ghcr.io/dexidp/dex:v2.41.1",
   "docker.io/library/redis:7.2.5-alpine",
