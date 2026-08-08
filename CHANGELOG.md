@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `CONTRIBUTING.md` referenced `pylint` as the required Python linter in three places (Local Setup command, Code Standards, PR Checklist), but CI, the `Makefile`, and `.pre-commit-config.yaml` all actually enforce `flake8`. Updated the doc to match what's enforced.
+- `requirements-dev.txt` was almost entirely unpinned and missing a trailing newline. Added `>=` version floors for every entry (`flake8`/`detect-secrets` pinned to match the exact versions already used in `.pre-commit-config.yaml`; the rest floored at current stable releases), and added the missing trailing newline.
+- Added a one-line reminder to inspect the script before piping to a shell above each `curl | bash` / `curl | sh` install command in `docs/guides/infrastructure/kubernetes-security-hardening.md`, `docs/guides/infrastructure/complete-devops-platform-guide.md`, `docs/guides/security/ad-mitre-log-source-playbook.md`, and `docs/guides/security/llm-security-compliance-lab.md`. Commands themselves are unchanged.
+
 ### Added
 - `scripts/check_doc_references.py` (+ `tests/python/test_check_doc_references.py`) — scans doc-index bullets/tables (e.g. `` - **`docs/foo.md`** – ... ``) for backtick-quoted filenames that don't resolve to a real file on disk. `markdown-link-check` only validates real `[text](path)` Markdown links, so a plain-text filename reference like the stale `docs/network-map.md` in `labs/security/README.md` could go unnoticed indefinitely; this closes that gap. Wired into `make docs-refs`, a new blocking step in the `check-doc-links` CI job (it's local and deterministic, unlike the informational `markdown-link-check` step), and a new local pre-commit hook.
 - `## Provisioning Philosophy` section in `docs/architecture/architecture.md` — states explicitly why each lab uses a single Vagrantfile with inline shell provisioners instead of Ansible roles (single-host lab, fewer dependencies to install, provisioning logic co-located with what it provisions), and links to the roadmap item that would revisit this if the labs grow enough to justify it.

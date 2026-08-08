@@ -50,6 +50,9 @@ curl -L https://github.com/aquasecurity/kube-bench/releases/latest/download/kube
   | tar -xz -C /usr/local/bin kube-bench
 
 # kubescape — security posture scanner
+# Piping curl to bash runs whatever that URL returns with your current
+# shell's privileges — inspect the script first if you haven't before:
+#   curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | less
 curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | bash
 
 # kubectl-neat — clean up verbose kubectl output

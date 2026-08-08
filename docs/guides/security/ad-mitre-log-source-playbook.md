@@ -1143,6 +1143,9 @@ python3 windows-exploit-suggester.py --database 2024-01.db --systeminfo systemin
 
 ```bash
 # LinPEAS for Linux (modern version)
+# Fetched from the official carlospolop/PEASS-ng releases page — only run
+# this against lab targets, and prefer the pinned release URL over
+# "latest" if you need a reproducible result across lab rebuilds.
 curl -L https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh | bash
 
 # Windows automated checks

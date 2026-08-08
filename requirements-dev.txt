@@ -1,13 +1,19 @@
 # Development dependencies for linting and static analysis.
 # Install with: pip install -r requirements-dev.txt
+#
+# Version floors below are kept loose (>=) intentionally, per the repo's
+# stated philosophy of catching real errors, not chasing exact pins in dev
+# tooling. flake8 and detect-secrets are pinned to match the exact versions
+# already pinned in .pre-commit-config.yaml, so local `pip install` and the
+# pre-commit hook run the same tool version.
 
-pylint
+pylint>=4.0.6
 pytest>=9.1.1
-pytest-cov
-flake8
-bandit
-pre-commit
-detect-secrets
-ruff
-black
-mypy
+pytest-cov>=7.1.0
+flake8>=7.1.1
+bandit>=1.9.4
+pre-commit>=4.6.1
+detect-secrets>=1.5.0
+ruff>=0.16.2
+black>=26.5.1
+mypy>=2.3.0

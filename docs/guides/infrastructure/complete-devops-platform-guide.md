@@ -465,6 +465,9 @@ CMD ["./myapp"]
 
 ```bash
 # Download and install k3d
+# Piping curl to bash runs whatever that URL returns with your current
+# shell's privileges — inspect the script first if you haven't before:
+#   curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | less
 curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
 # Verify installation
