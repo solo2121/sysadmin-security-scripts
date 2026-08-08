@@ -51,8 +51,8 @@ test:
 	bats tests/bash/
 
 coverage:
-	@echo "==> pytest with coverage"
-	pytest tests/python/ -v --cov=. --cov-report=term-missing
+	@echo "==> pytest with coverage (minimum 80%, matches CI)"
+	pytest tests/python/ -v --cov=. --cov-report=term-missing --cov-fail-under=80
 
 validate:
 	@echo "==> vagrant validate (ad-pentest)"

@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `.github/workflows/ci.yml` — pinned `actions/checkout` and `actions/setup-python` from the mutable `@v7` tag to the exact commit SHA that tag currently resolves to (`actions/checkout@3d3c42e...` = v7.0.1, `actions/setup-python@5fda3b9...` = v7.0.0), with a version comment on each line. Tags are mutable and can be force-moved; a pinned SHA can't change without a new commit. `dependabot.yml` already watches the `github-actions` ecosystem, so it will open PRs to bump the pin on new releases.
+- `.github/workflows/ci.yml` / `Makefile` — the Python coverage step was informational only (`|| true`, couldn't fail the build). Changed to `--cov-fail-under=80`, an enforced minimum. Current coverage is 85%, so this has headroom for normal work while still catching a real regression.
+- `tools/security/reconnaissance/amass-scan.sh` — added `set -Eeuo pipefail` to match the strict-mode convention used by every other script in `tools/`. This required initializing `DOMAIN=""` and `OUTPUT_DIR=""` up front, since both were previously read (`[ -z "$DOMAIN" ]`) before ever being assigned a default — harmless without `-u`, but would have aborted with "unbound variable" the moment strict mode was turned on.
+- `tools/security/reconnaissance/amass-scan.sh` — fixed a pre-existing bug where every error path (`Domain argument is required`, `Unknown option`, `Too many arguments`) exited with status `0` instead of `1`. All three called `show_help()`, which unconditionally did `exit 0` internally, so the `exit 1` written right after each call was dead code. Moved the `exit 0` out of `show_help()` and into the one call site that legitimately wants it (`-h`/`--help`). Verified `--help` (0), no-args (1), `-s` with no value (1), too many args (1), and an unknown flag (1) all now return the correct exit code.
+
 ### Fixed
 - `CONTRIBUTING.md` referenced `pylint` as the required Python linter in three places (Local Setup command, Code Standards, PR Checklist), but CI, the `Makefile`, and `.pre-commit-config.yaml` all actually enforce `flake8`. Updated the doc to match what's enforced.
 - `requirements-dev.txt` was almost entirely unpinned and missing a trailing newline. Added `>=` version floors for every entry (`flake8`/`detect-secrets` pinned to match the exact versions already used in `.pre-commit-config.yaml`; the rest floored at current stable releases), and added the missing trailing newline.

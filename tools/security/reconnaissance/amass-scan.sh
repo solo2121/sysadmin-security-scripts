@@ -13,6 +13,8 @@
 # Usage: ./amass-scan.sh <domain> [output-dir]
 # Dependencies: amass, jq (for JSON processing)
 
+set -Eeuo pipefail
+
 ###############################################################################
 # Configuration
 ###############################################################################
@@ -20,6 +22,8 @@ VERSION="1.1.0"
 DEFAULT_SCANS=("passive" "active" "full")  # Default scan types to perform
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 LOG_LEVEL="info"  # Available levels: error, warn, info, debug
+DOMAIN=""
+OUTPUT_DIR=""
 
 ###############################################################################
 # Functions
@@ -60,7 +64,6 @@ show_help() {
     echo "  passive: Non-intrusive enumeration (no direct interaction)"
     echo "  active:  Includes DNS resolution and basic probing"
     echo "  full:    Comprehensive scan with brute forcing"
-    exit 0
 }
 
 # Check for required dependencies
@@ -151,6 +154,7 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         -h|--help)
             show_help
+            exit 0
             ;;
         -v|--version)
             echo "Amass Automation Script v$VERSION"
