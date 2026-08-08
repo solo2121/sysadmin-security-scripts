@@ -20,6 +20,7 @@ you're not sure where to look.
 |---|---|
 | [`architecture/architecture.md`](architecture/architecture.md) | Overall infrastructure design for all three labs |
 | [`architecture/threat-model.md`](architecture/threat-model.md) | Assets, trust boundaries, and assumed attacker per lab |
+| [`architecture/emergency-isolation-runbook.md`](architecture/emergency-isolation-runbook.md) | What to do if a lab reaches the internet or a trusted network unexpectedly |
 | [`security-scope.md`](security-scope.md) | What's authorized/isolated for the offensive-security content |
 
 ## Workflows

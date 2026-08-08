@@ -50,10 +50,15 @@ curl -L https://github.com/aquasecurity/kube-bench/releases/latest/download/kube
   | tar -xz -C /usr/local/bin kube-bench
 
 # kubescape — security posture scanner
-# Piping curl to bash runs whatever that URL returns with your current
-# shell's privileges — inspect the script first if you haven't before:
-#   curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | less
-curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh | bash
+# Download, inspect, then run — piping curl directly to a shell executes
+# whatever that URL returns with your current privileges, with no chance
+# to review it first. Downloading a script doesn't make it trustworthy;
+# read it before running it.
+curl -s https://raw.githubusercontent.com/kubescape/kubescape/master/install.sh -o /tmp/kubescape-install.sh
+less /tmp/kubescape-install.sh   # inspect before running
+chmod +x /tmp/kubescape-install.sh
+bash /tmp/kubescape-install.sh
+rm -f /tmp/kubescape-install.sh
 
 # kubectl-neat — clean up verbose kubectl output
 kubectl krew install neat

@@ -55,10 +55,15 @@ export OPENAI_API_KEY="your_key_here"
 ## Option B: Ollama (Local – Free, No Key Required)
 
 ```bash
-# Piping curl to sh runs whatever that URL returns with your current
-# shell's privileges — inspect the script first if you haven't before:
-#   curl -fsSL https://ollama.com/install.sh | less
-curl -fsSL https://ollama.com/install.sh | sh
+# Download, inspect, then run — piping curl directly to a shell executes
+# whatever that URL returns with your current privileges, with no chance
+# to review it first. Downloading a script doesn't make it trustworthy;
+# read it before running it.
+curl -fsSL https://ollama.com/install.sh -o /tmp/ollama-install.sh
+less /tmp/ollama-install.sh   # inspect before running
+chmod +x /tmp/ollama-install.sh
+sh /tmp/ollama-install.sh
+rm -f /tmp/ollama-install.sh
 ollama pull llama3
 ```
 

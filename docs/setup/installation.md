@@ -43,14 +43,25 @@ fix command.
 
 ### Recommended host resources
 
-These are general recommendations. Exact needs depend on which lab and how many VMs you deploy.
+Actual requirements depend on which lab you deploy, how many VMs you start
+simultaneously, and which profile (where supported) you select. The figures
+below are pulled directly from each lab's own documentation and Vagrantfile,
+not estimated:
 
-- **Lab 1**: High memory and storage usage due to Windows servers, AD CS, and supporting systems.
-- **Lab 2**: Moderate to high memory usage due to Kubernetes, observability, and registry services.
+| Lab | Minimum tested | Recommended (full lab) | Disk |
+|---|---|---|---|
+| AD Pentest Lab (`labs/security/ad-pentest`) | ~20 GiB RAM for the documented 6-VM startup subset | 32 GB+ RAM for all 11 VMs (~29.5 GiB allocated) | 40 GiB+ for a single-lab subset |
+| AD Pentest VLAN Lab (`labs/security/ad-pentest-vlan`) | 8 GB+ RAM (`minimal` profile, ~10 GB allocated) | 32 GB+ RAM (`full` profile, all 12 VMs, ~36 GB allocated) | 80 GB+ |
+| DevOps/DevSecOps Lab (`labs/infrastructure/devops-linux-lab`) | ~10 GiB RAM (`minimal` profile) | ~30 GiB RAM (`full` profile, every VM) | 40 GiB+ for a single-lab subset |
 
-If your host doesn't meet the full recommendations, see
-[`docs/guides/optimization/minimal-resource-deployment.md`](../guides/optimization/minimal-resource-deployment.md)
-for tested reduced-VM profiles for both labs.
+- **CPU**: hardware virtualization (VT-x/AMD-V) must be enabled in BIOS/UEFI regardless of lab or profile.
+- **Run one lab at a time** on a resource-constrained host — each lab uses its own private network, but they still compete for the same host CPU/RAM/disk.
+- **Disk, combined**: budget 100 GiB+ if you plan to run full profiles or keep more than one lab's VMs on disk at the same time, even if not running concurrently.
+- The DevOps/DevSecOps Lab and the AD Pentest VLAN Lab both support a `LAB_PROFILE` environment variable (e.g. `LAB_PROFILE=minimal vagrant up`) to start a reduced VM subset instead of the full lab.
+
+For the full VM-by-VM memory breakdown, every profile's VM list, and other
+tested reduced-footprint options, see
+[`docs/guides/optimization/minimal-resource-deployment.md`](../guides/optimization/minimal-resource-deployment.md).
 
 ### Required tools
 

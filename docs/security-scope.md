@@ -74,6 +74,11 @@ This repository contains **educational security content** — offensive and defe
 
 ## Lab Isolation Requirements
 
+If you suspect a lab has already reached the internet or your trusted
+network — as opposed to setting up isolation before running one — see the
+[Emergency Lab-Isolation Runbook](architecture/emergency-isolation-runbook.md)
+instead of this section.
+
 Before running any lab, ensure:
 
 ### Network Isolation

@@ -465,10 +465,15 @@ CMD ["./myapp"]
 
 ```bash
 # Download and install k3d
-# Piping curl to bash runs whatever that URL returns with your current
-# shell's privileges — inspect the script first if you haven't before:
-#   curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | less
-curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+# Download, inspect, then run — piping curl directly to a shell executes
+# whatever that URL returns with your current privileges, with no chance
+# to review it first. Downloading a script doesn't make it trustworthy;
+# read it before running it.
+curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh -o /tmp/k3d-install.sh
+less /tmp/k3d-install.sh   # inspect before running
+chmod +x /tmp/k3d-install.sh
+bash /tmp/k3d-install.sh
+rm -f /tmp/k3d-install.sh
 
 # Verify installation
 k3d version

@@ -52,6 +52,35 @@ Please do not report the following as security issues:
 
 ---
 
+## Repository-Level Controls (GitHub Settings)
+
+The controls below live in this repository's *content* (CI workflows,
+`.pre-commit-config.yaml`, `.secrets.baseline`, `.github/dependabot.yml`)
+and are verifiable by reading those files directly:
+
+- Dependabot version updates (`.github/dependabot.yml`) for the
+  `github-actions` and `pip` ecosystems.
+- GitHub Actions pinned to commit SHAs in `.github/workflows/ci.yml`.
+- Local secret-leak prevention via `detect-secrets` in
+  `.pre-commit-config.yaml` and `.secrets.baseline`.
+
+The controls below are **GitHub repository settings**, configured in the
+GitHub web UI under *Settings → Code security* (or the equivalent API/
+`gh` CLI calls) rather than in any file in this repository. Nothing in
+this repository's content can confirm whether they're currently enabled —
+verify them directly in the repository's settings if you're relying on
+them:
+
+- Branch protection rules or repository rulesets on `main`.
+- Secret scanning and push protection.
+- Dependabot alerts (as opposed to the version-update PRs configured in
+  `dependabot.yml`, which is a separate setting).
+- Code scanning (e.g., GitHub's default CodeQL setup).
+- GitHub Actions permissions (e.g., whether Actions can approve pull
+  requests, or the default `GITHUB_TOKEN` permission level for the
+  repository as a whole, as distinct from the `permissions:` block
+  already declared per-workflow in `ci.yml`).
+
 ## Security Best Practices for Users
 
 - Run all lab environments in an isolated VM or network.

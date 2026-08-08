@@ -9,7 +9,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `docs/architecture/emergency-isolation-runbook.md` — home-lab runbook for
+  the scenario where a lab VM, network, or bridge is suspected of reaching
+  the real internet or a trusted network unexpectedly: containment,
+  evidence preservation, credential rotation, destroy-vs-restore guidance,
+  and a reconnection checklist. Linked from `docs/README.md` and
+  cross-referenced from `docs/security-scope.md`'s Lab Isolation
+  Requirements section. Not a substitute for an enterprise incident-response
+  plan.
+- `SECURITY.md` — `## Repository-Level Controls (GitHub Settings)` section,
+  distinguishing controls verifiable from this repository's own content
+  (Dependabot config, SHA-pinned Actions, `detect-secrets` baseline) from
+  controls that live in GitHub repository settings and can't be confirmed
+  by reading the repository (branch protection/rulesets, secret scanning
+  and push protection, Dependabot alerts, code scanning, Actions
+  permissions). Doesn't claim any of the settings-based controls are
+  currently enabled — only names them as items to verify directly in
+  GitHub.
+
 ### Changed
+- `docs/setup/installation.md` — the "Recommended host resources" section
+  now gives concrete minimum/recommended RAM and disk figures per lab
+  (sourced from `minimal-resource-deployment.md` and
+  `labs/security/ad-pentest-vlan/README.md`'s profile table) instead of
+  only qualitative descriptions ("high", "moderate to high") behind a
+  link. The full VM-by-VM breakdown still lives in
+  `minimal-resource-deployment.md`, linked at the end of the section.
+- `docs/guides/infrastructure/kubernetes-security-hardening.md`,
+  `docs/guides/infrastructure/complete-devops-platform-guide.md`, and
+  `docs/guides/security/llm-security-compliance-lab.md` — the kubescape,
+  k3d, and Ollama install commands were previously a bare `curl | bash` /
+  `curl | sh` with an inspect-first comment above them (see the prior
+  `Fixed` entry below). Replaced with an actual download → inspect (`less`)
+  → execute → clean-up sequence, so the inspection step is something the
+  reader does, not just something the doc suggests. URLs, curl flags, and
+  the original shell interpreter (`bash` or `sh`) are unchanged in all
+  three. `docs/guides/security/ad-mitre-log-source-playbook.md`'s LinPEAS
+  line was intentionally left as a one-liner — see the `CONTRIBUTING.md`-
+  adjacent rationale in the audit response for why (it's a technique
+  reference/cheat-sheet entry alongside other one-line fetch-and-run
+  examples like the PowerUp `IEX` download-cradle immediately below it,
+  not a one-time setup step; expanding only that one line would break the
+  format without a corresponding safety benefit for an already-compromised
+  lab target).
+- `tools/sysadmin/utilities/git-management.sh` — consolidated four separate
+  `set -o errexit` / `set -o errtrace` / `set -o nounset` / `set -o
+  pipefail` lines into `set -Eeuo pipefail`, matching the single-line style
+  already used by 11 other scripts in `tools/` and `labs/*/scripts/`. Same
+  options, same behavior (including `errtrace`, which this script's `trap
+  ... ERR` handler depends on) — purely a style consolidation.
 - `.github/workflows/ci.yml` — pinned `actions/checkout` and `actions/setup-python` from the mutable `@v7` tag to the exact commit SHA that tag currently resolves to (`actions/checkout@3d3c42e...` = v7.0.1, `actions/setup-python@5fda3b9...` = v7.0.0), with a version comment on each line. Tags are mutable and can be force-moved; a pinned SHA can't change without a new commit. `dependabot.yml` already watches the `github-actions` ecosystem, so it will open PRs to bump the pin on new releases.
 - `.github/workflows/ci.yml` / `Makefile` — the Python coverage step was informational only (`|| true`, couldn't fail the build). Changed to `--cov-fail-under=80`, an enforced minimum. Current coverage is 85%, so this has headroom for normal work while still catching a real regression.
 - `tools/security/reconnaissance/amass-scan.sh` — added `set -Eeuo pipefail` to match the strict-mode convention used by every other script in `tools/`. This required initializing `DOMAIN=""` and `OUTPUT_DIR=""` up front, since both were previously read (`[ -z "$DOMAIN" ]`) before ever being assigned a default — harmless without `-u`, but would have aborted with "unbound variable" the moment strict mode was turned on.

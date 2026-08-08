@@ -6,10 +6,7 @@
 #              status, branch, commit, remote, and sync tasks.
 # ============================================================
 
-set -o errexit
-set -o errtrace
-set -o nounset
-set -o pipefail
+set -Eeuo pipefail
 shopt -s nocasematch
 
 handle_error() {
