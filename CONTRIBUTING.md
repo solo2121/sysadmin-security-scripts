@@ -75,7 +75,7 @@ You can still run the checks individually if you prefer:
 shellcheck path/to/script.sh
 
 # Python scripts
-pylint path/to/script.py
+flake8 path/to/script.py
 
 # Vagrant syntax check
 vagrant validate
@@ -128,7 +128,7 @@ These checks help catch issues before changes are submitted.
 
 ### Python Script Guidelines
 
-- Scripts must pass `pylint` without errors.
+- Scripts must pass `flake8` (see `.github/workflows/ci.yml` and `Makefile` for the exact invocation and ignore list).
 - Use type hints where practical.
 - Include a module-level docstring that explains the purpose, usage, and author.
 
@@ -149,7 +149,7 @@ These checks help catch issues before changes are submitted.
 
 ### PR Checklist
 
-- [ ] All scripts pass linting (`shellcheck` for Bash, `pylint` for Python).
+- [ ] All scripts pass linting (`shellcheck` for Bash, `flake8` for Python).
 - [ ] Changes were tested locally in a VM or lab environment.
 - [ ] Documentation was updated to reflect the changes, including `docs/project/learning-path.md` if the onboarding flow or lab order changed.
 - [ ] `CHANGELOG.md` was updated under `[Unreleased]`.
