@@ -123,6 +123,12 @@ TRIVY_VERSION = "0.57.1"
 # CI/CD Ports
 GITEA_PORT = 3000
 JENKINS_PORT = 8080
+# Host-side port for the Jenkins forwarded_port only. JENKINS_PORT (8080) is
+# also used as devops-1's host-forwarded ingress port (guest 80 -> host 8080),
+# so cicd-server needs a different host port to avoid a bind conflict when
+# both VMs run together (LAB_PROFILE=full). Jenkins still listens on 8080
+# inside the container/guest; only the host-side mapping changes.
+JENKINS_HOST_PORT = 18080
 SONARQUBE_PORT = 9000
 VAULT_PORT = 8200
 ZAP_PORT = 8090
@@ -405,7 +411,7 @@ EOF
     "ubuntu-lab" => { box: "bento/ubuntu-24.04", ip: vm_ip(20), memory: 1024, cpus: 1, role: "lab" },
     "rocky-lab" => { box: "rockylinux/10", ip: vm_ip(21), memory: 1024, cpus: 1, role: "lab" },
     "alma-lab" => { box: "almalinux/10", ip: vm_ip(22), memory: 1024, cpus: 1, role: "lab" },
-    "suse-lab" => { box: "opensuse/Leap-15.6", ip: vm_ip(23), memory: 1024, cpus: 1, role: "lab" }
+    "suse-lab" => { box: "opensuse/Leap-15.6.x86_64", ip: vm_ip(23), memory: 1024, cpus: 1, role: "lab" }
   }
 
   ansible_nodes = {
@@ -2366,7 +2372,7 @@ EOF
       # ================= CI/CD SERVER PROVISIONING =================
       when "cicd"
         vm.vm.network "forwarded_port", guest: GITEA_PORT, host: GITEA_PORT, host_ip: "127.0.0.1"
-        vm.vm.network "forwarded_port", guest: JENKINS_PORT, host: JENKINS_PORT, host_ip: "127.0.0.1"
+        vm.vm.network "forwarded_port", guest: JENKINS_PORT, host: JENKINS_HOST_PORT, host_ip: "127.0.0.1"
         vm.vm.network "forwarded_port", guest: SONARQUBE_PORT, host: SONARQUBE_PORT, host_ip: "127.0.0.1"
         vm.vm.network "forwarded_port", guest: VAULT_PORT, host: VAULT_PORT, host_ip: "127.0.0.1"
         vm.vm.network "forwarded_port", guest: ZAP_PORT, host: ZAP_PORT, host_ip: "127.0.0.1"
