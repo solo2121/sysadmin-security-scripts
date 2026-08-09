@@ -9,8 +9,8 @@ This directory contains reproducible lab environments for infrastructure enginee
 | Lab | Path | Focus |
 |-----|------|-------|
 | DevOps Linux Lab | [`infrastructure/devops-linux-lab/`](infrastructure/devops-linux-lab/) | Vagrant/libvirt infrastructure, Linux administration, Kubernetes, DevOps workflows, and monitoring |
-| Active Directory Pentest Lab | [`security/ad-pentest/`](security/ad-pentest/) | Active Directory enumeration, Kerberos attacks, lateral movement, privilege escalation, and remediation practice |
-| VLAN Enterprise Lab | [`security/ad-pentest-vlan/`](security/ad-pentest-vlan/) | VLAN segmentation, multi-subnet enterprise simulation, topology validation, and network isolation testing |
+|  Active Directory Pentest Lab (base)| [`security/active-directory/base/`](security/active-directory/base/) | Active Directory enumeration, Kerberos attacks, lateral movement, privilege escalation, and remediation practice |
+|  Active Directory Pentest Lab (vlan-segmented)| [`security/active-directory/vlan-segmented/`](security/active-directory/vlan-segmented/) | VLAN segmentation, multi-subnet enterprise simulation, topology validation, and network isolation testing |
 
 ---
 
@@ -86,8 +86,8 @@ Before launching a security lab, review [`../docs/security-scope.md`](../docs/se
 1. Start with the DevOps Linux Lab to build comfort with Linux, Vagrant, virtualization, and infrastructure workflows.
 2. Practice monitoring and hardening with scripts under [`../tools/sysadmin/`](../tools/sysadmin/).
 3. Explore reconnaissance and validation tooling under [`../tools/security/`](../tools/security/).
-4. Move into the Active Directory Pentest Lab for controlled attack-chain practice.
-5. Use the VLAN Enterprise Lab to reason about segmentation, routing, and network isolation.
+4. Move into the  Active Directory Pentest Lab (base)for controlled attack-chain practice.
+5. Use the  Active Directory Pentest Lab (vlan-segmented)to reason about segmentation, routing, and network isolation.
 
 ---
 
