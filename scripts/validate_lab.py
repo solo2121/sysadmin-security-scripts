@@ -51,8 +51,8 @@ REQUIRED_TOP_LEVEL_DIRS = [
 
 # Each lab directory should carry its own README documenting the lab.
 LAB_DIRS_REQUIRING_README = [
-    "labs/security/ad-pentest",
-    "labs/security/ad-pentest-vlan",
+    "labs/security/active-directory/base",
+    "labs/security/active-directory/vlan-segmented",
     "labs/infrastructure/devops-linux-lab",
 ]
 

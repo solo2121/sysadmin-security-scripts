@@ -73,13 +73,13 @@ jobs:
 
       - name: Validate AD Pentest Vagrantfile
         run: vagrant validate
-        working-directory: labs/security/ad-pentest
+        working-directory: labs/security/active-directory/base
         env:
           VAGRANT_DEFAULT_PROVIDER: libvirt
 
       - name: Validate AD Pentest VLAN Vagrantfile
         run: vagrant validate
-        working-directory: labs/security/ad-pentest-vlan
+        working-directory: labs/security/active-directory/vlan-segmented
         env:
           VAGRANT_DEFAULT_PROVIDER: libvirt
 
