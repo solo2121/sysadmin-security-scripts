@@ -65,7 +65,7 @@ STATE_ICONS = {
     "running": "[green]▶[/green]",
     "poweroff": "[red]■[/red]",
     "not_created": "[yellow]○[/yellow]",
-    "default": "[gray]?[/gray]",
+    "default": "[bright_black]?[/bright_black]",
 }
 
 
@@ -282,7 +282,7 @@ def show_main_menu(states: dict[str, str]) -> dict[str, str]:
     console.print("[cyan][L] Linux Labs (no provision) [M] Modern (no provision)[/cyan]")
     console.print("[cyan][C] CI/CD Server (no provision) [B] Halt All[/cyan]")
     console.print("[cyan][R] Refresh  [Q] Quit[/cyan]")
-    console.print("[gray]Note: Harbor password only required once per session for provisioning[/gray]")
+    console.print("[bright_black]Note: Harbor password only required once per session for provisioning[/bright_black]")
 
     return options
 
@@ -306,15 +306,15 @@ def vm_menu(vagrantfile: Path, vm: str) -> None:
         else:
             console.print("Harbor: [yellow]not set (only needed for provision)[/yellow]")
 
-        console.print("\n[cyan][S] SSH (no password needed)")
-        console.print("[U] Up with Provision (password needed once)")
-        console.print("[T] Start (no provision, no password)")
-        console.print("[H] Halt (no password)")
-        console.print("[R] Reload with Provision (password needed once)")
-        console.print("[P] Provision only (password needed once)")
-        console.print("[D] Destroy (no password)")
-        console.print("[B] Back")
-        console.print("[Q] Quit[/cyan]")
+        console.print("\n[cyan][S] SSH (no password needed)[/cyan]")
+        console.print("[cyan][U] Up with Provision (password needed once)[/cyan]")
+        console.print("[cyan][T] Start (no provision, no password)[/cyan]")
+        console.print("[cyan][H] Halt (no password)[/cyan]")
+        console.print("[cyan][R] Reload with Provision (password needed once)[/cyan]")
+        console.print("[cyan][P] Provision only (password needed once)[/cyan]")
+        console.print("[cyan][D] Destroy (no password)[/cyan]")
+        console.print("[cyan][B] Back[/cyan]")
+        console.print("[cyan][Q] Quit[/cyan]")
 
         choice = Prompt.ask("[bold]Action[/bold]", default="B").upper()
 
@@ -343,7 +343,7 @@ def vm_menu(vagrantfile: Path, vm: str) -> None:
         else:
             console.print("[red]Invalid option[/red]")
 
-        Prompt.ask("[gray]Press Enter to continue...[/gray]", default="")
+        Prompt.ask("[bright_black]Press Enter to continue...[/bright_black]", default="")
 
 
 # ========================== GROUP ACTIONS ==========================
@@ -497,7 +497,7 @@ def main() -> None:
             sys.exit(0)
         else:
             console.print("[red]Invalid option[/red]")
-            Prompt.ask("[gray]Press Enter to continue...[/gray]", default="")
+            Prompt.ask("[bright_black]Press Enter to continue...[/bright_black]", default="")
 
 
 if __name__ == "__main__":
