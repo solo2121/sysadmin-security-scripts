@@ -39,7 +39,8 @@ console = Console()
 VAGRANTFILE_CANDIDATES = ["Vagrantfile"]
 
 # Curated inventory for UI grouping and batch actions.
-# Actual execution and UI display are filtered against `vagrant status`.
+# The Vagrantfile can define only a profile subset at runtime. Keep the full
+# lab inventory visible and use `vagrant status` only for the state column.
 VM_GROUPS = {
     "DEVOPS": ["devops-1"],
     "WORKERS": ["worker-1", "worker-2"],
@@ -260,14 +261,8 @@ def show_main_menu(states: dict[str, str]) -> dict[str, str]:
     options: dict[str, str] = {}
 
     for group_name, configured_vms in VM_GROUPS.items():
-        # Filter to only display VMs that actually exist according to Vagrant
-        actual_vms = [vm for vm in configured_vms if vm in states]
-
-        if not actual_vms:
-            continue
-
         table.add_row("", f"[bold purple]{group_name}[/bold purple]", "", style="underline")
-        for vm in actual_vms:
+        for vm in configured_vms:
             state = states.get(vm, "not_created")
             icon = STATE_ICONS.get(state, STATE_ICONS["default"])
             table.add_row(f"[{idx:02d}]", vm, f"{icon} {state}")
@@ -370,8 +365,9 @@ def start_group(vagrantfile: Path, group_key: str) -> None:
         return
 
     states = get_machine_states(vagrantfile)
-    # Only act on VMs that actually exist
-    vms = [vm for vm in VM_GROUPS[group_name] if vm in states]
+    # Keep group actions aligned with the full menu inventory. Vagrant will
+    # handle machines excluded by the active profile as unavailable.
+    vms = VM_GROUPS[group_name]
 
     # DevOps group requires provisioning in your lab setup
     if group_name == "DEVOPS":

@@ -32,6 +32,7 @@ readonly WORKERS=("worker-1" "worker-2")
 readonly ANSIBLE_NODES=("node1" "node2")
 readonly LINUX_LABS=("ubuntu-lab" "rocky-lab" "alma-lab" "suse-lab")
 readonly MODERN_LABS=("kind-lab" "k3d-lab")
+readonly CICD_SERVER=("cicd-server")
 
 # ========================== STATE ==========================
 declare -A machine_states=()
@@ -301,6 +302,9 @@ start_group(){
         modern)
             vms=("${MODERN_LABS[@]}")
             ;;
+        cicd)
+            vms=("${CICD_SERVER[@]}")
+            ;;
         all)
             ensure_harbor_pass_once
             vagrant_cmd up --provision
@@ -342,11 +346,13 @@ while true; do
     show_group "ANSIBLE NODES" "${ANSIBLE_NODES[@]}"
     show_group "LINUX LABS" "${LINUX_LABS[@]}"
     show_group "MODERN LABS" "${MODERN_LABS[@]}"
+    show_group "CI/CD SERVER" "${CICD_SERVER[@]}"
 
     echo
     echo -e "${CYAN}[A] Start All (provision)  [V] DevOps (provision)"
     echo -e "[W] Workers (no provision)   [N] Ansible (no provision)"
     echo -e "[L] Linux Labs (no provision) [M] Modern (no provision)"
+    echo -e "[C] CI/CD Server (no provision)"
     echo -e "[B] Halt All  [R] Refresh  [Q] Quit${NC}"
     echo
     echo -e "${GRAY}Note: Harbor password only required once per session for provisioning${NC}"
@@ -367,6 +373,7 @@ while true; do
         N) start_group ansible ;;
         L) start_group labs ;;
         M) start_group modern ;;
+        C) start_group cicd ;;
         B) halt_all ;;
         R) continue ;;
         Q) exit 0 ;;
