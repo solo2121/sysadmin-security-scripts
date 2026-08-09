@@ -240,7 +240,7 @@ def configure_network(vm, ip)
     libvirt__network_name: LAB_NET,
     libvirt__forward_mode: "none",
     libvirt__dhcp_enabled: false,
-    libvirt__driver_name: "virtio",
+    libvirt__driver_name: "qemu",
     auto_config: false
 end
 
