@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 #
-# Unit tests for labs/security/ad-pentest-vlan/scripts/setup-vlans.sh
+# Unit tests for labs/security/active-directory/vlan-segmented/scripts/setup-vlans.sh
 #
 # Scope:
 #   These tests source the real script (guarded against auto-execution
@@ -15,7 +15,7 @@
 #   parameter-expansion logic those functions rely on, using the real
 #   VLAN_CONFIG data sourced from the script itself.
 
-SCRIPT_PATH="${BATS_TEST_DIRNAME}/../../labs/security/ad-pentest-vlan/scripts/setup-vlans.sh"
+SCRIPT_PATH="${BATS_TEST_DIRNAME}/../../labs/security/active-directory/vlan-segmented/scripts/setup-vlans.sh"
 
 setup() {
     # shellcheck disable=SC1090
