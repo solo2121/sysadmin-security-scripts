@@ -51,6 +51,7 @@ you're not sure where to look.
 | [`guides/security/metasploit-lab-guide.md`](guides/security/metasploit-lab-guide.md) | Metasploit usage in the lab |
 | [`guides/security/network-traffic-analysis.md`](guides/security/network-traffic-analysis.md) | Traffic analysis / packet capture workflows |
 | [`guides/security/detection-and-blue-team.md`](guides/security/detection-and-blue-team.md) | Blue-team detection content (SIEM, alerting) |
+| [`guides/security/domain-compromise-walkthrough.md`](guides/security/domain-compromise-walkthrough.md) | End-to-end domain compromise walkthrough for the AD Pentest Lab |
 | [`guides/security/ad-mitre-log-source-playbook.md`](guides/security/ad-mitre-log-source-playbook.md) | Mapping AD log sources to MITRE ATT&CK |
 | [`guides/security/llm-security-compliance-lab.md`](guides/security/llm-security-compliance-lab.md) | LLM platform vulnerability/compliance testing |
 

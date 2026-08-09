@@ -65,6 +65,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tools/security/reconnaissance/amass-scan.sh` — fixed a pre-existing bug where every error path (`Domain argument is required`, `Unknown option`, `Too many arguments`) exited with status `0` instead of `1`. All three called `show_help()`, which unconditionally did `exit 0` internally, so the `exit 1` written right after each call was dead code. Moved the `exit 0` out of `show_help()` and into the one call site that legitimately wants it (`-h`/`--help`). Verified `--help` (0), no-args (1), `-s` with no value (1), too many args (1), and an unknown flag (1) all now return the correct exit code.
 
 ### Fixed
+- `docs/README.md` — `guides/security/domain-compromise-walkthrough.md` was
+  a real, linked-to file (from `docs/project/learning-path.md`) but was
+  missing from the Security guides table in the docs index. Added.
+- Root `README.md` — the repository structure tree showed `workflows/` as a
+  direct child of `docs/`, but it actually lives at
+  `docs/guides/workflows/`; the tree also omitted `docs/project/` and
+  `docs/setup/`, and omitted `tools/lib/` under `tools/`. Corrected the
+  tree to match the actual layout, and added a `Documentation Index` entry
+  to the Documentation hub table linking to `docs/README.md`. Also added
+  `make docs-refs` to the Development quickstart snippet and a pointer to
+  `make help` for the remaining targets (`make format`, `make typecheck`,
+  `make coverage`, `make validate-repo`, `make docs`, `make prereq`), none
+  of which were previously mentioned outside the Makefile itself.
 - `CONTRIBUTING.md` referenced `pylint` as the required Python linter in three places (Local Setup command, Code Standards, PR Checklist), but CI, the `Makefile`, and `.pre-commit-config.yaml` all actually enforce `flake8`. Updated the doc to match what's enforced.
 - `requirements-dev.txt` was almost entirely unpinned and missing a trailing newline. Added `>=` version floors for every entry (`flake8`/`detect-secrets` pinned to match the exact versions already used in `.pre-commit-config.yaml`; the rest floored at current stable releases), and added the missing trailing newline.
 - Added a one-line reminder to inspect the script before piping to a shell above each `curl | bash` / `curl | sh` install command in `docs/guides/infrastructure/kubernetes-security-hardening.md`, `docs/guides/infrastructure/complete-devops-platform-guide.md`, `docs/guides/security/ad-mitre-log-source-playbook.md`, and `docs/guides/security/llm-security-compliance-lab.md`. Commands themselves are unchanged.

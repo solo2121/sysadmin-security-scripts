@@ -230,7 +230,12 @@ security-engineering-lab/
 ├── docs/
 │   ├── architecture/
 │   ├── guides/
-│   └── workflows/
+│   │   ├── infrastructure/
+│   │   ├── optimization/
+│   │   ├── security/
+│   │   └── workflows/
+│   ├── project/
+│   └── setup/
 ├── labs/
 │   ├── infrastructure/
 │   │   └── devops-linux-lab/
@@ -239,6 +244,7 @@ security-engineering-lab/
 │       └── ad-pentest-vlan/
 ├── scripts/
 ├── tools/
+│   ├── lib/
 │   ├── security/
 │   └── sysadmin/
 ├── tests/
@@ -283,6 +289,7 @@ security-engineering-lab/
 
 | Document | Purpose |
 |---|---|
+| [Documentation Index](./docs/README.md) | Full map of every doc under `docs/`, grouped by topic |
 | [Learning Path](./docs/project/learning-path.md) | Recommended learning progression |
 | [Architecture](./docs/architecture/architecture.md) | Infrastructure design |
 | [Security Scope](./docs/security-scope.md) | Security boundaries |
@@ -348,8 +355,13 @@ make lint       # shellcheck (errors) + flake8 (informational)
 make test       # pytest + bats unit tests
 make validate   # vagrant validate on all three lab Vagrantfiles
 make security   # bandit (informational) + detect-secrets
+make docs-refs  # dangling doc-reference check (blocks CI on a real finding)
 ```
 
+
+Run `make help` for the full target list, including `make format`,
+`make typecheck`, `make coverage`, `make validate-repo`, `make docs`, and
+`make prereq`.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full contributor workflow,
 and [tests/README.md](./tests/README.md) for what the test suites cover.
