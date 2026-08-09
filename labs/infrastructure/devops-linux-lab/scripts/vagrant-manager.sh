@@ -42,6 +42,16 @@ IDX=1
 # Prevent repeated password prompts during the same session
 HARBOR_PROMPT_DONE=0
 
+# ========================== DEPENDENCY CHECK ==========================
+
+require_vagrant() {
+    if ! command -v vagrant >/dev/null 2>&1; then
+        echo -e "${RED}ERROR: 'vagrant' was not found on PATH.${NC}" >&2
+        echo "Install Vagrant or activate the environment that provides it." >&2
+        exit 1
+    fi
+}
+
 # ========================== HARBOR PASSWORD HANDLING ==========================
 
 ensure_harbor_pass() {
@@ -146,6 +156,7 @@ refresh(){
     machine_states=()
     IDX=1
 
+    local name type state
     while IFS=',' read -r _ name type state _; do
         [[ "$type" != "state" ]] && continue
         [[ -z "$name" ]] && continue
@@ -315,6 +326,8 @@ halt_all(){
 
 # NO automatic password prompt here!
 # Password is only requested when provisioning is needed
+
+require_vagrant
 
 while true; do
     refresh

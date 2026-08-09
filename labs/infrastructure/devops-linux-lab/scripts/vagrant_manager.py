@@ -2,7 +2,7 @@
 """
 vagrant_manager.py
 
-Interactive manager for the lab's Vagrant VMs. 
+Interactive manager for the lab's Vagrant VMs.
 Replaces the previous bash manager with a small, testable Python CLI built on `rich`.
 
 Features translated from bash v8.1:
@@ -68,6 +68,7 @@ STATE_ICONS = {
     "default": "[gray]?[/gray]",
 }
 
+
 @dataclass
 class VmAction:
     name: str
@@ -100,13 +101,13 @@ def find_vagrantfile() -> Path | None:
 def get_machine_states(vagrantfile: Path) -> dict[str, str]:
     """
     Ask Vagrant for the state of all machines in the project.
-    Vagrant status is authoritative — if a VM isn't in the Vagrantfile, 
+    Vagrant status is authoritative — if a VM isn't in the Vagrantfile,
     it won't appear here, preventing stale hard-coded entries from acting up.
     """
     states: dict[str, str] = {}
     if not shutil.which("vagrant"):
         return states
-    
+
     try:
         result = subprocess.run(
             ["vagrant", "status"],
@@ -117,7 +118,7 @@ def get_machine_states(vagrantfile: Path) -> dict[str, str]:
         )
     except FileNotFoundError:
         return states
-    
+
     if result.returncode != 0:
         return states
 
@@ -141,7 +142,7 @@ def get_machine_states(vagrantfile: Path) -> dict[str, str]:
 def ensure_harbor_pass() -> None:
     """Prompt for Harbor password if not set in environment."""
     global HARBOR_PASS
-    
+
     if HARBOR_PASS:
         console.print("[green]Using HARBOR_PASS from environment.[/green]")
         return
@@ -160,17 +161,17 @@ def ensure_harbor_pass() -> None:
         if not pwd:
             console.print("[bold red]ERROR: Password cannot be empty.[/bold red]")
             continue
-        
+
         if len(pwd) < 8:
             console.print("[yellow]WARNING: Password is less than 8 characters.[/yellow]")
             if not Confirm.ask("Continue?", default=False):
                 sys.exit(1)
-        
+
         pwd_confirm = getpass.getpass("Confirm password: ")
         if pwd != pwd_confirm:
             console.print("[bold red]ERROR: Passwords do not match.[/bold red]")
             continue
-        
+
         HARBOR_PASS = pwd
         console.print("[green]Password configured successfully.[/green]")
         break
@@ -181,7 +182,7 @@ def ensure_harbor_pass_once() -> None:
     global HARBOR_PROMPT_DONE
     if HARBOR_PROMPT_DONE:
         return
-    
+
     ensure_harbor_pass()
     HARBOR_PROMPT_DONE = True
 
@@ -216,7 +217,7 @@ def run_vagrant(
 
     label = vm or "(all)"
     console.rule(f"[bold cyan]vagrant {action}[/bold cyan] {label}")
-    
+
     env = os.environ.copy()
     env["VAGRANT_DEFAULT_PROVIDER"] = "libvirt"
     if HARBOR_PASS:
@@ -227,9 +228,9 @@ def run_vagrant(
 
     try:
         result = subprocess.run(
-            cmd, 
-            cwd=vagrantfile.parent, 
-            env=env, 
+            cmd,
+            cwd=vagrantfile.parent,
+            env=env,
             stdin=stdin_arg
         )
     except FileNotFoundError:
@@ -249,7 +250,7 @@ def show_main_menu(states: dict[str, str]) -> dict[str, str]:
     """Render the main menu and return the mapping of selection numbers to VMs."""
     console.clear()
     console.print(Panel.fit("[bold white]VAGRANT LAB MANAGER v8.1[/bold white]", border_style="blue"))
-    
+
     table = Table(show_header=False, box=None, padding=(0, 1, 0, 1))
     table.add_column("ID", style="cyan", width=5)
     table.add_column("VM", style="white", width=15)
@@ -261,7 +262,7 @@ def show_main_menu(states: dict[str, str]) -> dict[str, str]:
     for group_name, configured_vms in VM_GROUPS.items():
         # Filter to only display VMs that actually exist according to Vagrant
         actual_vms = [vm for vm in configured_vms if vm in states]
-        
+
         if not actual_vms:
             continue
 
@@ -282,7 +283,7 @@ def show_main_menu(states: dict[str, str]) -> dict[str, str]:
     console.print("[cyan][C] CI/CD Server (no provision) [B] Halt All[/cyan]")
     console.print("[cyan][R] Refresh  [Q] Quit[/cyan]")
     console.print("[gray]Note: Harbor password only required once per session for provisioning[/gray]")
-    
+
     return options
 
 
@@ -291,13 +292,13 @@ def vm_menu(vagrantfile: Path, vm: str) -> None:
     while True:
         states = get_machine_states(vagrantfile)
         state = states.get(vm, "not_created")
-        
+
         console.clear()
         console.print(Panel.fit(f"[bold white]VM MANAGEMENT: {vm}[/bold white]", border_style="blue"))
-        
+
         console.print(f"VM:    [cyan]{vm}[/cyan]")
         console.print(f"State: {state}")
-        
+
         if HARBOR_PASS and HARBOR_PROMPT_DONE:
             console.print("Harbor: [green]configured (session)[/green]")
         elif HARBOR_PASS:
@@ -341,7 +342,7 @@ def vm_menu(vagrantfile: Path, vm: str) -> None:
             sys.exit(0)
         else:
             console.print("[red]Invalid option[/red]")
-        
+
         Prompt.ask("[gray]Press Enter to continue...[/gray]", default="")
 
 
@@ -363,11 +364,11 @@ def start_group(vagrantfile: Path, group_key: str) -> None:
         "M": "MODERN LABS",
         "C": "CI/CD SERVER",
     }
-    
+
     group_name = group_map.get(group_key)
     if not group_name:
         return
-        
+
     states = get_machine_states(vagrantfile)
     # Only act on VMs that actually exist
     vms = [vm for vm in VM_GROUPS[group_name] if vm in states]
@@ -465,25 +466,35 @@ def main() -> None:
     while True:
         states = get_machine_states(vagrantfile)
         options = show_main_menu(states)
-        
+
         choice = Prompt.ask("[bold]Selection[/bold]", default="R")
-        
+
         if choice.isdigit() and choice in options:
             vm_menu(vagrantfile, options[choice])
             continue
-            
+
         choice = choice.upper()
-        
-        if choice == "A": start_group(vagrantfile, "all")
-        elif choice == "V": start_group(vagrantfile, "V")
-        elif choice == "W": start_group(vagrantfile, "W")
-        elif choice == "N": start_group(vagrantfile, "N")
-        elif choice == "L": start_group(vagrantfile, "L")
-        elif choice == "M": start_group(vagrantfile, "M")
-        elif choice == "C": start_group(vagrantfile, "C")
-        elif choice == "B": halt_all(vagrantfile)
-        elif choice == "R": continue
-        elif choice == "Q": sys.exit(0)
+
+        if choice == "A":
+            start_group(vagrantfile, "all")
+        elif choice == "V":
+            start_group(vagrantfile, "V")
+        elif choice == "W":
+            start_group(vagrantfile, "W")
+        elif choice == "N":
+            start_group(vagrantfile, "N")
+        elif choice == "L":
+            start_group(vagrantfile, "L")
+        elif choice == "M":
+            start_group(vagrantfile, "M")
+        elif choice == "C":
+            start_group(vagrantfile, "C")
+        elif choice == "B":
+            halt_all(vagrantfile)
+        elif choice == "R":
+            continue
+        elif choice == "Q":
+            sys.exit(0)
         else:
             console.print("[red]Invalid option[/red]")
             Prompt.ask("[gray]Press Enter to continue...[/gray]", default="")
