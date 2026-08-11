@@ -165,9 +165,9 @@ All hashes, Kerberos tickets, and key material are redacted before reaching the 
 ### Start the Lab
 
 ```bash
-cd labs/security/ad-pentest
+cd labs/security/active-directory/base
 vagrant up
-./scripts/vagrant-manager.sh
+python3 scripts/vagrant_manager.py status
 vagrant status
 ```
 

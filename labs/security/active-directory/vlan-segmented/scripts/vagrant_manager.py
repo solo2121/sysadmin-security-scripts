@@ -14,6 +14,11 @@ Features:
 - Sequential start of all VMs to preserve network boot order
 - Interactive per-VM management
 - Safe non-interactive destroy behavior
+- LAB_PROFILE-aware: "Start All" / "Halt All" and the no-args CLI
+  default only target VMs that actually exist under the Vagrantfile's
+  current profile (explicit LAB_PROFILE, or its hardware-based
+  auto-detection when LAB_PROFILE is unset), instead of always
+  targeting all 12 known VMs.
 
 Requires:
     rich
@@ -230,6 +235,35 @@ def get_vagrant_inventory(
 # ========================== VAGRANT EXECUTION ==========================
 
 
+def resolve_active_vms(
+    vagrantfile: Path,
+) -> tuple[list[str], bool]:
+    """
+    Determine which known lab VMs actually exist under the Vagrantfile's
+    current LAB_PROFILE.
+
+    Uses `vagrant status --machine-readable` (via get_vagrant_inventory)
+    as the source of truth rather than re-implementing the Vagrantfile's
+    PROFILES table or its hardware-based get_optimal_profile auto-detect
+    logic in Python. `vagrant status` already reflects whichever profile
+    the Vagrantfile resolved to -- explicit LAB_PROFILE or auto-detected
+    -- because it lists exactly the machines the current run's
+    `config.vm.define` calls actually produced.
+
+    Returns (active_vm_names_in_declared_order, resolved_via_status).
+    If `vagrant status` is unavailable or returns nothing, falls back to
+    the full ALL_VMS inventory and reports resolved_via_status=False, so
+    callers can fall back to the previous unconditional behavior.
+    """
+    states, _ = get_vagrant_inventory(vagrantfile)
+
+    if not states:
+        return list(ALL_VMS), False
+
+    active = [vm for vm in ALL_VMS if vm in states]
+    return (active or list(ALL_VMS)), True
+
+
 def require_vagrant() -> bool:
     """Return True when Vagrant is available on PATH."""
     if shutil.which("vagrant"):
@@ -414,9 +448,14 @@ def ssh_opnsense(host: str) -> VmAction:
 def show_main_menu(
     states: dict[str, str],
     ssh_hosts: dict[str, str],
+    status_resolved: bool,
 ) -> dict[str, str]:
     """
     Render the main menu.
+
+    When status_resolved is True, a VM name absent from `states` is not
+    just "not created" -- it isn't defined at all under the current
+    LAB_PROFILE, and is shown as excluded rather than startable.
 
     Returns a mapping from selection number to VM name.
     """
@@ -428,6 +467,14 @@ def show_main_menu(
             border_style="blue",
         )
     )
+
+    if status_resolved:
+        active_count = sum(1 for vm in ALL_VMS if vm in states)
+        console.print(
+            f"[dim]LAB_PROFILE: {active_count} of {len(ALL_VMS)} known "
+            f"VMs active -- set LAB_PROFILE to change "
+            f"(see the Vagrantfile's PROFILES table)[/dim]"
+        )
 
     table = Table(
         show_header=False,
@@ -456,6 +503,17 @@ def show_main_menu(
         )
 
         for vm in configured_vms:
+            if status_resolved and vm not in states:
+                table.add_row(
+                    f"[{index:02d}]",
+                    f"[dim]{vm}[/dim]",
+                    "[yellow]excluded (LAB_PROFILE)[/yellow]",
+                    "",
+                )
+                options[str(index)] = vm
+                index += 1
+                continue
+
             state = states.get(
                 vm,
                 "not_created",
@@ -623,12 +681,17 @@ def vm_menu(
 # ========================== GROUP ACTIONS ==========================
 
 
-def start_all(vagrantfile: Path) -> VmAction:
+def start_all(
+    vagrantfile: Path,
+    vms: tuple[str, ...] | list[str],
+) -> VmAction:
     """
-    Start all lab VMs sequentially.
+    Start the given lab VMs sequentially.
 
     --no-parallel is intentional and preserves the original Bash
-    manager's network boot ordering.
+    manager's network boot ordering. Callers should pass the VMs
+    active under the current LAB_PROFILE (see resolve_active_vms),
+    not unconditionally ALL_VMS.
     """
     console.print(
         "[green]Starting all VMs...[/green]"
@@ -637,13 +700,16 @@ def start_all(vagrantfile: Path) -> VmAction:
     return run_vagrant(
         "up",
         vagrantfile,
-        vms_list=ALL_VMS,
+        vms_list=vms,
         extra_args=["--no-parallel"],
     )
 
 
-def halt_all(vagrantfile: Path) -> VmAction:
-    """Halt all lab VMs."""
+def halt_all(
+    vagrantfile: Path,
+    vms: tuple[str, ...] | list[str],
+) -> VmAction:
+    """Halt the given lab VMs."""
     console.print(
         "[yellow]Halting all VMs...[/yellow]"
     )
@@ -651,7 +717,7 @@ def halt_all(vagrantfile: Path) -> VmAction:
     return run_vagrant(
         "halt",
         vagrantfile,
-        vms_list=ALL_VMS,
+        vms_list=vms,
     )
 
 
@@ -829,7 +895,7 @@ def main() -> int:
             )
 
             console.print(
-                "  python3 pentest_lab_manager.py "
+                "  python3 vagrant_manager.py "
                 "destroy kali DC01"
             )
 
@@ -854,19 +920,36 @@ def main() -> int:
         # No explicit VM targets.
         #
         # Preserve lab-wide policies:
-        #   up       -> ALL_VMS + --no-parallel
-        #   halt     -> ALL_VMS
-        #   reload   -> ALL_VMS
-        #   provision -> ALL_VMS
+        #   up       -> active-profile VMs + --no-parallel
+        #   halt     -> active-profile VMs
+        #   reload   -> active-profile VMs
+        #   provision -> active-profile VMs
+        #
+        # "Active-profile VMs" comes from `vagrant status`, which already
+        # reflects the Vagrantfile's LAB_PROFILE (explicit or
+        # auto-detected) -- not a hardcoded ALL_VMS list. If `vagrant
+        # status` is unavailable, this falls back to ALL_VMS, matching
+        # the previous unconditional behavior.
         # ------------------------------------------------------------------
 
         if not args.vms:
+            active_vms, status_resolved = resolve_active_vms(
+                vagrantfile
+            )
+
+            if status_resolved and len(active_vms) < len(ALL_VMS):
+                console.print(
+                    f"[dim]LAB_PROFILE resolved to {len(active_vms)} "
+                    f"of {len(ALL_VMS)} known VMs: "
+                    f"{', '.join(active_vms)}[/dim]"
+                )
+
             if args.action == "up":
                 results.append(
                     run_vagrant(
                         "up",
                         vagrantfile,
-                        vms_list=ALL_VMS,
+                        vms_list=active_vms,
                         extra_args=["--no-parallel"],
                     )
                 )
@@ -880,7 +963,7 @@ def main() -> int:
                     run_vagrant(
                         args.action,
                         vagrantfile,
-                        vms_list=ALL_VMS,
+                        vms_list=active_vms,
                         extra_args=extra,
                     )
                 )
@@ -919,10 +1002,13 @@ def main() -> int:
         states, ssh_hosts = get_vagrant_inventory(
             vagrantfile
         )
+        active_vms = [vm for vm in ALL_VMS if vm in states] or list(ALL_VMS)
+        status_resolved = bool(states)
 
         options = show_main_menu(
             states,
             ssh_hosts,
+            status_resolved,
         )
 
         choice = Prompt.ask(
@@ -940,11 +1026,11 @@ def main() -> int:
         choice = choice.upper()
 
         if choice == "A":
-            result = start_all(vagrantfile)
+            result = start_all(vagrantfile, active_vms)
             print_results([result])
 
         elif choice == "B":
-            result = halt_all(vagrantfile)
+            result = halt_all(vagrantfile, active_vms)
             print_results([result])
 
         elif choice == "R":

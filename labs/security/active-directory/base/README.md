@@ -1,4 +1,4 @@
-# Active Directory Penetration Testing Lab (KVM/libvirt) v1.12
+# Active Directory Penetration Testing Lab (KVM/libvirt) v1.13
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/platform-KVM%2Flibvirt-blue)](https://www.linux-kvm.org/)
@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/Python-57%25-blue)](https://www.python.org/)
 [![Shell](https://img.shields.io/badge/Shell-42%25-darkgreen)](https://www.gnu.org/software/bash/)
 
-Enterprise-grade Active Directory penetration testing lab built with Vagrant and KVM/libvirt. Simulates modern corporate attack surfaces with 11 VMs and 60+ realistic attack paths.
+Enterprise-grade Active Directory penetration testing lab built with Vagrant and KVM/libvirt. Simulates modern corporate attack surfaces with up to 11 VMs and 60+ realistic attack paths, selectable via [Lab Profiles](#lab-profiles) — the default `ad` profile brings up 6 VMs (~19GB RAM); `LAB_PROFILE=full` brings up all 11 (~29.5GB RAM).
 
 ---
 
@@ -17,6 +17,7 @@ Enterprise-grade Active Directory penetration testing lab built with Vagrant and
 - [Target Audience](#target-audience)
 - [Learning Objectives](#learning-objectives)
 - [Lab Architecture](#lab-architecture)
+- [Lab Profiles](#lab-profiles)
 - [Quick Start](#quick-start)
 - [Platform-Specific Guides](#platform-specific-guides)
 - [Attack Scenarios](#attack-scenarios)
@@ -198,6 +199,43 @@ Two isolated networks:
 
 ---
 
+## Lab Profiles
+
+As of this version, `vagrant up` (no arguments) no longer builds all 11 VMs. `kali` and `dc01` are always created; every other VM is created only if it belongs to the active `LAB_PROFILE`. This is controlled by the `LAB_PROFILE` environment variable and is enforced directly in the `Vagrantfile` — it is not just documentation.
+
+```bash
+LAB_PROFILE=minimal vagrant up   # kali, dc01, win10
+LAB_PROFILE=ad vagrant up        # default — kali, dc01, db01, ca01-esc, win10, linux01
+LAB_PROFILE=web vagrant up       # ad profile + juice-shop
+LAB_PROFILE=cloud vagrant up     # ad profile + cloud-pentest
+LAB_PROFILE=full vagrant up      # everything — all 11 VMs
+vagrant up                       # LAB_PROFILE unset -> defaults to "ad"
+```
+
+| Profile | VMs created | vCPU | RAM | Intended use |
+|---|---|---|---|---|
+| `minimal` | kali, dc01, win10 | 6 | ~10 GB | Fastest bring-up. Kerberoasting, AS-REP roasting, local-admin-to-domain-admin, basic BloodHound enumeration. |
+| `ad` **(default)** | kali, dc01, db01, ca01-esc, win10, linux01 | 11 | ~19 GB | The standard day-to-day AD lab — adds AD CS (ESC1/3/4/6/7/8), a second lateral-movement target (db01), and one non-domain-joined Linux box (linux01). |
+| `web` | `ad` profile + juice-shop | 13 | ~21 GB | Everything in `ad`, plus an OWASP Juice Shop target for web-application exercises. juice-shop itself has no AD integration. |
+| `cloud` | `ad` profile + cloud-pentest | 13 | ~21 GB | Everything in `ad`, plus a LocalStack-based AWS attack-surface simulation. cloud-pentest itself has no AD or hybrid-identity integration — it's a standalone IAM/S3/Lambda misconfiguration sandbox. |
+| `full` | all 11 VMs | 22 | ~29.5 GB | Adds print01 (PrintNightmare), llm01 (OWASP LLM Top-10), metasploitable2 (legacy CVEs), juice-shop, and cloud-pentest on top of `ad`. |
+
+An invalid `LAB_PROFILE` value (e.g. `LAB_PROFILE=bogus vagrant up`) fails fast with an error listing the valid profile names, instead of silently falling back to something unexpected.
+
+**Bringing up a VM outside the active profile:** because excluded VMs are never defined (not just powered off), `vagrant up print01` fails with "machine not found" unless `print01` is in the active profile. Select a profile that includes it instead:
+
+```bash
+LAB_PROFILE=full vagrant up print01
+LAB_PROFILE=full vagrant up llm01
+LAB_PROFILE=full vagrant up metasploitable2
+LAB_PROFILE=web vagrant up juice-shop
+LAB_PROFILE=cloud vagrant up cloud-pentest
+```
+
+**Per-VM resource overrides** (`DB01_MEMORY`, `WIN10_CPUS`, etc.) and **per-VM IP overrides** (`DB01_IP`, `WIN10_IP`, etc.) are unaffected by `LAB_PROFILE` and continue to work exactly as before.
+
+---
+
 ## Attack Automation
 
 The lab includes a Python-based automation framework that runs attack modules in a controlled, phased sequence.
@@ -272,10 +310,21 @@ All sensitive data such as hashes, tickets, and keys is automatically redacted b
 Use the included interactive manager instead of typing raw Vagrant commands:
 
 ```bash
-./scripts/vagrant-manager.sh
+python3 scripts/vagrant_manager.py
 ```
 
-The manager shows all VMs grouped by role with live state and IP address for each. From the menu you can SSH into any running VM, start, halt, reload, provision, or destroy individual VMs, start or halt the entire lab with a single key, and destroy every VM in the lab in one step (`X`, with a confirmation prompt) when you're done and want a clean slate.
+It discovers VM names directly from the `Vagrantfile` and is `LAB_PROFILE`-aware (see [Lab Profiles](#lab-profiles)): it also reads the `Vagrantfile`'s `LAB_PROFILES` hash and your `LAB_PROFILE` environment variable, so `--list`, the interactive "a. all" option, and a bare `up`/`halt`/`reload`/`provision`/`destroy` with no VM names all default to only the VMs that actually exist under your active profile — not all 11. VMs excluded by the current profile are shown grayed out with a hint (e.g. `print01 (needs LAB_PROFILE=full)`) instead of being silently included and then failing. You can still target an excluded VM by name explicitly; whether that succeeds depends on whether you've also set the matching `LAB_PROFILE`, exactly as with raw `vagrant up <name>`.
+
+```bash
+python3 scripts/vagrant_manager.py --list        # print discovered VM names and exit
+python3 scripts/vagrant_manager.py up win10 db01  # bring up specific VMs
+python3 scripts/vagrant_manager.py status         # show vagrant status and exit
+
+LAB_PROFILE=full python3 scripts/vagrant_manager.py --list   # see/target all 11 VMs
+LAB_PROFILE=full python3 scripts/vagrant_manager.py up print01
+```
+
+Requires the `rich` package: `pip install rich`.
 
 There is also a lower-level libvirt admin tool for pool, network, and domain management:
 
@@ -326,7 +375,7 @@ vagrant plugin install vagrant-winrm
 
 ```bash
 git clone https://github.com/solo2121/security-engineering-lab.git
-cd security-engineering-lab/labs/security/ad-pentest
+cd security-engineering-lab/labs/security/active-directory/base
 ```
 
 ### Step 5: Start Domain Controller First
@@ -341,22 +390,26 @@ Verify DC is ready:
 vagrant ssh dc01 -c "type C:\\DC-FINAL.txt"
 ```
 
-### Step 6: Deploy Full Lab
+### Step 6: Deploy the Lab
 
 ```bash
 vagrant up
 ```
 
-**Estimated time:** 50–90 minutes, varying by hardware.
+With no `LAB_PROFILE` set, this brings up the default `ad` profile (kali, dc01, db01, ca01-esc, win10, linux01 — 6 VMs, ~19GB RAM). See [Lab Profiles](#lab-profiles) for the full list of profiles and how to select a different one.
+
+**Estimated time:** 20–40 minutes for the default `ad` profile; 50–90 minutes for `LAB_PROFILE=full`, varying by hardware.
 
 ### Step 7: Selective Lab Deployment
 
-Deploy only specific machines to save resources:
+Choose a smaller or larger profile with the `LAB_PROFILE` environment variable:
 
 ```bash
-export VAGRANT_VMS="dc01,kali,llm01,cloud-pentest"
-vagrant up
+LAB_PROFILE=minimal vagrant up   # kali, dc01, win10 only (~10GB RAM)
+LAB_PROFILE=full vagrant up      # all 11 VMs (~29.5GB RAM)
 ```
+
+See [Lab Profiles](#lab-profiles) for the complete profile table and instructions on starting an individual VM that isn't in your active profile.
 
 ---
 
@@ -732,6 +785,25 @@ In-depth docs for this lab live under [`docs/`](docs/):
 ---
 
 ## Changelog
+
+### v1.13 (unreleased)
+
+**Changed:**
+- `vagrant up` (no arguments) no longer creates all 11 VMs. `kali` and `dc01` are always created; every other VM (`db01`, `ca01-esc`, `win10`, `linux01`, `print01`, `llm01`, `metasploitable2`, `juice-shop`, `cloud-pentest`) is now created only if it belongs to the active `LAB_PROFILE`. Default profile is `ad` (kali, dc01, db01, ca01-esc, win10, linux01 — 6 VMs, ~19GB RAM), replacing the old always-on 11-VM (~29.5GB RAM) default. See [Lab Profiles](#lab-profiles).
+- Removed the old "RESTRICTED STARTUP PROFILE (32GB HOSTS)" startup banner — it printed a suggested 6-VM subset (which itself omitted `db01` while including `llm01`/`cloud-pentest`) but never actually enforced it. `LAB_PROFILE` replaces it with an enforced mechanism.
+- `juice-shop` now calls `write_lab_hosts`, matching `metasploitable2` and `cloud-pentest`. Previously it received no `/etc/hosts` lab entries.
+- Removed `scripts/vagrant-manager.sh`. `scripts/vagrant_manager.py` is now the only supported lab manager; it already covered the same operations.
+- `scripts/vagrant_manager.py` is now `LAB_PROFILE`-aware: `--list`, the interactive "a. all" option, and a bare `up`/`halt`/`reload`/`provision`/`destroy` with no VM names now default to only the VMs active under the current profile, instead of all 11 discovered names. VMs excluded by the active profile are shown with a hint instead of being silently targeted and reported as FAILED.
+
+**Fixed:**
+- Quick Start's "Selective Lab Deployment" step documented a `VAGRANT_VMS` environment variable that the `Vagrantfile` never read. Replaced with the real `LAB_PROFILE` mechanism.
+- Quick Start Step 4's clone instructions referenced a nonexistent path (`labs/security/ad-pentest`); corrected to `labs/security/active-directory/base`.
+
+**Breaking / migration notes:**
+- If your workflow, scripts, or CI relies on bare `vagrant up` creating all 11 VMs, either run `LAB_PROFILE=full vagrant up`, or set `LAB_PROFILE=full` in your shell profile / CI environment to restore the old behavior exactly.
+- `vagrant up <name>` for a VM outside the active profile now fails with "machine not found" instead of finding the machine — select a profile that includes it first, e.g. `LAB_PROFILE=full vagrant up print01`. This is a change from prior versions where all 11 machines were always defined and startable by name regardless of any profile.
+- IP addresses, hostnames, VM names, `domain_join_windows`/`disable_internet_gateway`/`add_health_check` call signatures, and the attack-automation scripts are unchanged.
+- `python3 scripts/vagrant_manager.py up` (or `halt`/`reload`/`provision`/`destroy`) with no VM names now targets only the active `LAB_PROFILE`'s VMs, not all 11 discovered names. Explicitly naming VMs (`vagrant_manager.py up print01`) is unaffected. If you have automation that relies on the old all-VMs default, set `LAB_PROFILE=full` in that environment.
 
 ### v1.12 (2026-07-31)
 

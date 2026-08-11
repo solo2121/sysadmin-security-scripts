@@ -9,8 +9,17 @@
 # ==============================================================================
 # Author: Miguel A. Carlo
 # Project: Enterprise Active Directory Penetration Testing Lab
-# Version: 1.12 - Enterprise Edition (FLAT NETWORK - OPTIMIZED)
-# Release Date: 2026-07-31
+# Version: 1.13 - Enterprise Edition (FLAT NETWORK - PROFILE-BASED)
+# Release Date: unreleased
+#
+# Changes in v1.13:
+# - Added LAB_PROFILE (minimal/ad/web/cloud/full) to control which
+#   optional VMs are created; "vagrant up" no longer always builds
+#   all 11 VMs. Default profile is "ad" (kali, dc01, db01, ca01-esc,
+#   win10, linux01). See README.md "Lab Profiles" section.
+# - Removed the unenforced "RESTRICTED STARTUP PROFILE" banner.
+# - juice-shop now calls write_lab_hosts for consistent /etc/hosts
+#   entries, matching metasploitable2 and cloud-pentest.
 #
 # Changes in v1.12:
 # - Fixed plugin check order to prevent false positives
@@ -89,6 +98,61 @@ VM_CPUS = {
   juice_shop: ENV.fetch('JUICE_SHOP_CPUS', 2).to_i,
   cloud_pentest: ENV.fetch('CLOUD_PENTEST_CPUS', 2).to_i
 }
+
+# ------------------------------------------------------------
+# LAB PROFILES - controls which optional VMs get created
+# ------------------------------------------------------------
+# "kali" and "dc01" are always created - every profile needs an
+# attacker box and a domain controller.
+#
+# Every other VM below is created ONLY if its name appears in the
+# active profile's list. This replaces the old always-on behavior
+# where "vagrant up" (no args) built all 11 VMs unconditionally.
+#
+# Selecting a profile:
+#   LAB_PROFILE=ad vagrant up          # default if LAB_PROFILE is unset
+#   LAB_PROFILE=minimal vagrant up
+#   LAB_PROFILE=web vagrant up
+#   LAB_PROFILE=cloud vagrant up
+#   LAB_PROFILE=full vagrant up
+#
+# A VM that isn't in the active profile is never defined, so
+# "vagrant up <name>" for that VM will fail with "machine not
+# found" unless you re-run with a profile that includes it, e.g.:
+#   LAB_PROFILE=full vagrant up print01
+LAB_PROFILES = {
+  'minimal' => %w[win10],
+  'ad'      => %w[db01 ca01-esc win10 linux01],
+  'web'     => %w[db01 ca01-esc win10 linux01 juice-shop],
+  'cloud'   => %w[db01 ca01-esc win10 linux01 cloud-pentest],
+  'full'    => %w[db01 ca01-esc win10 linux01 print01 llm01 metasploitable2 juice-shop cloud-pentest]
+}.freeze
+
+DEFAULT_LAB_PROFILE = 'ad'
+
+LAB_PROFILE = ENV.fetch('LAB_PROFILE', DEFAULT_LAB_PROFILE).downcase
+
+unless LAB_PROFILES.key?(LAB_PROFILE)
+  raise "Invalid LAB_PROFILE '#{LAB_PROFILE}'. Valid profiles: #{LAB_PROFILES.keys.join(', ')} " \
+        "(unset LAB_PROFILE to use the default '#{DEFAULT_LAB_PROFILE}' profile)"
+end
+
+ACTIVE_OPTIONAL_VMS = LAB_PROFILES[LAB_PROFILE]
+
+def profile_includes?(vm_name)
+  ACTIVE_OPTIONAL_VMS.include?(vm_name)
+end
+
+puts ""
+puts "=============================================================="
+puts " LAB_PROFILE: #{LAB_PROFILE}"
+puts "=============================================================="
+puts "  Always-on : kali, dc01"
+puts "  Included  : #{ACTIVE_OPTIONAL_VMS.empty? ? '(none)' : ACTIVE_OPTIONAL_VMS.join(', ')}"
+puts "  Excluded  : #{(LAB_PROFILES.values.flatten.uniq - ACTIVE_OPTIONAL_VMS).join(', ')}"
+puts "  To change : LAB_PROFILE=<#{LAB_PROFILES.keys.join('|')}> vagrant up"
+puts "=============================================================="
+puts ""
 
 # ------------------------------------------------------------
 # PASSWORD CONSTANTS - WITH ENV OVERRIDE SUPPORT
@@ -181,30 +245,6 @@ puts "  VM Count            : #{VM_MEMORY.keys.count}"
 puts "  Total Memory        : #{total_gb} GB"
 puts "  Recommended Host    : 48 GB RAM"
 puts "  Minimum Host        : 32 GB (restricted mode)"
-puts ""
-
-puts "=============================================================="
-puts " MODE: RESTRICTED STARTUP PROFILE (32GB HOSTS)"
-puts "=============================================================="
-puts "  The following subset is supported under constrained memory:"
-puts ""
-puts "  +-------------------+--------+"
-puts "  | VM                | RAM    |"
-puts "  +-------------------+--------+"
-puts "  | kali              | 4 GB   |"
-puts "  | dc01              | 4 GB   |"
-puts "  | win10             | 2 GB   |"
-puts "  | ca01-esc          | 4 GB   |"
-puts "  | llm01             | 4 GB   |"
-puts "  | cloud-pentest     | 2 GB   |"
-puts "  +-------------------+--------+"
-puts "  | TOTAL             | 20 GB  |"
-puts "  +-------------------+--------+"
-puts ""
-puts "  NOTE: Non-essential VMs are excluded in this mode."
-puts "  TIP:  For full lab experience, use 'vagrant up --no-provision'"
-puts "        to start all VMs without provisioning."
-puts "=============================================================="
 puts ""
 
 # ------------------------------------------------------------
@@ -1566,6 +1606,7 @@ Vagrant.configure("2") do |config|
   # ===========================================================================
   # DB01
   # ===========================================================================
+  if profile_includes?("db01")
   config.vm.define "db01" do |vm|
     vm.vm.box = "peru/windows-server-2022-standard-x64-eval"
     vm.vm.hostname = "db01"
@@ -1585,10 +1626,12 @@ Vagrant.configure("2") do |config|
     disable_internet_gateway(vm, "db01")
     add_health_check(vm, "db01")
   end
+  end
 
   # ===========================================================================
   # CA01-ESC - FULL AD CS VULNERABILITIES FOR ESC ATTACKS
   # ===========================================================================
+  if profile_includes?("ca01-esc")
   config.vm.define "ca01-esc" do |vm|
     vm.vm.box = "peru/windows-server-2022-standard-x64-eval"
     vm.vm.hostname = "ca01-esc"
@@ -1748,10 +1791,12 @@ msPKI-Template-Schema-Version: 1
     disable_internet_gateway(vm, "ca01-esc")
     add_health_check(vm, "ca01-esc")
   end
+  end
 
   # ===========================================================================
   # WIN10
   # ===========================================================================
+  if profile_includes?("win10")
   config.vm.define "win10" do |vm|
     vm.vm.box = "peru/windows-10-enterprise-x64-eval"
     vm.vm.hostname = "win10"
@@ -1780,10 +1825,12 @@ msPKI-Template-Schema-Version: 1
     disable_internet_gateway(vm, "win10")
     add_health_check(vm, "win10")
   end
+  end
 
   # ===========================================================================
   # LINUX01
   # ===========================================================================
+  if profile_includes?("linux01")
   config.vm.define "linux01" do |vm|
     vm.vm.box = "generic/ubuntu2204"
     vm.vm.box_version = "4.3.10"
@@ -1841,10 +1888,12 @@ EOF
       echo "Linux01 configured with Polkit vulnerability"
     SHELL
   end
+  end
 
   # ===========================================================================
   # PRINT01
   # ===========================================================================
+  if profile_includes?("print01")
   config.vm.define "print01" do |vm|
     vm.vm.box = "peru/windows-server-2022-standard-x64-eval"
     vm.vm.hostname = "print01"
@@ -1875,10 +1924,12 @@ EOF
     disable_internet_gateway(vm, "print01")
     add_health_check(vm, "print01")
   end
+  end
 
   # ===========================================================================
   # LLM01
   # ===========================================================================
+  if profile_includes?("llm01")
   config.vm.define "llm01" do |vm|
     vm.vm.box = "generic/ubuntu2204"
     vm.vm.box_version = "4.3.10"
@@ -2213,10 +2264,12 @@ EOF
       echo "================================================"
     SHELL
   end
+  end
 
   # ===========================================================================
   # METASPLOITABLE2
   # ===========================================================================
+  if profile_includes?("metasploitable2")
   config.vm.define "metasploitable2" do |vm|
     vm.vm.box = "deargle/metasploitable2"
     vm.vm.box_version = "0.1.0"
@@ -2243,10 +2296,12 @@ EOF
       echo "search #{DOMAIN_NAME}" >> /etc/resolv.conf
     SHELL
   end
+  end
 
   # ===========================================================================
   # JUICE-SHOP
   # ===========================================================================
+  if profile_includes?("juice-shop")
   config.vm.define "juice-shop" do |vm|
     vm.vm.box = "ubuntu/jammy64"
     vm.vm.box_version = "20241007.0.0"
@@ -2262,6 +2317,8 @@ EOF
     end
 
     vm.ssh.insert_key = true
+
+    write_lab_hosts(vm)
     
     vm.vm.provision "shell", name: "juice-shop-setup", run: "once", inline: <<-SHELL
       apt-get update
@@ -2273,10 +2330,12 @@ EOF
       echo "Juice Shop running at http://172.28.128.15"
     SHELL
   end
+  end
 
   # ===========================================================================
   # CLOUD-PENTEST
   # ===========================================================================
+  if profile_includes?("cloud-pentest")
   config.vm.define "cloud-pentest" do |vm|
     vm.vm.box = "generic/ubuntu2204"
     vm.vm.box_version = "4.3.10"
@@ -2614,5 +2673,6 @@ EOF
       echo "See /opt/cloud-lab/ATTACK_VECTORS.md for details"
       echo "================================================"
     SHELL
+  end
   end
 end

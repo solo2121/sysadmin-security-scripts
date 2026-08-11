@@ -7,11 +7,20 @@ Interactive manager for the lab's Vagrant VMs.
 Provides an interactive Rich-based TUI while preserving the same
 Vagrant operations as the original Bash manager.
 
+VM discovery is LAB_PROFILE-aware: it parses the Vagrantfile's LAB_PROFILES
+hash and reads the LAB_PROFILE environment variable (same default, "ad", as
+the Vagrantfile itself), so "all" and the default target list only include
+VMs that actually exist under your current profile, instead of all 11
+possible VM names.
+
 Usage:
     python3 vagrant_manager.py
     python3 vagrant_manager.py --list
     python3 vagrant_manager.py up web db
     python3 vagrant_manager.py status
+
+    LAB_PROFILE=full python3 vagrant_manager.py --list
+    LAB_PROFILE=full python3 vagrant_manager.py up print01
 
 Requires:
     rich
@@ -23,6 +32,7 @@ Install:
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shutil
 import subprocess
@@ -39,6 +49,12 @@ from rich.table import Table
 console = Console()
 
 VAGRANTFILE_CANDIDATES = ("Vagrantfile",)
+
+# Must mirror the Vagrantfile's own defaults (see the "LAB PROFILES" block
+# near the top of the Vagrantfile). If those ever change, update here too.
+LAB_PROFILE_ENV = "LAB_PROFILE"
+DEFAULT_LAB_PROFILE = "ad"
+ALWAYS_ON_VMS = ("kali", "dc01")
 
 ACTIONS = {
     "1": ("up", "Bring VM(s) up"),
@@ -149,6 +165,85 @@ def discover_vms_from_status(vagrantfile: Path) -> list[str]:
             names.append(match.group(1))
 
     return list(dict.fromkeys(names))
+
+
+def parse_lab_profiles(vagrantfile: Path) -> dict[str, list[str]] | None:
+    """
+    Parse the LAB_PROFILES hash out of the Vagrantfile, e.g.:
+
+        LAB_PROFILES = {
+          'minimal' => %w[win10],
+          'ad'      => %w[db01 ca01-esc win10 linux01],
+          ...
+        }.freeze
+
+    Returns None if no LAB_PROFILES block is found. Older Vagrantfiles
+    (or other labs without profile support) are handled by treating
+    every discovered VM as always active, preserving prior behavior.
+    """
+    try:
+        text = vagrantfile.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return None
+
+    block = re.search(r"LAB_PROFILES\s*=\s*\{(.*?)\n\}", text, re.S)
+
+    if not block:
+        return None
+
+    profiles: dict[str, list[str]] = {}
+
+    for name, vm_list in re.findall(
+        r"""['"]([\w-]+)['"]\s*=>\s*%w\[([^\]]*)\]""",
+        block.group(1),
+    ):
+        profiles[name] = vm_list.split()
+
+    return profiles or None
+
+
+def resolve_active_vms(
+    vagrantfile: Path,
+    discovered: list[str],
+) -> tuple[set[str], str, bool]:
+    """
+    Determine which discovered VM names actually exist under the current
+    LAB_PROFILE, mirroring the Vagrantfile's own ENV.fetch('LAB_PROFILE', ...)
+    default and validation logic.
+
+    Returns (active_vm_names, resolved_profile_name, profiles_supported).
+    If the Vagrantfile has no LAB_PROFILES block, profiles_supported is
+    False and every discovered VM is treated as active.
+    """
+    profiles = parse_lab_profiles(vagrantfile)
+
+    if profiles is None:
+        return set(discovered), "", False
+
+    requested = os.environ.get(LAB_PROFILE_ENV, DEFAULT_LAB_PROFILE).lower()
+
+    if requested not in profiles:
+        console.print(
+            f"[yellow]Warning:[/yellow] LAB_PROFILE='{requested}' is not "
+            f"one of {sorted(profiles)}. Vagrant itself will raise an "
+            f"error if you try to use it as-is; for this menu, falling "
+            f"back to '{DEFAULT_LAB_PROFILE}'."
+        )
+        requested = (
+            DEFAULT_LAB_PROFILE
+            if DEFAULT_LAB_PROFILE in profiles
+            else next(iter(profiles))
+        )
+
+    active = set(ALWAYS_ON_VMS) | set(profiles.get(requested, []))
+    return active, requested, True
+
+
+def profile_hint(vagrantfile: Path, vm: str) -> str:
+    """Best-effort hint: which profile would include an excluded VM."""
+    profiles = parse_lab_profiles(vagrantfile) or {}
+    hits = [name for name, vm_list in profiles.items() if vm in vm_list]
+    return f"LAB_PROFILE={hits[0]}" if hits else ""
 
 
 def require_vagrant() -> bool:
@@ -279,8 +374,12 @@ def show_status(vagrantfile: Path) -> bool:
     return result.returncode == 0
 
 
-def pick_vms(vms: list[str]) -> list[str]:
-    """Prompt the user to pick one, several, or all VMs."""
+def pick_vms(
+    vms: list[str],
+    active: set[str],
+    vagrantfile: Path,
+) -> list[str]:
+    """Prompt the user to pick one, several, or all (active-profile) VMs."""
     if not vms:
         console.print(
             "[yellow]No VMs discovered; "
@@ -291,9 +390,16 @@ def pick_vms(vms: list[str]) -> list[str]:
     console.print("\n[bold]Available VMs:[/bold]")
 
     for index, name in enumerate(vms, start=1):
-        console.print(f"  {index}. {name}")
+        if name in active:
+            console.print(f"  {index}. {name}")
+        else:
+            hint = profile_hint(vagrantfile, name)
+            suffix = f" (needs {hint})" if hint else " (not in current LAB_PROFILE)"
+            console.print(f"  {index}. [dim]{name}[/dim][yellow]{suffix}[/yellow]")
 
-    console.print("  a. all")
+    console.print(
+        f"  a. all  [dim](the {len(active)} VM(s) in your current LAB_PROFILE)[/dim]"
+    )
 
     choice = Prompt.ask(
         "Select VM number(s) (comma-separated) or 'a' for all",
@@ -301,7 +407,7 @@ def pick_vms(vms: list[str]) -> list[str]:
     )
 
     if choice.strip().lower() == "a":
-        return vms.copy()
+        return [name for name in vms if name in active]
 
     selected: list[str] = []
     seen: set[str] = set()
@@ -324,9 +430,9 @@ def pick_vms(vms: list[str]) -> list[str]:
     if not selected:
         console.print(
             "[yellow]No valid selection made; "
-            "defaulting to all.[/yellow]"
+            "defaulting to active-profile VMs.[/yellow]"
         )
-        return vms.copy()
+        return [name for name in vms if name in active]
 
     return selected
 
@@ -362,11 +468,22 @@ def validate_vm_names(
 
 def interactive_menu(
     vms: list[str],
+    active: set[str],
+    profile: str,
+    supported: bool,
     vagrantfile: Path,
 ) -> None:
     """Run the interactive Vagrant manager."""
     if not require_vagrant():
         return
+
+    if supported:
+        excluded = [name for name in vms if name not in active]
+        console.print(
+            f"[bold]LAB_PROFILE:[/bold] {profile}  "
+            f"[dim]({len(active)} active, {len(excluded)} excluded -- "
+            f"set LAB_PROFILE to change)[/dim]"
+        )
 
     while True:
         console.print(
@@ -397,7 +514,7 @@ def interactive_menu(
             continue
 
         if action == "ssh":
-            targets = pick_vms(vms)
+            targets = pick_vms(vms, active, vagrantfile)
 
             if len(targets) != 1:
                 console.print(
@@ -414,7 +531,7 @@ def interactive_menu(
             continue
 
         if action == "destroy":
-            targets = pick_vms(vms)
+            targets = pick_vms(vms, active, vagrantfile)
 
             names = (
                 ", ".join(targets)
@@ -444,7 +561,7 @@ def interactive_menu(
             print_results(results)
             continue
 
-        targets = pick_vms(vms)
+        targets = pick_vms(vms, active, vagrantfile)
         targets_to_run = targets or [None]
 
         results = [
@@ -507,11 +624,17 @@ def main() -> int:
     )
 
     vms = discover_vms(vagrantfile)
+    active, profile, supported = resolve_active_vms(vagrantfile, vms)
 
     if args.list:
         if vms:
             for vm in vms:
-                console.print(vm)
+                if not supported or vm in active:
+                    console.print(vm)
+                else:
+                    hint = profile_hint(vagrantfile, vm)
+                    suffix = f" (needs {hint})" if hint else " (excluded)"
+                    console.print(f"{vm}{suffix}")
         else:
             console.print(
                 "[yellow]No VMs discovered.[/yellow]"
@@ -533,7 +656,10 @@ def main() -> int:
         if args.vms and not targets:
             return 1
 
-        targets_to_run = targets or vms or [None]
+        default_targets = (
+            [name for name in vms if name in active] if supported else vms
+        )
+        targets_to_run = targets or default_targets or [None]
 
         extra = (
             ["-f"]
@@ -557,6 +683,9 @@ def main() -> int:
 
     interactive_menu(
         vms,
+        active,
+        profile,
+        supported,
         vagrantfile,
     )
 
