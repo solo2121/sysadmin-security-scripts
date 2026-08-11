@@ -19,7 +19,10 @@ Usage:
     python3 vagrant_manager.py up web db
     python3 vagrant_manager.py status
 
-    LAB_PROFILE=full python3 vagrant_manager.py --list
+    LAB_PROFILE=ad python3 vagrant_manager.py --list
+    LAB_PROFILE=ai python3 vagrant_manager.py up llm01
+    LAB_PROFILE=web python3 vagrant_manager.py up juice-shop
+    LAB_PROFILE=cloud python3 vagrant_manager.py up cloud-pentest
     LAB_PROFILE=full python3 vagrant_manager.py up print01
 
 Requires:
@@ -54,6 +57,7 @@ VAGRANTFILE_CANDIDATES = ("Vagrantfile",)
 # near the top of the Vagrantfile). If those ever change, update here too.
 LAB_PROFILE_ENV = "LAB_PROFILE"
 DEFAULT_LAB_PROFILE = "ad"
+# Core VMs are available in every lab profile.
 ALWAYS_ON_VMS = ("kali", "dc01")
 
 ACTIONS = {
@@ -240,10 +244,12 @@ def resolve_active_vms(
 
 
 def profile_hint(vagrantfile: Path, vm: str) -> str:
-    """Best-effort hint: which profile would include an excluded VM."""
+    """Return the profiles that include a VM."""
     profiles = parse_lab_profiles(vagrantfile) or {}
     hits = [name for name, vm_list in profiles.items() if vm in vm_list]
-    return f"LAB_PROFILE={hits[0]}" if hits else ""
+    if not hits:
+        return ""
+    return ", ".join(f"LAB_PROFILE={name}" for name in hits)
 
 
 def require_vagrant() -> bool:
@@ -394,7 +400,7 @@ def pick_vms(
             console.print(f"  {index}. {name}")
         else:
             hint = profile_hint(vagrantfile, name)
-            suffix = f" (needs {hint})" if hint else " (not in current LAB_PROFILE)"
+            suffix = f" (available via {hint})" if hint else " (not in current LAB_PROFILE)"
             console.print(f"  {index}. [dim]{name}[/dim][yellow]{suffix}[/yellow]")
 
     console.print(
@@ -440,28 +446,53 @@ def pick_vms(
 def validate_vm_names(
     requested: list[str],
     discovered: list[str],
+    active: set[str],
+    profile: str,
+    supported: bool,
+    vagrantfile: Path,
 ) -> list[str]:
     """
     Validate explicitly supplied VM names.
 
-    Returns the valid names while preserving their input order.
+    When LAB_PROFILES are supported, explicitly requested VMs must also be
+    active in the current LAB_PROFILE. This keeps command-line operations
+    consistent with the interactive manager and the Vagrantfile.
     """
     if not requested or not discovered:
         return requested
 
     known = set(discovered)
-    invalid = [name for name in requested if name not in known]
+    unknown = [name for name in requested if name not in known]
 
-    if invalid:
+    if unknown:
         console.print(
             "[bold red]Error:[/bold red] Unknown VM(s): "
-            + ", ".join(invalid)
+            + ", ".join(unknown)
         )
         console.print(
-            "[dim]Known VMs:[/dim] "
-            + ", ".join(discovered)
+            "[dim]Known VMs:[/dim] " + ", ".join(discovered)
         )
         return []
+
+    if supported:
+        excluded = [name for name in requested if name not in active]
+        if excluded:
+            console.print(
+                f"[bold red]Error:[/bold red] VM(s) not available "
+                f"under LAB_PROFILE='{profile}': "
+                + ", ".join(excluded)
+            )
+            for name in excluded:
+                hint = profile_hint(vagrantfile, name)
+                if hint:
+                    console.print(
+                        f"[yellow]{name}:[/yellow] use {hint}"
+                    )
+                else:
+                    console.print(
+                        f"[yellow]{name}:[/yellow] not assigned to a profile"
+                    )
+            return []
 
     return list(dict.fromkeys(requested))
 
@@ -651,6 +682,10 @@ def main() -> int:
         targets = validate_vm_names(
             args.vms,
             vms,
+            active,
+            profile,
+            supported,
+            vagrantfile,
         )
 
         if args.vms and not targets:
