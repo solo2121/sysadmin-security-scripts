@@ -449,7 +449,7 @@ def show_main_menu(
     states: dict[str, str],
     ssh_hosts: dict[str, str],
     status_resolved: bool,
-) -> dict[str, str]:
+) -> tuple[dict[str, str], set[str]]:
     """
     Render the main menu.
 
@@ -457,7 +457,18 @@ def show_main_menu(
     just "not created" -- it isn't defined at all under the current
     LAB_PROFILE, and is shown as excluded rather than startable.
 
-    Returns a mapping from selection number to VM name.
+    Excluded VMs are listed for discoverability but are intentionally
+    left out of the returned `options` mapping: they don't exist under
+    the Vagrantfile's current LAB_PROFILE, so passing one to `vagrant`
+    fails with "was not found configured for this Vagrant environment"
+    instead of a clean, actionable message. Callers should route their
+    selection number through `excluded` first.
+
+    Returns (options, excluded):
+        options:  selection number -> VM name, for VMs that are
+                  selectable right now.
+        excluded: selection numbers that correspond to a VM excluded by
+                  the current LAB_PROFILE.
     """
     console.clear()
 
@@ -492,6 +503,7 @@ def show_main_menu(
 
     index = 1
     options: dict[str, str] = {}
+    excluded: set[str] = set()
 
     for vlan_name, configured_vms in VLAN_GROUPS.items():
         table.add_row(
@@ -510,7 +522,7 @@ def show_main_menu(
                     "[yellow]excluded (LAB_PROFILE)[/yellow]",
                     "",
                 )
-                options[str(index)] = vm
+                excluded.add(str(index))
                 index += 1
                 continue
 
@@ -550,7 +562,7 @@ def show_main_menu(
         "[Q] Quit[/cyan]"
     )
 
-    return options
+    return options, excluded
 
 
 def vm_menu(
@@ -1005,7 +1017,7 @@ def main() -> int:
         active_vms = [vm for vm in ALL_VMS if vm in states] or list(ALL_VMS)
         status_resolved = bool(states)
 
-        options = show_main_menu(
+        options, excluded = show_main_menu(
             states,
             ssh_hosts,
             status_resolved,
@@ -1016,12 +1028,30 @@ def main() -> int:
             default="R",
         )
 
-        if choice.isdigit() and choice in options:
-            vm_menu(
-                vagrantfile,
-                options[choice],
-            )
-            continue
+        if choice.isdigit():
+            if choice in options:
+                vm_menu(
+                    vagrantfile,
+                    options[choice],
+                )
+                continue
+
+            if choice in excluded:
+                console.print(
+                    "[yellow]That VM is excluded by the current "
+                    "LAB_PROFILE and does not exist in this Vagrant "
+                    "environment.[/yellow]"
+                )
+                console.print(
+                    "[dim]Set LAB_PROFILE to a profile that includes "
+                    "it, e.g. LAB_PROFILE=full[/dim]"
+                )
+
+                Prompt.ask(
+                    "[bright_black]Press Enter to continue...[/bright_black]",
+                    default="",
+                )
+                continue
 
         choice = choice.upper()
 
