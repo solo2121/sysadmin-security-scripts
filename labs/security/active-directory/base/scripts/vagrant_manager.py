@@ -68,6 +68,7 @@ ACTIONS = {
     "5": ("destroy", "Destroy VM(s)"),
     "6": ("ssh", "SSH into a VM"),
     "7": ("status", "Show status"),
+    "8": ("list_all", "List all lab VMs"),
     "q": ("quit", "Quit"),
 }
 
@@ -384,8 +385,14 @@ def pick_vms(
     vms: list[str],
     active: set[str],
     vagrantfile: Path,
-) -> list[str]:
-    """Prompt the user to pick one, several, or all (active-profile) VMs."""
+) -> list[str] | None:
+    """
+    Prompt the user to pick one, several, or all (active-profile) VMs.
+
+    Returns None if the user's selection resolved to nothing runnable
+    (e.g. they only picked VMs excluded by the current LAB_PROFILE);
+    callers must treat None as "cancel", not "operate on everything".
+    """
     if not vms:
         console.print(
             "[yellow]No VMs discovered; "
@@ -416,6 +423,7 @@ def pick_vms(
         return [name for name in vms if name in active]
 
     selected: list[str] = []
+    skipped: list[str] = []
     seen: set[str] = set()
 
     for part in choice.split(","):
@@ -429,9 +437,34 @@ def pick_vms(
         if 1 <= index <= len(vms):
             name = vms[index - 1]
 
+            if name not in active:
+                if name not in skipped:
+                    skipped.append(name)
+                continue
+
             if name not in seen:
                 selected.append(name)
                 seen.add(name)
+
+    if skipped:
+        console.print(
+            "[yellow]Skipped (excluded by current LAB_PROFILE):[/yellow] "
+            + ", ".join(skipped)
+        )
+        for name in skipped:
+            hint = profile_hint(vagrantfile, name)
+            console.print(
+                f"  [dim]{name}: use {hint}[/dim]"
+                if hint
+                else f"  [dim]{name}: not assigned to a profile[/dim]"
+            )
+
+        if not selected:
+            console.print(
+                "[yellow]No active-profile VM was selected; "
+                "cancelling this action.[/yellow]"
+            )
+            return None
 
     if not selected:
         console.print(
@@ -508,22 +541,23 @@ def interactive_menu(
     if not require_vagrant():
         return
 
-    if supported:
-        excluded = [name for name in vms if name not in active]
-        console.print(
-            f"[bold]LAB_PROFILE:[/bold] {profile}  "
-            f"[dim]({len(active)} active, {len(excluded)} excluded -- "
-            f"set LAB_PROFILE to change)[/dim]"
-        )
-
     while True:
+        if supported:
+            excluded = [name for name in vms if name not in active]
+            menu_title = (
+                f"Vagrant Lab Manager -- Profile: {profile} | "
+                f"Active: {len(active)} | Excluded: {len(excluded)}"
+            )
+        else:
+            menu_title = "Vagrant Lab Manager"
+
         console.print(
             Panel.fit(
                 "\n".join(
                     f"{key}. {label}"
                     for key, (_, label) in ACTIONS.items()
                 ),
-                title="Vagrant Lab Manager",
+                title=menu_title,
                 border_style="cyan",
             )
         )
@@ -536,6 +570,31 @@ def interactive_menu(
 
         action, _ = ACTIONS[choice]
 
+        if action == "list_all":
+            table = Table(title="All lab VMs")
+            table.add_column("VM")
+            table.add_column("Status")
+            table.add_column("Available profiles")
+
+            profiles = parse_lab_profiles(vagrantfile) or {}
+
+            for name in vms:
+                owning = [
+                    p_name
+                    for p_name, p_vms in profiles.items()
+                    if name in p_vms or name in ALWAYS_ON_VMS
+                ]
+                table.add_row(
+                    name,
+                    "[green]active[/green]"
+                    if name in active
+                    else "[yellow]excluded[/yellow]",
+                    ", ".join(owning) if owning else "-",
+                )
+
+            console.print(table)
+            continue
+
         if action == "quit":
             console.print("Bye.")
             return
@@ -546,6 +605,10 @@ def interactive_menu(
 
         if action == "ssh":
             targets = pick_vms(vms, active, vagrantfile)
+
+            if targets is None:
+                console.print("[yellow]Cancelled.[/yellow]")
+                continue
 
             if len(targets) != 1:
                 console.print(
@@ -563,6 +626,10 @@ def interactive_menu(
 
         if action == "destroy":
             targets = pick_vms(vms, active, vagrantfile)
+
+            if targets is None:
+                console.print("[yellow]Cancelled.[/yellow]")
+                continue
 
             names = (
                 ", ".join(targets)
@@ -593,6 +660,11 @@ def interactive_menu(
             continue
 
         targets = pick_vms(vms, active, vagrantfile)
+
+        if targets is None:
+            console.print("[yellow]Cancelled.[/yellow]")
+            continue
+
         targets_to_run = targets or [None]
 
         results = [
