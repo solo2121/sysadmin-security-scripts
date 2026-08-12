@@ -55,10 +55,10 @@ coverage:
 	pytest tests/python/ -v --cov=. --cov-report=term-missing --cov-fail-under=80
 
 validate:
-	@echo "==> vagrant validate (ad-pentest)"
-	cd labs/security/ad-pentest && vagrant validate
-	@echo "==> vagrant validate (ad-pentest-vlan)"
-	cd labs/security/ad-pentest-vlan && vagrant validate
+	@echo "==> vagrant validate (active-directory/base)"
+	cd labs/security/active-directory/base && vagrant validate
+	@echo "==> vagrant validate (active-directory/vlan-segmented)"
+	cd labs/security/active-directory/vlan-segmented && vagrant validate
 	@echo "==> vagrant validate (devops-linux-lab)"
 	cd labs/infrastructure/devops-linux-lab && vagrant validate
 
