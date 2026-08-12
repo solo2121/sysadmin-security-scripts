@@ -82,6 +82,21 @@ class VmAction:
     detail: str = ""
 
 
+@dataclass(frozen=True)
+class VmTarget:
+    """
+    A VM selected for an operation.
+
+    profile_override is set only when the user picked a VM outside the
+    current LAB_PROFILE and explicitly agreed to run this one action
+    under the profile that includes it. It is scoped to a single
+    `vagrant` subprocess call, not the whole session.
+    """
+
+    name: str
+    profile_override: str | None = None
+
+
 def find_vagrantfile() -> Path | None:
     """Find a Vagrantfile in the current directory or its parents."""
     here = Path.cwd()
@@ -253,6 +268,24 @@ def profile_hint(vagrantfile: Path, vm: str) -> str:
     return ", ".join(f"LAB_PROFILE={name}" for name in hits)
 
 
+def best_override_profile(vagrantfile: Path, vm: str) -> str | None:
+    """
+    Pick the most-scoped LAB_PROFILE that includes `vm`.
+
+    Prefers a narrower named profile (e.g. 'web') over 'full' when a VM
+    belongs to both, so an assisted one-off run doesn't unnecessarily
+    widen the resource footprint beyond what's needed for that VM.
+    """
+    profiles = parse_lab_profiles(vagrantfile) or {}
+    hits = sorted(name for name, vm_list in profiles.items() if vm in vm_list)
+
+    if not hits:
+        return None
+
+    narrower = [name for name in hits if name != "full"]
+    return narrower[0] if narrower else hits[0]
+
+
 def require_vagrant() -> bool:
     """Check whether Vagrant is available on PATH."""
     if shutil.which("vagrant"):
@@ -270,12 +303,17 @@ def run_vagrant(
     vm: str | None,
     vagrantfile: Path,
     extra_args: list[str] | None = None,
+    profile_override: str | None = None,
 ) -> VmAction:
     """
     Run a Vagrant subcommand with live output.
 
     Commands are always executed from the directory containing
     the discovered Vagrantfile.
+
+    profile_override, if given, is applied only to this subprocess's
+    environment (via a copy of os.environ) so a single assisted-switch
+    action doesn't change LAB_PROFILE for the rest of the session.
     """
     cmd = ["vagrant", action]
 
@@ -287,6 +325,15 @@ def run_vagrant(
 
     label = vm or "(all)"
 
+    env = None
+    if profile_override:
+        env = {**os.environ, LAB_PROFILE_ENV: profile_override}
+        console.print(
+            f"[dim]Running this action with {LAB_PROFILE_ENV}="
+            f"{profile_override} (this session stays on its own "
+            f"profile otherwise).[/dim]"
+        )
+
     console.rule(
         f"[bold cyan]vagrant {action}[/bold cyan] {label}"
     )
@@ -296,6 +343,7 @@ def run_vagrant(
             cmd,
             cwd=vagrantfile.parent,
             check=False,
+            env=env,
         )
     except FileNotFoundError:
         return VmAction(
@@ -385,13 +433,19 @@ def pick_vms(
     vms: list[str],
     active: set[str],
     vagrantfile: Path,
-) -> list[str] | None:
+) -> list[VmTarget] | None:
     """
     Prompt the user to pick one, several, or all (active-profile) VMs.
 
+    Picking a VM outside the current LAB_PROFILE doesn't just skip it:
+    the user is asked whether to run that one action under the profile
+    that includes it (see best_override_profile / VmTarget). Declining
+    skips that VM; accepting scopes the profile switch to that single
+    `vagrant` call only, leaving the rest of the session unaffected.
+
     Returns None if the user's selection resolved to nothing runnable
-    (e.g. they only picked VMs excluded by the current LAB_PROFILE);
-    callers must treat None as "cancel", not "operate on everything".
+    (nothing picked, or every excluded pick was declined); callers must
+    treat None as "cancel", not "operate on everything".
     """
     if not vms:
         console.print(
@@ -420,10 +474,10 @@ def pick_vms(
     )
 
     if choice.strip().lower() == "a":
-        return [name for name in vms if name in active]
+        return [VmTarget(name) for name in vms if name in active]
 
-    selected: list[str] = []
-    skipped: list[str] = []
+    selected: list[VmTarget] = []
+    declined: list[str] = []
     seen: set[str] = set()
 
     for part in choice.split(","):
@@ -434,44 +488,55 @@ def pick_vms(
 
         index = int(part)
 
-        if 1 <= index <= len(vms):
-            name = vms[index - 1]
+        if not (1 <= index <= len(vms)):
+            continue
 
-            if name not in active:
-                if name not in skipped:
-                    skipped.append(name)
-                continue
+        name = vms[index - 1]
 
-            if name not in seen:
-                selected.append(name)
-                seen.add(name)
+        if name in seen:
+            continue
 
-    if skipped:
+        if name in active:
+            selected.append(VmTarget(name))
+            seen.add(name)
+            continue
+
+        override = best_override_profile(vagrantfile, name)
+
+        if override is None:
+            console.print(
+                f"[yellow]'{name}' isn't assigned to any LAB_PROFILE "
+                f"-- skipping.[/yellow]"
+            )
+            declined.append(name)
+            continue
+
+        if Confirm.ask(
+            f"'{name}' requires LAB_PROFILE={override} (this session "
+            f"is on a different profile). Run this one action with "
+            f"LAB_PROFILE={override}?",
+            default=False,
+        ):
+            selected.append(VmTarget(name, profile_override=override))
+            seen.add(name)
+        else:
+            declined.append(name)
+
+    if declined:
         console.print(
-            "[yellow]Skipped (excluded by current LAB_PROFILE):[/yellow] "
-            + ", ".join(skipped)
+            "[yellow]Not running for:[/yellow] " + ", ".join(declined)
         )
-        for name in skipped:
-            hint = profile_hint(vagrantfile, name)
-            console.print(
-                f"  [dim]{name}: use {hint}[/dim]"
-                if hint
-                else f"  [dim]{name}: not assigned to a profile[/dim]"
-            )
-
-        if not selected:
-            console.print(
-                "[yellow]No active-profile VM was selected; "
-                "cancelling this action.[/yellow]"
-            )
-            return None
 
     if not selected:
+        if declined:
+            console.print("[yellow]Cancelling this action.[/yellow]")
+            return None
+
         console.print(
             "[yellow]No valid selection made; "
             "defaulting to active-profile VMs.[/yellow]"
         )
-        return [name for name in vms if name in active]
+        return [VmTarget(name) for name in vms if name in active]
 
     return selected
 
@@ -528,6 +593,27 @@ def validate_vm_names(
             return []
 
     return list(dict.fromkeys(requested))
+
+
+def run_targets(
+    action: str,
+    vagrantfile: Path,
+    targets: list[VmTarget],
+    extra_args: list[str] | None = None,
+) -> list[VmAction]:
+    """Run `action` across each VmTarget, or the whole env if targets is empty."""
+    targets_to_run: list[VmTarget | None] = targets or [None]
+
+    return [
+        run_vagrant(
+            action,
+            target.name if target else None,
+            vagrantfile,
+            extra_args=extra_args,
+            profile_override=target.profile_override if target else None,
+        )
+        for target in targets_to_run
+    ]
 
 
 def interactive_menu(
@@ -619,8 +705,9 @@ def interactive_menu(
 
             run_vagrant(
                 "ssh",
-                targets[0],
+                targets[0].name,
                 vagrantfile,
+                profile_override=targets[0].profile_override,
             )
             continue
 
@@ -632,7 +719,7 @@ def interactive_menu(
                 continue
 
             names = (
-                ", ".join(targets)
+                ", ".join(t.name for t in targets)
                 if targets
                 else "ALL VMs"
             )
@@ -644,17 +731,12 @@ def interactive_menu(
                 console.print("Cancelled.")
                 continue
 
-            targets_to_run = targets or [None]
-
-            results = [
-                run_vagrant(
-                    "destroy",
-                    vm,
-                    vagrantfile,
-                    extra_args=["-f"],
-                )
-                for vm in targets_to_run
-            ]
+            results = run_targets(
+                "destroy",
+                vagrantfile,
+                targets,
+                extra_args=["-f"],
+            )
 
             print_results(results)
             continue
@@ -665,16 +747,7 @@ def interactive_menu(
             console.print("[yellow]Cancelled.[/yellow]")
             continue
 
-        targets_to_run = targets or [None]
-
-        results = [
-            run_vagrant(
-                action,
-                vm,
-                vagrantfile,
-            )
-            for vm in targets_to_run
-        ]
+        results = run_targets(action, vagrantfile, targets)
 
         print_results(results)
 

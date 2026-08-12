@@ -307,13 +307,19 @@ All sensitive data such as hashes, tickets, and keys is automatically redacted b
 
 ## Lab Manager
 
-Use the included interactive manager instead of typing raw Vagrant commands:
+Use the included interactive manager instead of typing raw Vagrant commands.
+
+**Why:** the Vagrantfile only defines the VMs in your active `LAB_PROFILE` — raw `vagrant up print01` under the default `ad` profile fails with `The machine 'print01' was not found configured for this Vagrant environment`, because `print01` genuinely doesn't exist under that profile, not because of a typo. `scripts/vagrant_manager.py` knows about `LAB_PROFILE` and handles this for you instead of leaving you to decode that error yourself.
 
 ```bash
 python3 scripts/vagrant_manager.py
 ```
 
-It discovers VM names directly from the `Vagrantfile` and is `LAB_PROFILE`-aware (see [Lab Profiles](#lab-profiles)): it also reads the `Vagrantfile`'s `LAB_PROFILES` hash and your `LAB_PROFILE` environment variable, so `--list`, the interactive "a. all" option, and a bare `up`/`halt`/`reload`/`provision`/`destroy` with no VM names all default to only the VMs that actually exist under your active profile — not all 11. VMs excluded by the current profile are shown grayed out with a hint (e.g. `print01 (needs LAB_PROFILE=full)`) instead of being silently included and then failing. You can still target an excluded VM by name explicitly; whether that succeeds depends on whether you've also set the matching `LAB_PROFILE`, exactly as with raw `vagrant up <name>`.
+It discovers VM names directly from the `Vagrantfile` and is `LAB_PROFILE`-aware (see [Lab Profiles](#lab-profiles)): it reads the `Vagrantfile`'s `LAB_PROFILES` hash and your `LAB_PROFILE` environment variable, so `--list`, the interactive "a. all" option, and a bare `up`/`halt`/`reload`/`provision`/`destroy` with no VM names all default to only the VMs that actually exist under your active profile — not all 11. VMs excluded by the current profile are shown grayed out with a hint (e.g. `print01 (needs LAB_PROFILE=full)`).
+
+**Picking an excluded VM in the interactive menu:** you're not locked out of it. The menu asks whether to run just that one action under the profile that includes it — e.g. picking `print01` under `LAB_PROFILE=ad` asks *"'print01' requires LAB_PROFILE=full... Run this one action with LAB_PROFILE=full?"*. Answering yes runs only that command under `full`; the rest of your session (and your shell's `LAB_PROFILE`) is untouched. Answering no cancels cleanly instead of erroring out against Vagrant. Option `8` ("List all lab VMs") shows every VM, its status, and which profile(s) include it, for browsing before you commit to anything.
+
+**Non-interactive / scripted use** (`up`, `halt`, etc. passed as CLI args) does not prompt — it's meant for automation, so an excluded VM name is rejected immediately with an error naming the profile it belongs to, rather than blocking on a question no one is there to answer:
 
 ```bash
 python3 scripts/vagrant_manager.py --list        # print discovered VM names and exit
@@ -696,6 +702,7 @@ curl http://172.28.128.80:4566/_localstack/health
 
 | Issue | Cause | Solution |
 |-------|-------|----------|
+| `vagrant up <vm>` says "was not found configured for this Vagrant environment" | `<vm>` isn't in your active `LAB_PROFILE` (see [Lab Profiles](#lab-profiles)) | Either `LAB_PROFILE=full vagrant up <vm>`, or use `scripts/vagrant_manager.py` (see [Lab Manager](#lab-manager)), whose interactive menu offers to run that one VM under the right profile for you. |
 | VM won't boot | Insufficient RAM | Increase RAM or reduce VMs. |
 | DNS resolution fails | DC01 not ready | Wait 5-10 min, then reboot clients. |
 | WinRM connection timeout | Firewall/network issue | `vagrant winrm list` to test. |

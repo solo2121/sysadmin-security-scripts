@@ -207,6 +207,42 @@ Re-run:
 
 ---
 
+---
+
+## 8. `vagrant up <vm>` Fails with "was not found configured for this Vagrant environment"
+
+### Symptoms
+
+```
+The machine with the name '<vm>' was not found configured for
+this Vagrant environment.
+```
+
+This happens for VMs like `metasploitable2`, `juice-shop`, `llm01`, `print01`, or `cloud-pentest`.
+
+### Cause
+
+Not a bug in the requested VM — that VM genuinely isn't defined under your active `LAB_PROFILE`. The Vagrantfile only defines the machines belonging to the current profile (see [VM Profiles](../README.md#vm-profiles)); it doesn't create every VM and mark the rest "off". Running `vagrant up <vm>` directly for an excluded VM will always fail this way, by design — that's how `LAB_PROFILE` keeps resource usage bounded to what you actually asked for.
+
+### Fix
+
+Either:
+
+```bash
+# Re-run with a profile that includes the VM
+LAB_PROFILE=full vagrant up metasploitable2
+```
+
+or, preferably, use `scripts/vagrant_manager.py` (see [Lab Manager](../README.md#lab-manager)) instead of raw `vagrant` commands — its interactive menu shows which profile a VM needs and offers to run that one action under it, without you needing to know or type the right `LAB_PROFILE` value yourself:
+
+```bash
+python3 scripts/vagrant_manager.py
+```
+
+Do not use `scripts/vagrant-manager.sh` for this — it predates `LAB_PROFILE` and has no awareness of profiles, so it will hit this same error with no recovery path.
+
+---
+
 ## Debug Checklist
 
 Before opening an issue:

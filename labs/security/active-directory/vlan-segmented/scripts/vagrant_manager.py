@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -264,6 +265,83 @@ def resolve_active_vms(
     return (active or list(ALL_VMS)), True
 
 
+def parse_profiles(vagrantfile: Path) -> dict[str, dict] | None:
+    """
+    Parse the Vagrantfile's PROFILES hash, e.g.:
+
+        PROFILES = {
+          'ad' => {
+            description: '...',
+            vms: %w[opnsense DC01 kali WIN10 CA01-ESC DB01 linux01],
+            min_ram: 16384,
+            recommended_ram: 32768
+          },
+          ...
+        }
+
+    Returns None if no PROFILES block is found (older Vagrantfile, or
+    a lab without profile support).
+    """
+    try:
+        text = vagrantfile.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return None
+
+    block = re.search(r"PROFILES\s*=\s*\{(.*?)\n\}\n", text, re.S)
+
+    if not block:
+        return None
+
+    profiles: dict[str, dict] = {}
+
+    for entry in re.finditer(
+        r"""['"](?P<name>[\w-]+)['"]\s*=>\s*\{(?P<body>.*?)\},?\s*"""
+        r"""(?=\n\s*['"][\w-]+['"]\s*=>\s*\{|\Z)""",
+        block.group(1),
+        re.S,
+    ):
+        name = entry.group("name")
+        body = entry.group("body")
+        vms_match = re.search(r"vms:\s*%w\[([^\]]*)\]", body)
+        ram_match = re.search(r"min_ram:\s*(\d+)", body)
+        rec_match = re.search(r"recommended_ram:\s*(\d+)", body)
+
+        profiles[name] = {
+            "vms": vms_match.group(1).split() if vms_match else [],
+            "min_ram": int(ram_match.group(1)) if ram_match else None,
+            "recommended_ram": (
+                int(rec_match.group(1)) if rec_match else None
+            ),
+        }
+
+    return profiles or None
+
+
+def best_override_profile(vagrantfile: Path, vm: str) -> tuple[str, dict] | None:
+    """
+    Pick the most-scoped profile that includes `vm`, preferring a
+    narrower named profile over 'full' when a VM belongs to both.
+
+    Returns (profile_name, profile_info) or None if the Vagrantfile
+    has no PROFILES block or no profile includes this VM.
+    """
+    profiles = parse_profiles(vagrantfile)
+
+    if not profiles:
+        return None
+
+    hits = sorted(
+        name for name, info in profiles.items() if vm in info["vms"]
+    )
+
+    if not hits:
+        return None
+
+    narrower = [name for name in hits if name != "full"]
+    chosen = narrower[0] if narrower else hits[0]
+    return chosen, profiles[chosen]
+
+
 def require_vagrant() -> bool:
     """Return True when Vagrant is available on PATH."""
     if shutil.which("vagrant"):
@@ -290,6 +368,7 @@ def run_vagrant(
     vm: str | None = None,
     vms_list: list[str] | tuple[str, ...] | None = None,
     extra_args: list[str] | None = None,
+    profile_override: str | None = None,
 ) -> VmAction:
     """
     Run a Vagrant subcommand from the Vagrantfile directory.
@@ -298,6 +377,10 @@ def run_vagrant(
 
     SSH receives the normal interactive stdin. Other commands receive
     /dev/null so unexpected prompts cannot block the manager.
+
+    profile_override, if given, sets LAB_PROFILE for this subprocess
+    only (see build_vagrant_environment) -- it does not change the
+    manager's own os.environ, so the rest of the session is unaffected.
     """
     cmd = ["vagrant", action]
 
@@ -315,11 +398,19 @@ def run_vagrant(
         else (vm or "(all)")
     )
 
+    env = build_vagrant_environment()
+
+    if profile_override:
+        env["LAB_PROFILE"] = profile_override
+        console.print(
+            f"[dim]Running this action with LAB_PROFILE="
+            f"{profile_override} (this session stays on its own "
+            f"profile otherwise).[/dim]"
+        )
+
     console.rule(
         f"[bold cyan]vagrant {action}[/bold cyan] {label}"
     )
-
-    env = build_vagrant_environment()
 
     stdin_arg = (
         None
@@ -449,7 +540,7 @@ def show_main_menu(
     states: dict[str, str],
     ssh_hosts: dict[str, str],
     status_resolved: bool,
-) -> tuple[dict[str, str], set[str]]:
+) -> tuple[dict[str, str], dict[str, str]]:
     """
     Render the main menu.
 
@@ -467,8 +558,10 @@ def show_main_menu(
     Returns (options, excluded):
         options:  selection number -> VM name, for VMs that are
                   selectable right now.
-        excluded: selection numbers that correspond to a VM excluded by
-                  the current LAB_PROFILE.
+        excluded: selection number -> VM name, for VMs excluded by the
+                  current LAB_PROFILE. Callers can use the name to look
+                  up which profile would include it (see
+                  best_override_profile) and offer an assisted switch.
     """
     console.clear()
 
@@ -503,7 +596,7 @@ def show_main_menu(
 
     index = 1
     options: dict[str, str] = {}
-    excluded: set[str] = set()
+    excluded: dict[str, str] = {}
 
     for vlan_name, configured_vms in VLAN_GROUPS.items():
         table.add_row(
@@ -522,7 +615,7 @@ def show_main_menu(
                     "[yellow]excluded (LAB_PROFILE)[/yellow]",
                     "",
                 )
-                excluded.add(str(index))
+                excluded[str(index)] = vm
                 index += 1
                 continue
 
@@ -568,8 +661,16 @@ def show_main_menu(
 def vm_menu(
     vagrantfile: Path,
     vm: str,
+    profile_override: str | None = None,
 ) -> None:
-    """Display the individual VM management menu."""
+    """
+    Display the individual VM management menu.
+
+    profile_override, if set, means this VM was reached via the
+    assisted profile-switch (the VM isn't in the current session's
+    LAB_PROFILE) and is applied to every action run from this menu,
+    scoped to each subprocess call only.
+    """
     while True:
         states, ssh_hosts = get_vagrant_inventory(
             vagrantfile
@@ -606,6 +707,13 @@ def vm_menu(
             f"Host:  {host}"
         )
 
+        if profile_override:
+            console.print(
+                f"[yellow]Note: actions here run with "
+                f"LAB_PROFILE={profile_override} "
+                f"(outside this session's profile).[/yellow]"
+            )
+
         console.print("\n[cyan][S] SSH[/cyan]")
         console.print("[cyan][U] Up[/cyan]")
         console.print("[cyan][H] Halt[/cyan]")
@@ -640,6 +748,7 @@ def vm_menu(
                     "ssh",
                     vagrantfile,
                     vm=vm,
+                    profile_override=profile_override,
                 )
 
         elif choice == "U":
@@ -647,6 +756,7 @@ def vm_menu(
                 "up",
                 vagrantfile,
                 vm=vm,
+                profile_override=profile_override,
             )
 
         elif choice == "H":
@@ -654,6 +764,7 @@ def vm_menu(
                 "halt",
                 vagrantfile,
                 vm=vm,
+                profile_override=profile_override,
             )
 
         elif choice == "D":
@@ -667,6 +778,7 @@ def vm_menu(
                     vagrantfile,
                     vm=vm,
                     extra_args=["-f"],
+                    profile_override=profile_override,
                 )
 
         elif choice == "R":
@@ -674,6 +786,7 @@ def vm_menu(
                 "reload",
                 vagrantfile,
                 vm=vm,
+                profile_override=profile_override,
             )
 
         elif choice == "B":
@@ -1037,15 +1150,31 @@ def main() -> int:
                 continue
 
             if choice in excluded:
-                console.print(
-                    "[yellow]That VM is excluded by the current "
-                    "LAB_PROFILE and does not exist in this Vagrant "
-                    "environment.[/yellow]"
-                )
-                console.print(
-                    "[dim]Set LAB_PROFILE to a profile that includes "
-                    "it, e.g. LAB_PROFILE=full[/dim]"
-                )
+                vm = excluded[choice]
+                found = best_override_profile(vagrantfile, vm)
+
+                if found is None:
+                    console.print(
+                        f"[yellow]'{vm}' isn't assigned to any "
+                        f"profile in this Vagrantfile -- "
+                        f"skipping.[/yellow]"
+                    )
+                elif Confirm.ask(
+                    f"'{vm}' requires LAB_PROFILE={found[0]} "
+                    f"({found[1]['description']}, "
+                    f"recommended {found[1]['recommended_ram'] // 1024}GB "
+                    f"RAM). This session is on a different profile. "
+                    f"Run this one VM's actions under "
+                    f"LAB_PROFILE={found[0]}?",
+                    default=False,
+                ):
+                    vm_menu(
+                        vagrantfile,
+                        vm,
+                        profile_override=found[0],
+                    )
+                else:
+                    console.print("[yellow]Cancelled.[/yellow]")
 
                 Prompt.ask(
                     "[bright_black]Press Enter to continue...[/bright_black]",

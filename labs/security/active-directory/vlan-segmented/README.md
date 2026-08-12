@@ -448,22 +448,24 @@ delay on first run.
 
 ## Lab Manager
 
-The lab includes an interactive management utility to simplify common Vagrant operations.
-
-Run:
+Use the Python manager, not raw Vagrant commands or the older `vagrant-manager.sh`:
 
 ```bash
-./scripts/vagrant-manager.sh
+python3 scripts/vagrant_manager.py
 ```
+
+**Why this one specifically:** `scripts/vagrant-manager.sh` predates `LAB_PROFILE` support and has no awareness of it — it will let you pick any of the 12 known VMs and then fail with `The machine '<name>' was not found configured for this Vagrant environment` for anything outside your active profile, the exact error this section used to cause. `scripts/vagrant_manager.py` reads the Vagrantfile's `PROFILES` table and `vagrant status` directly, so it knows which VMs actually exist right now.
 
 The manager provides:
 
-- VM status overview
-- VLAN-based VM grouping
+- VM status overview, grouped by VLAN (99/10/20/30/40 as below)
 - IP address visibility
-- SSH access shortcuts
-- Individual VM start/stop controls
-- Full lab start/stop operations
+- SSH access shortcuts (including direct OPNsense SSH)
+- Individual VM start/stop/reload/destroy controls
+- "Start All" / "Halt All" scoped to your current `LAB_PROFILE`
+- Option `[Q]` quit, `[R]` refresh
+
+**Picking a VM outside your current profile:** it isn't hidden, and it isn't a dead end. VMs excluded by the active profile show as `excluded (LAB_PROFILE)` in the list; selecting one asks whether to run just that VM's actions under the profile that includes it — e.g. *"'metasploitable2' requires LAB_PROFILE=full (Full lab - All VMs, recommended 48GB RAM). Run this one VM's actions under LAB_PROFILE=full?"*. Confirming applies that profile to that one `vagrant` call only; declining cancels cleanly. Your shell's `LAB_PROFILE` and the rest of your session are never changed by this.
 
 VMs are displayed by network segment:
 
@@ -472,6 +474,8 @@ VMs are displayed by network segment:
 - VLAN 20 — Workstations
 - VLAN 30 — Internal Servers
 - VLAN 40 — DMZ
+
+Requires the `rich` package: `pip install rich`.
 
 ---
 
