@@ -201,23 +201,21 @@ security-engineering-lab/
 │       ├── README.md
 │       └── troubleshooting.md
 ├── examples/
-│   ├── configs/
-│   ├── README.md
-│   └── templates/
+│   └── README.md
 ├── labs/
 │   ├── infrastructure/
 │   │   └── devops-linux-lab/
 │   ├── README.md
 │   └── security/
 │       ├── active-directory/
+│       │   ├── base/
+│       │   └── vlan-segmented/
 │       ├── README.md
 │       └── requirements.txt
 ├── scripts/
-│   ├── bootstrap/
 │   ├── check_doc_references.py
 │   ├── check-prerequisites.sh
 │   ├── README.md
-│   ├── utilities/
 │   └── validate_lab.py
 ├── tests/
 │   ├── bash/

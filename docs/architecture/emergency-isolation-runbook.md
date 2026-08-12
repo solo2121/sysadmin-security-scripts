@@ -46,7 +46,7 @@ connected keeps leaking or receiving traffic while you read logs.
    Network names to check, by lab (see
    [`threat-model.md`](threat-model.md) for what each one is for):
    - AD Pentest Lab: `vagrant0` by default (the `LAB_NET` Vagrant
-     environment variable in `labs/security/ad-pentest/Vagrantfile`).
+     environment variable in `labs/security/active-directory/base/Vagrantfile`).
    - AD Pentest VLAN Lab: `br-wan`, `br-mgmt`, `br-workstations`,
      `br-servers`, `br-dmz`, `br-attacker`.
    - DevOps/DevSecOps Lab: the auto-detected `vagrant-libvirt` network
@@ -133,7 +133,7 @@ Do this **after** containment, not instead of it.
 ## 4. Credential rotation
 
 - **Lab credentials** (the intentional weak/training credentials in
-  [`lab-credentials.md`](../../labs/security/ad-pentest/docs/lab-credentials.md))
+  [`lab-credentials.md`](../../labs/security/active-directory/base/docs/lab-credentials.md))
   don't need rotation on their own — they're documented as disposable,
   lab-only, and never meant to be reused anywhere.
 - **Rotate anything real** you may have typed into a lab VM by mistake:

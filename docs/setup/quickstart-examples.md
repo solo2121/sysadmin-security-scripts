@@ -258,7 +258,7 @@ Services may then be accessible if configured, such as Grafana and Prometheus.
 #### Step 1: Navigate to AD Lab
 
 ```bash
-cd security-engineering-lab/labs/security/ad-pentest
+cd security-engineering-lab/labs/security/active-directory/base
 ls -la
 ```
 

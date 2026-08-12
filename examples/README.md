@@ -1,8 +1,10 @@
 # Examples
 
-Reference configs and templates that are not tied to a specific lab scenario.
-Use these as starting points when building a new lab or tool; scenario-specific
-configs live inside the relevant `labs/` directory instead.
+Reserved for reference configs and templates that are not tied to a specific
+lab scenario — starting points for building a new lab or tool. Scenario-
+specific configs live inside the relevant `labs/` directory instead.
 
-- `configs/` — standalone configuration file examples
-- `templates/` — boilerplate templates for new labs/scripts
+No `configs/` or `templates/` content exists yet; this directory currently
+holds only this README. Add a `configs/` or `templates/` subdirectory here
+when there's a concrete standalone example to include, rather than as
+placeholders.

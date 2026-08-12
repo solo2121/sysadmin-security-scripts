@@ -85,7 +85,7 @@ The lab includes a Python automation framework that runs the techniques in this 
 ### Setup
 
 ```bash
-cd labs/security/ad-pentest
+cd labs/security/active-directory/base
 
 pip install -r labs/security/requirements.txt
 
@@ -991,7 +991,7 @@ aws --endpoint-url=http://172.28.128.80:4566 iam attach-user-policy \
 ### Quick Reset
 
 ```bash
-cd labs/security/ad-pentest
+cd labs/security/active-directory/base
 
 vagrant destroy win10 -f && vagrant up win10
 vagrant destroy -f && vagrant up

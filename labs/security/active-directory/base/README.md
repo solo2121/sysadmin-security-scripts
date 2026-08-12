@@ -51,11 +51,11 @@ Users are responsible for complying with all applicable laws.
 
 ## Overview
 
-### Version 1.12 Highlights
+### Version 1.13 Highlights
 
 | Metric | Value |
 |--------|-------|
-| Total Machines | 11 (5 Windows, 6 Linux) |
+| Total Machines | Up to 11 (5 Windows, 6 Linux) under `LAB_PROFILE=full`; the default `ad` profile brings up 6 (`kali`, `dc01`, `db01`, `ca01-esc`, `win10`, `linux01`) — see [Lab Profiles](#lab-profiles) |
 | Attack Paths | 60+ |
 | Vulnerabilities | 80+ |
 | LLM Endpoints | 15 |
@@ -251,7 +251,7 @@ pip install -r labs/security/requirements.txt
 ### Usage
 
 ```bash
-cd labs/security/ad-pentest
+cd labs/security/active-directory/base
 
 # List all registered attack modules
 python3 scripts/lab_attack_automation.py --list-attacks

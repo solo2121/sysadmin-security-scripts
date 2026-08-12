@@ -426,8 +426,8 @@ In-depth docs for this lab live under [`docs/`](docs/):
 
 ## Related Labs
 
-- [`../../../labs/security/ad-pentest/`](../../../labs/security/ad-pentest/) — Active Directory pentest lab.
-- [`../../../labs/security/ad-pentest-vlan/`](../../../labs/security/ad-pentest-vlan/) — VLAN edition.
+- [`../../../labs/security/active-directory/base/`](../../../labs/security/active-directory/base/) — Active Directory pentest lab.
+- [`../../../labs/security/active-directory/vlan-segmented/`](../../../labs/security/active-directory/vlan-segmented/) — VLAN edition.
 - [`../../../tools/sysadmin/`](../../../tools/sysadmin/) — Linux administration scripts.
 
 ---

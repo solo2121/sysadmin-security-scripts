@@ -19,8 +19,8 @@ Describe what the documentation should say instead, if you have a suggestion.
 
 ## Related lab or component
 
-- [ ] `labs/security/ad-pentest`
-- [ ] `labs/security/ad-pentest-vlan`
+- [ ] `labs/security/active-directory/base`
+- [ ] `labs/security/active-directory/vlan-segmented`
 - [ ] `labs/infrastructure/devops-linux-lab`
 - [ ] Repository-wide (README, CONTRIBUTING, SECURITY, etc.)
 - [ ] Other (describe below)

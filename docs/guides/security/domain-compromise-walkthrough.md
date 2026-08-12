@@ -1,9 +1,9 @@
 # Zero Credentials to Domain Admin: A Full Attack Chain Walkthrough
 
-**Lab:** Active Directory Pentest Lab (`labs/security/ad-pentest/`)
+**Lab:** Active Directory Pentest Lab (`labs/security/active-directory/base/`)
 **Lab version:** 1.9
 **Network:** 172.28.128.0/24 (`lab.local`)
-**Full reference:** See [`attack-guide.md`](../../../labs/security/ad-pentest/docs/attack-guide.md) for comprehensive technique coverage and alternative attack paths.
+**Full reference:** See [`attack-guide.md`](../../../labs/security/active-directory/base/docs/attack-guide.md) for comprehensive technique coverage and alternative attack paths.
 
 This is a narrative walkthrough of one complete path from an unauthenticated
 foothold to Domain Admin, using nothing but the credentials and access
@@ -12,7 +12,7 @@ what was run, what came back, why it mattered, and what it would look like
 to a defender watching the same traffic.
 
 For the full technique reference (every path, not just this one), see
-[`attack-guide.md`](../../../labs/security/ad-pentest/docs/attack-guide.md).
+[`attack-guide.md`](../../../labs/security/active-directory/base/docs/attack-guide.md).
 For blue-team detections mapped to these exact techniques, see
 [`ad-mitre-log-source-playbook.md`](ad-mitre-log-source-playbook.md).
 
@@ -251,9 +251,9 @@ rather than just handing out Domain Admin credentials on day one.
 ## Reset the lab
 
 ```bash
-cd labs/security/ad-pentest
+cd labs/security/active-directory/base
 vagrant destroy -f && vagrant up
 ```
 
-See [`attack-guide.md`](../../../labs/security/ad-pentest/docs/attack-guide.md#14-lab-reset)
+See [`attack-guide.md`](../../../labs/security/active-directory/base/docs/attack-guide.md#14-lab-reset)
 for a lighter-weight artifact cleanup that doesn't require rebuilding every VM.

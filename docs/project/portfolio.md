@@ -8,8 +8,8 @@
 
 | Lab | Path | Focus |
 |-----|------|-------|
-| Active Directory Pentest Lab | [`labs/security/ad-pentest/`](../../labs/security/ad-pentest/) | Kerberos attacks, AD CS ESC1/4/7/8/9 chains, privilege escalation, and NTLM relay |
-| VLAN Enterprise Lab | [`labs/security/ad-pentest-vlan/`](../../labs/security/ad-pentest-vlan/) | Network segmentation, VLAN isolation, enterprise routing, and traffic analysis |
+| Active Directory Pentest Lab | [`labs/security/active-directory/base/`](../../labs/security/active-directory/base/) | Kerberos attacks, AD CS ESC1/4/7/8/9 chains, privilege escalation, and NTLM relay |
+| VLAN Enterprise Lab | [`labs/security/active-directory/vlan-segmented/`](../../labs/security/active-directory/vlan-segmented/) | Network segmentation, VLAN isolation, enterprise routing, and traffic analysis |
 | DevOps Linux Lab | [`labs/infrastructure/devops-linux-lab/`](../../labs/infrastructure/devops-linux-lab/) | Kubernetes (k3s, Kind, K3d), Argo CD, Harbor, Terraform, OpenTofu, and the Prometheus/Grafana/Loki stack |
 
 ---
@@ -85,7 +85,7 @@ For the full documentation index, see [`docs/README.md`](../README.md).
 ## Suggested Exploration Path
 
 1. [`labs/infrastructure/devops-linux-lab/README.md`](../../labs/infrastructure/devops-linux-lab/README.md) — start with the base infrastructure.
-2. [`labs/security/ad-pentest/README.md`](../../labs/security/ad-pentest/README.md) — move into the core offensive security environment.
+2. [`labs/security/active-directory/base/README.md`](../../labs/security/active-directory/base/README.md) — move into the core offensive security environment.
 3. [`tools/security/audit/`](../../tools/security/audit/) — explore the LLM and detection tooling layer.
 4. [`docs/architecture/architecture.md`](../../docs/architecture/architecture.md) — review the full system design.
 
@@ -95,10 +95,10 @@ For the full documentation index, see [`docs/README.md`](../README.md).
 
 | Role | Relevant Lab | Skills Practiced |
 |------|-------------|-----------------|
-| Penetration Tester | `labs/security/ad-pentest/` | AD enumeration, exploitation, privilege escalation |
-| Red Team Operator | `labs/security/ad-pentest-vlan/` | Adversary emulation, lateral movement, C2 concepts |
+| Penetration Tester | `labs/security/active-directory/base/` | AD enumeration, exploitation, privilege escalation |
+| Red Team Operator | `labs/security/active-directory/vlan-segmented/` | Adversary emulation, lateral movement, C2 concepts |
 | Security Engineer | `tools/security/audit/` | LLM security, detection engineering, log analysis |
-| Cloud Security Engineer | `labs/security/ad-pentest-vlan/` | AWS IAM abuse, S3 enumeration, EC2 metadata attacks |
+| Cloud Security Engineer | `labs/security/active-directory/vlan-segmented/` | AWS IAM abuse, S3 enumeration, EC2 metadata attacks |
 | DevSecOps Engineer | `labs/infrastructure/devops-linux-lab/` | Falco, Kyverno, Cert-Manager, Argo CD, Harbor |
 | Kubernetes Engineer | `labs/infrastructure/devops-linux-lab/` | k3s, Kind, K3d, Helm, GitOps workflows |
 | Linux Systems Administrator | `tools/sysadmin/` + Linux lab nodes | Hardening, monitoring, troubleshooting |

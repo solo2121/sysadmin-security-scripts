@@ -23,9 +23,9 @@ This document provides step-by-step workflows for common tasks in the security-e
 ```bash
 cd labs/infrastructure/devops-linux-lab
 # OR
-cd labs/security/ad-pentest
+cd labs/security/active-directory/base
 # OR
-cd labs/security/ad-pentest-vlan
+cd labs/security/active-directory/vlan-segmented
 ```
 
 #### Step 2: Review Lab Documentation
@@ -432,7 +432,7 @@ vagrant status
 
 ```bash
 # 1. Start the lab
-cd labs/security/ad-pentest
+cd labs/security/active-directory/base
 vagrant up
 
 # 2. Identify target systems
@@ -468,7 +468,7 @@ vagrant destroy -f
 
 ```bash
 # 1. Start VLAN lab
-cd labs/security/ad-pentest-vlan
+cd labs/security/active-directory/vlan-segmented
 vagrant up
 
 # 2. Verify VLAN configuration

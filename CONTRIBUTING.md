@@ -201,8 +201,8 @@ sudo dnf install shellcheck   # Rocky/Fedora
 4. Validate Vagrantfiles before submitting changes:
 
 ```bash
-cd labs/security/ad-pentest && vagrant validate
-cd labs/security/ad-pentest-vlan && vagrant validate
+cd labs/security/active-directory/base && vagrant validate
+cd labs/security/active-directory/vlan-segmented && vagrant validate
 cd labs/infrastructure/devops-linux-lab && vagrant validate
 ```
 

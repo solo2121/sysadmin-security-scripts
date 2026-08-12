@@ -75,7 +75,7 @@ documents a tested minimal set for 32 GiB hosts:
 Start only the subset you need with `vagrant up <name>`:
 
 ```bash
-cd labs/security/ad-pentest
+cd labs/security/active-directory/base
 vagrant up kali dc01 win10 ca01-esc llm01 cloud-pentest
 ```
 

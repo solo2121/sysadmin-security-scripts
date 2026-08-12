@@ -9,6 +9,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Documentation sync for the `active-directory/` rename and `LAB_PROFILE`
+  rollout.** `labs/security/ad-pentest/` and `labs/security/ad-pentest-vlan/`
+  were renamed to `labs/security/active-directory/base/` and
+  `labs/security/active-directory/vlan-segmented/` in a prior commit, and the
+  base lab's `Vagrantfile`/`scripts/vagrant_manager.py` gained `LAB_PROFILE`
+  support (default `ad` profile: 6 VMs; `LAB_PROFILE=full`: all 11) with an
+  assisted profile-switch prompt for VMs outside the active profile. Neither
+  change had been propagated through the rest of the repository's
+  documentation. Updated every stale `ad-pentest`/`ad-pentest-vlan` path
+  reference to `active-directory/base`/`active-directory/vlan-segmented`
+  across `README.md`, `SECURITY.md`, `CONTRIBUTING.md`,
+  `.github/ISSUE_TEMPLATE/*.md`, `docs/**/*.md`,
+  `labs/security/README.md`, `labs/security/requirements.txt`,
+  `labs/infrastructure/devops-linux-lab/README.md`,
+  `tools/security/README.md`, and the base/vlan-segmented labs' own
+  remaining internal references. Also fixed a broken `cd
+  labs/security/ad-pentest` in `labs/security/active-directory/base/README.md`'s
+  Attack Automation section (missed by the prior Quick Start fix) and
+  updated its stale "Version 1.12 Highlights" heading to v1.13.
+- `docs/setup/installation.md` — the "easier option" manager-script snippet
+  told readers to run `./scripts/vagrant-manager.sh` for any of the three
+  labs, but that script was removed from the base Active Directory lab
+  (`scripts/vagrant_manager.py` is now its only supported manager) and is
+  discouraged in favor of `vagrant_manager.py` for the VLAN lab as well.
+  Updated the snippet and surrounding text accordingly.
+- `labs/security/README.md` — the "Available Labs" table and every
+  Quick Start / Common Workflows command still referenced the pre-rename
+  `ad-pentest`/`ad-pentest-vlan` paths and the removed
+  `./scripts/vagrant-manager.sh`. Updated paths, switched commands to
+  `python3 scripts/vagrant_manager.py`, refreshed the base lab's version
+  (`v1.12` → `v1.13`), and noted that both labs are now `LAB_PROFILE`-scoped
+  rather than always creating every listed host.
+- Root `README.md`'s repository-structure tree listed `scripts/bootstrap/`,
+  `scripts/utilities/`, `examples/configs/`, and `examples/templates/`,
+  none of which exist on disk, and didn't show the `active-directory/base/`
+  and `active-directory/vlan-segmented/` split under
+  `labs/security/active-directory/`. Corrected the tree to match the actual
+  layout.
+- `examples/README.md` described `configs/` and `templates/`
+  subdirectories that don't exist yet. Reworded to describe the directory's
+  actual (currently empty) state instead of implying that content is
+  already there.
+
 ### Added
 - `docs/architecture/emergency-isolation-runbook.md` — home-lab runbook for
   the scenario where a lab VM, network, or bridge is suspected of reaching

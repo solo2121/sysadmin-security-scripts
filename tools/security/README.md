@@ -57,6 +57,6 @@ Check each script before execution and confirm the target is within your authori
 
 ## Related Labs
 
-- [`../../labs/security/ad-pentest/`](../../labs/security/ad-pentest/)
-- [`../../labs/security/ad-pentest-vlan/`](../../labs/security/ad-pentest-vlan/)
+- [`../../labs/security/active-directory/base/`](../../labs/security/active-directory/base/)
+- [`../../labs/security/active-directory/vlan-segmented/`](../../labs/security/active-directory/vlan-segmented/)
 - [`../../docs/security-scope.md`](../../docs/security-scope.md)

@@ -189,7 +189,7 @@ Phase 3: Client/Attacker Systems (Once DC is ready)
 ### Phase 1: Domain Controller Deployment (30-45 minutes)
 
 ```bash
-cd ~/labs/security-engineering-lab/labs/security/ad-pentest
+cd ~/labs/security-engineering-lab/labs/security/active-directory/base
 
 # 1. Start ONLY the Domain Controller
 vagrant up dc01

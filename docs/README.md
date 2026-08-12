@@ -66,8 +66,8 @@ you're not sure where to look.
 
 Looking for lab-specific docs (attack guides, credentials, networking) instead of general repo docs? Those live alongside each lab:
 
-- `labs/security/ad-pentest/docs/`
-- `labs/security/ad-pentest-vlan/docs/`
+- `labs/security/active-directory/base/docs/`
+- `labs/security/active-directory/vlan-segmented/docs/`
 - `labs/infrastructure/devops-linux-lab/docs/`
 
 See [`labs/README.md`](../labs/README.md) for the full lab index.

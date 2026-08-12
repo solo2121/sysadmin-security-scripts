@@ -24,14 +24,14 @@ You don't need to run all three labs. Pick the one that matches your goal.
 **Goal:** learn Windows enterprise attack paths from zero credentials to
 Domain Admin.
 
-1. Deploy [Lab 1 – Active Directory Pentest Lab](../../labs/security/ad-pentest/README.md).
-2. Work through [`attack-guide.md`](../../labs/security/ad-pentest/docs/attack-guide.md)
+1. Deploy [Lab 1 – Active Directory Pentest Lab](../../labs/security/active-directory/base/README.md).
+2. Work through [`attack-guide.md`](../../labs/security/active-directory/base/docs/attack-guide.md)
    in order — it's numbered (recon → enumeration → initial access → credential
    attacks → AD CS → modern AD attacks), not a reference dump.
 3. Read the full walkthrough:
    [domain-compromise-walkthrough.md](../guides/security/domain-compromise-walkthrough.md).
 4. Once comfortable with the flat network, move to
-   [Lab 2 – AD Pentest VLAN / Enterprise Segmentation](../../labs/security/ad-pentest-vlan/README.md)
+   [Lab 2 – AD Pentest VLAN / Enterprise Segmentation](../../labs/security/active-directory/vlan-segmented/README.md)
    for network-segmentation-aware attack paths and lateral-movement constraints.
 
 ### Track B — DevOps & DevSecOps

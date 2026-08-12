@@ -8,8 +8,10 @@ This directory contains enterprise-focused Active Directory penetration testing 
 
 | Lab                    | Path                             | Focus                                                                                                                     | Version                                                | Hosts |
 |------------------------|----------------------------------|---------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------|-------|
-| Active Directory Lab   | [`ad-pentest/`](ad-pentest/)     | Complete AD attack chain from recon to Domain Admin; Kerberos attacks, AD CS exploits, lateral movement, cloud and LLM attacks | v1.12 – Enterprise Edition (FLAT NETWORK – OPTIMIZED) | 11    |
-| VLAN Enterprise AD Lab | [`ad-pentest-vlan/`](ad-pentest-vlan/) | Multi-subnet enterprise topology with VLAN segmentation, routing, inter-VLAN attacks, and network isolation testing       | v2.1.5                                                 | 12    |
+| Active Directory Lab   | [`active-directory/base/`](active-directory/base/)     | Complete AD attack chain from recon to Domain Admin; Kerberos attacks, AD CS exploits, lateral movement, cloud and LLM attacks | v1.13 – Enterprise Edition (FLAT NETWORK – OPTIMIZED) | up to 11 (`LAB_PROFILE=full`); 6 by default |
+| VLAN Enterprise AD Lab | [`active-directory/vlan-segmented/`](active-directory/vlan-segmented/) | Multi-subnet enterprise topology with VLAN segmentation, routing, inter-VLAN attacks, and network isolation testing       | v2.1.5                                                 | up to 12 (`LAB_PROFILE=full`); auto-detected by default |
+
+Both labs are `LAB_PROFILE`-scoped: `vagrant up` with no profile set only creates a subset of VMs sized for the host, not every machine listed above. See each lab's own README for its profile table.
 
 ---
 
@@ -18,9 +20,9 @@ This directory contains enterprise-focused Active Directory penetration testing 
 ### AD Pentest Lab
 
 ```bash
-cd ad-pentest
+cd active-directory/base
 vagrant up
-./scripts/vagrant-manager.sh
+python3 scripts/vagrant_manager.py
 vagrant status
 ```
 
@@ -33,9 +35,9 @@ bloodhound-python -u vagrant -p Vagrant123! -d lab.local -dc 172.28.128.21 -c Al
 ### VLAN Enterprise Lab
 
 ```bash
-cd ad-pentest-vlan
+cd active-directory/vlan-segmented
 vagrant up
-./scripts/vagrant-manager.sh
+python3 scripts/vagrant_manager.py
 vagrant status
 ```
 
@@ -46,7 +48,7 @@ ip route
 ping 172.28.10.21
 ```
 
-For full VLAN topology and subnets, see [`ad-pentest-vlan/README.md`](ad-pentest-vlan/README.md).
+For full VLAN topology and subnets, see [`active-directory/vlan-segmented/README.md`](active-directory/vlan-segmented/README.md).
 
 ---
 
@@ -105,7 +107,7 @@ See each lab’s `docs/lab-credentials.md` for the full credential reference and
 
 **Estimated time:** 30–60 minutes once the lab is up.
 
-See [`ad-pentest/docs/attack-guide.md`](ad-pentest/docs/attack-guide.md) for all techniques and variations.
+See [`active-directory/base/docs/attack-guide.md`](active-directory/base/docs/attack-guide.md) for all techniques and variations.
 
 ### VLAN Enterprise Lab — Network Isolation & Lateral Movement
 
@@ -116,22 +118,22 @@ See [`ad-pentest/docs/attack-guide.md`](ad-pentest/docs/attack-guide.md) for all
 3. Attempt cross-VLAN lateral movement while respecting firewall policy.
 4. Practice network isolation troubleshooting and misconfiguration abuse.
 
-See [`ad-pentest-vlan/README.md`](ad-pentest-vlan/README.md) and `docs/attack-guide.md` in that directory for VLAN-specific details.
+See [`active-directory/vlan-segmented/README.md`](active-directory/vlan-segmented/README.md) and `docs/attack-guide.md` in that directory for VLAN-specific details.
 
 ---
 
 ## Documentation by Lab
 
-### AD Pentest Lab (`ad-pentest/`)
+### AD Pentest Lab (`active-directory/base/`)
 
 - **`README.md`** – Lab overview, setup, prerequisites.
 - **`docs/attack-guide.md`** – Complete attack reference (14+ sections).
 - **`docs/lab-credentials.md`** – All seeded credentials and service accounts.
 - **`docs/dc01-deployment-validation.md`** – Recorded validation of a successful `dc01` deployment (static IP, AD promotion, scenario configuration).
-- **`Vagrantfile`** – Full provisioning (v1.12 – FLAT NETWORK – OPTIMIZED).
+- **`Vagrantfile`** – Full provisioning (v1.13 – FLAT NETWORK – OPTIMIZED).
 - **`scripts/lab_attack_automation.py`** – Optional automated attack chain.
 
-### VLAN Enterprise Lab (`ad-pentest-vlan/`)
+### VLAN Enterprise Lab (`active-directory/vlan-segmented/`)
 
 - **`README.md`** – Lab overview, VLAN topology, setup guide.
 - **`docs/attack-guide.md`** – VLAN-specific attack paths and scenarios.
@@ -161,7 +163,7 @@ See [`../../docs/setup/installation.md`](../../docs/setup/installation.md) for d
 ### Reset a Lab
 
 ```bash
-cd ad-pentest           # or ad-pentest-vlan
+cd active-directory/base   # or active-directory/vlan-segmented
 vagrant destroy -f
 vagrant up
 ```
@@ -169,7 +171,7 @@ vagrant up
 ### Run Only One VM
 
 ```bash
-cd ad-pentest
+cd active-directory/base
 vagrant up dc01
 # or
 vagrant up kali

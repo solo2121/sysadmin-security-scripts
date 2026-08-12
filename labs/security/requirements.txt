@@ -1,5 +1,5 @@
 # Shared Python dependencies for AD Pentest labs
-# Used by: labs/security/ad-pentest/ and labs/security/ad-pentest-vlan/
+# Used by: labs/security/active-directory/base/ and labs/security/active-directory/vlan-segmented/
 # Install with: pip install -r labs/security/requirements.txt
 
 rich>=15.0.0
@@ -8,7 +8,7 @@ aiofiles>=25.1.0
 requests>=2.34.2
 
 # lab_attack_automation.py dependencies
-# Used by: labs/security/ad-pentest/scripts/lab_attack_automation.py
+# Used by: labs/security/active-directory/base/scripts/lab_attack_automation.py
 # Install with: pip install -r labs/security/requirements.txt
 
 aiohttp>=3.14.3

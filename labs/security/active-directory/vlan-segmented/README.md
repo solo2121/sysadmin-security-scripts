@@ -20,7 +20,7 @@ This lab is part of the broader `security-engineering-lab` project.
 
 For the simpler flat network Active Directory environment, see:
 
-[`../ad-pentest/`](../ad-pentest/)
+[`../base/`](../base/)
 
 ---
 
@@ -126,7 +126,7 @@ Recommended experience:
 
 If you prefer a simpler deployment without VLAN segmentation, start with:
 
-[`../ad-pentest/`](../ad-pentest/)
+[`../base/`](../base/)
 
 ---
 
@@ -149,7 +149,7 @@ You are responsible for ensuring compliance with applicable laws, organizational
 
 ## Key Differences from Flat AD Lab
 
-| Feature | `../ad-pentest/` (Flat) | This Lab (VLAN) |
+| Feature | `../base/` (Flat) | This Lab (VLAN) |
 |---|---|---|
 | Network layout | Single flat subnet | Five segmented VLANs |
 | VLAN segmentation | No | Yes |
@@ -195,7 +195,7 @@ bridge-utils
 
 Relative to:
 
-`labs/security/ad-pentest-vlan/`
+`labs/security/active-directory/vlan-segmented/`
 
 ```text
 .
@@ -418,7 +418,7 @@ From the repository root:
 
 ```bash
 git clone https://github.com/solo2121/security-engineering-lab.git
-cd security-engineering-lab/labs/security/ad-pentest-vlan
+cd security-engineering-lab/labs/security/active-directory/vlan-segmented
 
 sudo apt update
 
@@ -780,7 +780,7 @@ In-depth docs for this lab live under [`docs/`](docs/):
 
 ## Related Labs
 
-- [`../ad-pentest/`](../ad-pentest/) — Flat Active Directory penetration testing lab.
+- [`../base/`](../base/) — Flat Active Directory penetration testing lab.
 - [`../../infrastructure/devops-linux-lab/`](../../infrastructure/devops-linux-lab/) — DevOps, Kubernetes, and infrastructure security lab.
 
 ---

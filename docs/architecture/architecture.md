@@ -47,8 +47,9 @@ security-engineering-lab/
 │   ├── infrastructure/
 │   │   └── devops-linux-lab/
 │   └── security/
-│       ├── ad-pentest/
-│       └── ad-pentest-vlan/
+│       └── active-directory/
+│           ├── base/
+│           └── vlan-segmented/
 ├── tools/
 │   ├── security/
 │   │   ├── audit/
@@ -86,8 +87,8 @@ Runnable environments for infrastructure and security practice.
 | Lab | Focus |
 |-----|-------|
 | `labs/infrastructure/devops-linux-lab/` | Linux administration, Vagrant/libvirt, Kubernetes, DevOps workflow documentation |
-| `labs/security/ad-pentest/` | Active Directory attack-chain practice in a controlled lab |
-| `labs/security/ad-pentest-vlan/` | VLAN segmentation, subnet design, and network isolation testing |
+| `labs/security/active-directory/base/` | Active Directory attack-chain practice in a controlled lab |
+| `labs/security/active-directory/vlan-segmented/` | VLAN segmentation, subnet design, and network isolation testing |
 
 Expected lab contents:
 

@@ -50,8 +50,8 @@ not estimated:
 
 | Lab | Minimum tested | Recommended (full lab) | Disk |
 |---|---|---|---|
-| AD Pentest Lab (`labs/security/ad-pentest`) | ~20 GiB RAM for the documented 6-VM startup subset | 32 GB+ RAM for all 11 VMs (~29.5 GiB allocated) | 40 GiB+ for a single-lab subset |
-| AD Pentest VLAN Lab (`labs/security/ad-pentest-vlan`) | 8 GB+ RAM (`minimal` profile, ~10 GB allocated) | 32 GB+ RAM (`full` profile, all 12 VMs, ~36 GB allocated) | 80 GB+ |
+| AD Pentest Lab (`labs/security/active-directory/base`) | ~20 GiB RAM for the documented 6-VM startup subset | 32 GB+ RAM for all 11 VMs (~29.5 GiB allocated) | 40 GiB+ for a single-lab subset |
+| AD Pentest VLAN Lab (`labs/security/active-directory/vlan-segmented`) | 8 GB+ RAM (`minimal` profile, ~10 GB allocated) | 32 GB+ RAM (`full` profile, all 12 VMs, ~36 GB allocated) | 80 GB+ |
 | DevOps/DevSecOps Lab (`labs/infrastructure/devops-linux-lab`) | ~10 GiB RAM (`minimal` profile) | ~30 GiB RAM (`full` profile, every VM) | 40 GiB+ for a single-lab subset |
 
 - **CPU**: hardware virtualization (VT-x/AMD-V) must be enabled in BIOS/UEFI regardless of lab or profile.
@@ -176,13 +176,13 @@ vagrant plugin install vagrant-winrm
 This lab is located in:
 
 ```text
-labs/security/ad-pentest/
+labs/security/active-directory/base/
 ```
 
 An alternate VLAN-segmented edition is located in:
 
 ```text
-labs/security/ad-pentest-vlan/
+labs/security/active-directory/vlan-segmented/
 ```
 
 This environment includes Windows Server 2022, domain-joined workstations, AD CS, Kali Linux, LocalStack, and additional research targets.
@@ -203,7 +203,7 @@ vagrant plugin install vagrant-winrm
 
 ```bash
 git clone https://github.com/solo2121/security-engineering-lab.git
-cd security-engineering-lab/labs/security/ad-pentest
+cd security-engineering-lab/labs/security/active-directory/base
 ```
 
 ### Start the lab
@@ -221,7 +221,7 @@ vagrant up
 If you want the segmented network edition, use:
 
 ```bash
-cd ../ad-pentest-vlan
+cd ../vlan-segmented
 vagrant up dc01
 vagrant up
 ```
@@ -331,14 +331,14 @@ To destroy all VMs in the current lab:
 vagrant destroy -f
 ```
 
-**Easier option:** each lab ships an interactive manager script that lists every machine's state and can start, halt, or destroy VMs individually or all at once, without you needing to remember Vagrant machine names:
+**Easier option:** each lab ships an interactive Python manager that lists every machine's state and can start, halt, or destroy VMs individually or all at once, without you needing to remember Vagrant machine names. It's also `LAB_PROFILE`-aware, so it only shows the VMs that actually exist under your active profile:
 
 ```bash
-cd labs/security/ad-pentest       # or ad-pentest-vlan / infrastructure/devops-linux-lab
-./scripts/vagrant-manager.sh
+cd labs/security/active-directory/base       # or active-directory/vlan-segmented / infrastructure/devops-linux-lab
+python3 scripts/vagrant_manager.py
 ```
 
-In the Active Directory Pentest Lab manager, press `X` to destroy every VM in the lab in one step (with a confirmation prompt) and optionally clean up the lab's leftover libvirt network.
+Use the manager's destroy option to remove every VM in the lab in one step (with a confirmation prompt).
 
 You can also remove unused packages and clean up your system if needed.
 

@@ -29,8 +29,8 @@ Physical Host
     └── Ubuntu VM (the "Vagrant Host")
         ├── KVM / libvirt / QEMU (nested)
         └── Vagrant labs
-            ├── labs/security/ad-pentest/        ← Lab 1 VMs
-            ├── labs/security/ad-pentest-vlan/   ← Lab 1 VLAN VMs
+            ├── labs/security/active-directory/base/        ← Lab 1 VMs
+            ├── labs/security/active-directory/vlan-segmented/   ← Lab 1 VLAN VMs
             └── labs/infrastructure/devops-linux-lab/ ← Lab 2 VMs
 ```
 
@@ -256,7 +256,7 @@ git clone https://github.com/solo2121/security-engineering-lab.git
 cd security-engineering-lab
 
 # Run the AD pentest lab
-cd labs/security/ad-pentest
+cd labs/security/active-directory/base
 
 # Validate Vagrantfile before starting
 vagrant validate
@@ -321,7 +321,7 @@ Then: `ssh proxmox-lab` opens all tunnels, and you connect to lab services on lo
 The VLAN lab creates bridge interfaces inside the Ubuntu VM. If they are not created automatically, run the setup script:
 
 ```bash
-cd labs/security/ad-pentest-vlan
+cd labs/security/active-directory/vlan-segmented
 sudo ./scripts/setup-vlans.sh
 vagrant up
 ```
@@ -640,7 +640,7 @@ virsh dominfo security-engineering-lab_dc01 | grep cpu
 
 - [`vagrant-management-tutorial.md`](vagrant-management-tutorial.md) — Vagrant commands and workflows
 - [`managing-kvm-qemu-cli-tutorial.md`](managing-kvm-qemu-cli-tutorial.md) — KVM management reference
-- [`../../../labs/security/ad-pentest/README.md`](../../../labs/security/ad-pentest/README.md) — AD pentest lab setup
+- [`../../../labs/security/active-directory/base/README.md`](../../../labs/security/active-directory/base/README.md) — AD pentest lab setup
 - [`../../../labs/infrastructure/devops-linux-lab/README.md`](../../../labs/infrastructure/devops-linux-lab/README.md) — DevOps lab setup
 - [`../../setup/installation.md`](../../setup/installation.md) — Full dependency installation guide
 - [`../../setup/troubleshooting.md`](../../setup/troubleshooting.md) — Common issues and fixes

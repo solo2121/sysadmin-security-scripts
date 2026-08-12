@@ -11,8 +11,8 @@ Describe the issue clearly and concisely.
 
 ## Affected area
 
-- [ ] `labs/security/ad-pentest`
-- [ ] `labs/security/ad-pentest-vlan`
+- [ ] `labs/security/active-directory/base`
+- [ ] `labs/security/active-directory/vlan-segmented`
 - [ ] `labs/infrastructure/devops-linux-lab`
 - [ ] `tools/security`
 - [ ] `tools/sysadmin`

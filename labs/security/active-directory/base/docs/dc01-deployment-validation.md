@@ -294,7 +294,7 @@ HEALTH CHECK COMPLETE
 You can reproduce this check manually once `vagrant up dc01` finishes:
 
 ```bash
-# From labs/security/ad-pentest/
+# From labs/security/active-directory/base/
 vagrant winrm-command "Test-Path C:\DC-FINAL.txt" --elevated
 nslookup dc01.lab.local 172.28.128.21
 ```

@@ -85,7 +85,7 @@
 ### Start the Lab
 
 ```bash
-cd labs/security/ad-pentest-vlan
+cd labs/security/active-directory/vlan-segmented
 
 # Deploy all VMs (according to LAB_PROFILE)
 vagrant up
