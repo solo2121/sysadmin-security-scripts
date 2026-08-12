@@ -417,6 +417,15 @@ LAB_PROFILE=full vagrant up      # all 11 VMs (~29.5GB RAM)
 
 See [Lab Profiles](#lab-profiles) for the complete profile table and instructions on starting an individual VM that isn't in your active profile.
 
+### Step 8: Tearing Down the Lab
+
+To stop and remove all VMs for this lab and reclaim host resources:
+
+```bash
+cd labs/security/active-directory/base
+vagrant destroy -f
+```
+
 ---
 
 ## Platform-Specific Guides
