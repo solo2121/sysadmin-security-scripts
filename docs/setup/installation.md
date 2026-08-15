@@ -1,13 +1,19 @@
 # Installation Guide
 
-This guide provides comprehensive instructions for setting up a Linux host to deploy the lab environments in this repository. The labs are provisioned using Vagrant with the KVM/libvirt provider.
+This guide provides comprehensive instructions for setting up a host to deploy the lab environments in this repository. The labs are provisioned using Vagrant and support two providers:
+
+- **KVM/libvirt** (default, Linux hosts only) — the environment each lab is developed and tested against, with the best performance for nested virtualization.
+- **VirtualBox** (cross-platform: Linux, macOS, Windows) — for hosts without KVM/libvirt, or non-Linux hosts. VirtualBox itself is Intel/AMD (x86_64) only and does not run on Apple Silicon/ARM.
+
+Each lab includes a Vagrantfile for both providers: the KVM/libvirt Vagrantfile at the lab root, and a VirtualBox Vagrantfile under `<lab-path>/virtualbox/`. Pick the section below that matches your host.
 
 ---
 
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
-- [Step 1: Host System Setup](#step-1-host-system-setup)
+- [Step 1: Host System Setup (KVM/libvirt)](#step-1-host-system-setup-kvmlibvirt)
+- [Step 1 (Alternative): Host System Setup (VirtualBox)](#step-1-alternative-host-system-setup-virtualbox)
 - [Step 2: Install Vagrant](#step-2-install-vagrant)
 - [Step 3: Install Vagrant Plugins](#step-3-install-vagrant-plugins)
 - [Step 4: Deploy a Lab Environment](#step-4-deploy-a-lab-environment)
@@ -65,19 +71,39 @@ tested reduced-footprint options, see
 
 ### Required tools
 
+Common to both providers:
+
 - Vagrant.
+- Required Vagrant plugins.
+
+KVM/libvirt provider (Linux hosts only):
+
 - KVM/QEMU.
 - Libvirt.
 - Virt-Manager.
-- Required Vagrant plugins.
+- `vagrant-libvirt` plugin.
+
+VirtualBox provider (Linux, macOS, Windows):
+
+- Oracle VirtualBox (6.1+ recommended).
+- `vagrant-vbguest` plugin (optional, keeps Guest Additions in sync).
 
 ### Recommended Linux distros
 
-The labs should work best on Debian-based or Fedora/RHEL-based Linux hosts with Libvirt and KVM support.
+The labs should work best on Debian-based or Fedora/RHEL-based Linux hosts. Libvirt/KVM support is Linux-specific; VirtualBox is available on all three major desktop operating systems.
+
+### Choosing a provider
+
+- Use **KVM/libvirt** if you're on Linux and want the best performance — this is the environment each lab is developed and tested against.
+- Use **VirtualBox** if you're on macOS or Windows, or on a Linux host where libvirt/KVM isn't available (e.g., inside another VM without nested virtualization, or a locked-down environment).
+- You can set your preferred provider for the session so you don't need to pass `--provider` on every command:
+  ```bash
+  export VAGRANT_DEFAULT_PROVIDER=virtualbox   # or: libvirt
+  ```
 
 ---
 
-## Host Setup
+## Step 1: Host System Setup (KVM/libvirt)
 
 ### 1. Update your system
 
@@ -150,17 +176,70 @@ If KVM modules are loaded, your host is ready for virtualization.
 
 ---
 
+## Step 1 (Alternative): Host System Setup (VirtualBox)
+
+Use this section instead of the KVM/libvirt steps above if you're on macOS, Windows, or a Linux host without libvirt.
+
+### 1. Install VirtualBox
+
+#### Debian / Ubuntu
+
+```bash
+sudo apt update
+sudo apt install -y virtualbox
+```
+
+Alternatively, install the latest release from the [official VirtualBox downloads page](https://www.virtualbox.org/wiki/Downloads).
+
+#### macOS
+
+Download and install the macOS `.dmg` from the [official VirtualBox downloads page](https://www.virtualbox.org/wiki/Downloads), or via Homebrew:
+
+```bash
+brew install --cask virtualbox
+```
+
+#### Windows
+
+Download and run the Windows installer from the [official VirtualBox downloads page](https://www.virtualbox.org/wiki/Downloads).
+
+### 2. Install Vagrant
+
+Install Vagrant for your platform from the [official Vagrant downloads page](https://developer.hashicorp.com/vagrant/downloads), or use the Debian/Ubuntu commands in [Install Vagrant](#2-install-vagrant) above.
+
+### 3. Verify VirtualBox is available
+
+```bash
+VBoxManage --version
+```
+
+VirtualBox 6.1 or later is recommended. If the command isn't found, confirm VirtualBox installed correctly and that `VBoxManage` is on your `PATH`.
+
+### 4. Enable hardware virtualization
+
+Confirm VT-x/AMD-V is enabled in your host's BIOS/UEFI. This is required for VirtualBox and for nested virtualization used by the DevOps/DevSecOps lab's Kubernetes workloads.
+
+---
+
 ## Install Vagrant Plugins
 
-The repository uses Libvirt-based Vagrant workflows, so install the required plugins before starting the labs.
+Install the plugins required by your chosen provider before starting the labs.
 
-### Common plugins
+### KVM/libvirt plugins
 
 ```bash
 vagrant plugin install vagrant-libvirt
 ```
 
-### Lab 1 plugins
+### VirtualBox plugins
+
+```bash
+vagrant plugin install vagrant-vbguest
+```
+
+`vagrant-vbguest` keeps VirtualBox Guest Additions in sync with the guest kernel; it's optional but recommended.
+
+### Lab 1 plugins (both providers)
 
 For the Active Directory Pentest Lab, install the additional plugins used by Windows and reload workflows:
 
@@ -191,10 +270,22 @@ This environment includes Windows Server 2022, domain-joined workstations, AD CS
 
 ### Install Lab 1 dependencies
 
+**KVM/libvirt:**
+
 ```bash
 sudo apt update
 sudo apt install -y qemu-kvm libvirt-daemon-system virt-manager vagrant
 vagrant plugin install vagrant-libvirt
+vagrant plugin install vagrant-reload
+vagrant plugin install vagrant-winrm
+```
+
+**VirtualBox:**
+
+```bash
+sudo apt update
+sudo apt install -y virtualbox vagrant   # or install VirtualBox/Vagrant per your OS (see Step 1 Alternative)
+vagrant plugin install vagrant-vbguest
 vagrant plugin install vagrant-reload
 vagrant plugin install vagrant-winrm
 ```
@@ -210,7 +301,18 @@ cd security-engineering-lab/labs/security/active-directory/base
 
 Start the Domain Controller first, then deploy the rest of the environment.
 
+**KVM/libvirt** (from the lab root):
+
 ```bash
+vagrant up dc01
+vagrant status
+vagrant up
+```
+
+**VirtualBox** (from the lab's `virtualbox/` subdirectory):
+
+```bash
+cd virtualbox
 vagrant up dc01
 vagrant status
 vagrant up
@@ -221,7 +323,8 @@ vagrant up
 If you want the segmented network edition, use:
 
 ```bash
-cd ../vlan-segmented
+cd ../vlan-segmented          # KVM/libvirt
+# or: cd ../vlan-segmented/virtualbox   # VirtualBox
 vagrant up dc01
 vagrant up
 ```
@@ -250,10 +353,20 @@ It includes k3s, Kind, K3d, Harbor, Argo CD, Prometheus, Grafana, Loki, Falco, K
 
 ### Install Lab 2 dependencies
 
+**KVM/libvirt:**
+
 ```bash
 sudo apt update
 sudo apt install -y qemu-kvm libvirt-daemon-system virt-manager vagrant
 vagrant plugin install vagrant-libvirt
+```
+
+**VirtualBox:**
+
+```bash
+sudo apt update
+sudo apt install -y virtualbox vagrant   # or install VirtualBox/Vagrant per your OS (see Step 1 Alternative)
+vagrant plugin install vagrant-vbguest
 ```
 
 ### Enter the lab directory
@@ -264,9 +377,20 @@ cd security-engineering-lab/labs/infrastructure/devops-linux-lab
 
 ### Start the lab
 
+**KVM/libvirt** (from the lab root):
+
 ```bash
 vagrant up
 ```
+
+**VirtualBox** (from the lab's `virtualbox/` subdirectory):
+
+```bash
+cd virtualbox
+vagrant up
+```
+
+> Nested virtualization for the K3s/Kind/K3d workloads is enabled automatically in both Vagrantfiles, but on VirtualBox it depends on your host CPU exposing VT-x/AMD-V to the guest — see [Known limitations](../../README.md#known-limitations) in the main README.
 
 ### Verify Lab 2
 
@@ -289,6 +413,16 @@ groups
 systemctl status libvirtd
 ```
 
+### VirtualBox provider not found
+
+If `vagrant up` reports it can't find the VirtualBox provider, confirm VirtualBox is installed and `VBoxManage` is on your `PATH`:
+
+```bash
+VBoxManage --version
+```
+
+On Linux, also make sure the `vboxdrv` kernel module is loaded (`sudo modprobe vboxdrv`); reinstalling the `virtualbox-dkms` package usually fixes a missing module after a kernel upgrade.
+
 ### Permission issues
 
 If you are prompted for password access repeatedly, recheck group membership and restart your shell session.
@@ -308,11 +442,11 @@ If the host is underpowered, reduce the number of running VMs or allocate more m
 Before you continue using the labs, confirm the following:
 
 - Vagrant is installed.
-- Libvirt is installed and running.
-- KVM modules are loaded.
-- Your user can manage libvirt domains.
-- Required Vagrant plugins are installed.
-- The lab directory contains the expected `Vagrantfile`.
+- Your chosen provider is installed and running:
+  - **KVM/libvirt:** Libvirt is installed and running, KVM modules are loaded, and your user can manage libvirt domains.
+  - **VirtualBox:** VirtualBox is installed, `VBoxManage --version` succeeds, and the `vboxdrv` kernel module is loaded (Linux only).
+- Required Vagrant plugins are installed for your provider.
+- The lab directory contains the expected `Vagrantfile` (root for KVM/libvirt, `virtualbox/` for VirtualBox).
 - `vagrant up` starts the environment successfully.
 
 ---
@@ -348,9 +482,16 @@ You can also remove unused packages and clean up your system if needed.
 
 ### Vagrant cannot find the provider
 
-Make sure the `vagrant-libvirt` plugin is installed.
+**KVM/libvirt:** make sure the `vagrant-libvirt` plugin is installed.
 
 ```bash
+vagrant plugin list
+```
+
+**VirtualBox:** make sure VirtualBox itself is installed and `VBoxManage` is on your `PATH`; the VirtualBox provider ships with Vagrant, so no extra plugin is required.
+
+```bash
+VBoxManage --version
 vagrant plugin list
 ```
 
@@ -360,6 +501,15 @@ Start and enable the service.
 
 ```bash
 sudo systemctl enable --now libvirtd
+```
+
+### VirtualBox kernel module not loaded (Linux)
+
+Load the `vboxdrv` module, or reinstall `virtualbox-dkms` if it fails to load after a kernel upgrade.
+
+```bash
+sudo modprobe vboxdrv
+sudo dpkg-reconfigure virtualbox-dkms   # Debian/Ubuntu, if the module still won't load
 ```
 
 ### KVM is missing

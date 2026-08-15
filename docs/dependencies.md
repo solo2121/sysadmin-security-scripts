@@ -10,18 +10,24 @@ replacing them.
 
 ## Supported host operating systems
 
-The labs are provisioned with Vagrant + KVM/libvirt and are developed
-and tested against:
+The labs are provisioned with Vagrant and support two providers: **KVM/libvirt**
+(the default, Linux-only) and **VirtualBox** (cross-platform). See the
+[README's Supported providers section](../README.md#supported-providers) for
+an overview and [`docs/setup/installation.md`](setup/installation.md) for
+full setup steps.
 
-| OS family | Notes |
-|---|---|
-| Debian / Ubuntu (recent LTS) | Primary, most-tested target. Setup guides give `apt` commands. |
-| Fedora / RHEL-family | Supported via KVM/libvirt; setup guides give `dnf`/`yum` equivalents where they differ. |
+| OS family | KVM/libvirt | VirtualBox | Notes |
+|---|---|---|---|
+| Debian / Ubuntu (recent LTS) | Primary, most-tested target | Supported | Setup guides give `apt` commands for both providers. |
+| Fedora / RHEL-family | Supported | Supported | Setup guides give `dnf`/`yum` equivalents where they differ. |
+| macOS | Not supported | Supported | VirtualBox is Intel/AMD (x86_64) only — does not run on Apple Silicon/ARM. |
+| Windows | Not supported | Supported | Use the native VirtualBox + Vagrant installers, or WSL2 with a Linux distribution above for KVM/libvirt. |
 
-macOS and Windows hosts are not directly supported for running the
-Vagrant/libvirt labs (nested KVM virtualization is Linux-specific).
-Windows users can run the labs inside WSL2 with a Linux distribution
-listed above, or via a Linux VM with nested virtualization enabled.
+Nested virtualization (used by the DevOps/DevSecOps lab's K3s/Kind/K3d
+workloads) is native on KVM/libvirt and must be explicitly enabled on
+VirtualBox (`--nested-hw-virt on`, already set in this repo's VirtualBox
+Vagrantfiles); actual nested-virt support still depends on your host CPU
+exposing VT-x/AMD-V to the guest.
 
 ## Python
 
@@ -64,13 +70,15 @@ unless noted otherwise.
 | `tcpdump` | `tools/security/network/tcpdump-wrapper.py` | requires elevated privileges to capture |
 | `ettercap` | `tools/security/network/ettercap-menu.py` | lab/VLAN use only |
 | `iptables`/`nft` (firewall tooling) | `tools/security/network/firewall-scan.sh` | |
-| `vagrant` + `vagrant-libvirt` plugin | all `labs/` environments | see [`docs/setup/`](setup/) |
+| `vagrant` + `vagrant-libvirt` plugin (KVM/libvirt) or `vagrant-vbguest` plugin (VirtualBox) | all `labs/` environments | see [`docs/setup/`](setup/) |
+| `qemu-kvm`/`libvirt` (KVM/libvirt) or Oracle VirtualBox (VirtualBox) | all `labs/` environments | pick one provider; see [`docs/setup/installation.md`](setup/installation.md) |
 | `shellcheck` | CI, `make lint`, pre-commit | |
 | `bats-core` | `tests/bash/`, `make test` | |
 
 Run [`scripts/check-prerequisites.sh`](../scripts/check-prerequisites.sh)
 to validate host-level prerequisites (KVM, libvirt, Vagrant, plugins,
-resources) before standing up a lab, and
+resources) before standing up a lab with the KVM/libvirt provider — this
+script does not currently check VirtualBox prerequisites — and
 [`scripts/validate_lab.py`](../scripts/validate_lab.py) to validate the
 repository itself (structure, docs, Vagrantfile syntax).
 

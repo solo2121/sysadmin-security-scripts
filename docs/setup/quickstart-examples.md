@@ -2,6 +2,8 @@
 
 This guide provides step-by-step examples for setting up and running the security-engineering-lab, including command examples, verification steps, troubleshooting, and common workflows.
 
+Most examples below use the **KVM/libvirt** provider (the repository default). Where a step differs on **VirtualBox**, an equivalent command is shown alongside it. See [Installation Guide](./installation.md) for full per-provider setup, and the main [README's Supported providers section](../../README.md#supported-providers) for an overview.
+
 ---
 
 ## Table of Contents
@@ -44,8 +46,11 @@ nproc
 # Check RAM
 free -h
 
-# Check disk space
+# Check disk space (KVM/libvirt)
 df -h /var/lib/libvirt/images 2>/dev/null || echo "Path may not exist yet"
+
+# Check disk space (VirtualBox — default VM storage location)
+df -h ~/VirtualBox\ VMs 2>/dev/null || echo "Path may not exist yet"
 
 # Verify kernel version
 uname -r
@@ -57,7 +62,7 @@ uname -r
 
 ### Installation Verification
 
-#### Verify KVM Module Loading
+#### Verify KVM Module Loading (KVM/libvirt)
 
 ```bash
 # Before installation
@@ -69,7 +74,7 @@ lsmod | grep kvm
 
 You should see `kvm_intel` or `kvm_amd` along with `kvm` after KVM is available.
 
-#### Verify Libvirt Installation
+#### Verify Libvirt Installation (KVM/libvirt)
 
 ```bash
 virsh version
@@ -77,7 +82,7 @@ virsh version
 
 You should see the libvirt library version and the running hypervisor version.
 
-#### Verify Libvirt Service
+#### Verify Libvirt Service (KVM/libvirt)
 
 ```bash
 sudo systemctl status libvirtd
@@ -85,7 +90,7 @@ sudo systemctl status libvirtd
 
 The service should be active and running.
 
-#### Verify User Permissions
+#### Verify User Permissions (KVM/libvirt)
 
 ```bash
 id
@@ -94,7 +99,7 @@ virsh list
 
 Your user should belong to the `libvirt` and `kvm` groups, and `virsh list` should work without permission errors.
 
-#### Verify Default Network
+#### Verify Default Network (KVM/libvirt)
 
 ```bash
 virsh net-list
@@ -106,6 +111,15 @@ If `default` is not active, start it:
 virsh net-start default
 virsh net-autostart default
 ```
+
+#### Verify VirtualBox Installation (VirtualBox)
+
+```bash
+VBoxManage --version
+VBoxManage list vms
+```
+
+You should see the VirtualBox version, and `list vms` should run without permission errors.
 
 ---
 
@@ -126,8 +140,19 @@ vagrant --version
 
 #### Install Vagrant Plugins
 
+**KVM/libvirt:**
+
 ```bash
 vagrant plugin install vagrant-libvirt
+vagrant plugin install vagrant-reload
+vagrant plugin install vagrant-disksize
+vagrant plugin list
+```
+
+**VirtualBox:**
+
+```bash
+vagrant plugin install vagrant-vbguest
 vagrant plugin install vagrant-reload
 vagrant plugin install vagrant-disksize
 vagrant plugin list
@@ -136,7 +161,12 @@ vagrant plugin list
 #### Vagrant Box Preparation
 
 ```bash
+# KVM/libvirt
 vagrant box add ubuntu/jammy64 --provider libvirt
+
+# VirtualBox
+vagrant box add ubuntu/jammy64 --provider virtualbox
+
 vagrant box list
 ```
 
@@ -144,7 +174,7 @@ vagrant box list
 
 ## Vagrant Configuration Examples
 
-### Basic Vagrantfile Example
+### Basic Vagrantfile Example (KVM/libvirt)
 
 ```ruby
 # File: Vagrantfile
@@ -168,6 +198,32 @@ Vagrant.configure("2") do |config|
   end
 end
 ```
+
+### Basic Vagrantfile Example (VirtualBox)
+
+```ruby
+# File: virtualbox/Vagrantfile
+Vagrant.configure("2") do |config|
+  config.vm.define "web" do |web|
+    web.vm.box = "ubuntu/jammy64"
+    web.vm.hostname = "web-server"
+    web.vm.network "private_network", ip: "192.168.56.10"
+
+    web.vm.provider "virtualbox" do |vb|
+      vb.memory = 2048
+      vb.cpus = 2
+      vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
+    end
+
+    web.vm.provision "shell", inline: <<-SHELL
+      apt-get update
+      apt-get install -y nginx
+    SHELL
+  end
+end
+```
+
+Note the different default private-network ranges: libvirt typically uses `192.168.122.0/24`, while this repository's VirtualBox Vagrantfiles use VirtualBox's default host-only network, `192.168.56.0/24`.
 
 ### Multi-VM Vagrantfile Example
 
@@ -204,14 +260,24 @@ end
 #### Step 1: Navigate to Lab Directory
 
 ```bash
+# KVM/libvirt
 cd security-engineering-lab/labs/infrastructure/devops-linux-lab
+
+# VirtualBox
+cd security-engineering-lab/labs/infrastructure/devops-linux-lab/virtualbox
+
 ls -la
 ```
 
 #### Step 2: Pre-download Base Boxes
 
 ```bash
+# KVM/libvirt
 vagrant box add ubuntu/jammy64 --provider libvirt
+
+# VirtualBox
+vagrant box add ubuntu/jammy64 --provider virtualbox
+
 vagrant box list
 ```
 
@@ -224,7 +290,11 @@ vagrant up
 In another terminal, monitor the VMs if needed:
 
 ```bash
+# KVM/libvirt
 watch -n 5 'virsh list'
+
+# VirtualBox
+watch -n 5 'VBoxManage list runningvms'
 ```
 
 #### Step 4: Verify Lab Status
@@ -289,7 +359,7 @@ curl http://172.28.128.60:8080/health
 
 ## Troubleshooting with Examples
 
-### Issue: Permission Denied on Vagrant Commands
+### Issue: Permission Denied on Vagrant Commands (KVM/libvirt)
 
 #### Example Error
 
@@ -306,6 +376,23 @@ sudo usermod -aG libvirt $USER
 sudo usermod -aG kvm $USER
 newgrp libvirt
 virsh list
+```
+
+### Issue: VirtualBox Provider Not Found (VirtualBox)
+
+#### Example Error
+
+```bash
+The provider 'virtualbox' could not be found, but was requested to
+back the machine 'devops-1'.
+```
+
+#### Solution
+
+```bash
+VBoxManage --version
+sudo modprobe vboxdrv          # Linux, if the kernel module isn't loaded
+vagrant plugin list            # confirm no conflicting provider plugin is forcing libvirt
 ```
 
 ### Issue: Network Connectivity Problems
@@ -380,10 +467,20 @@ vagrant suspend
 
 ### Workflow 2: Create Lab Snapshot Before Testing
 
+**KVM/libvirt:**
+
 ```bash
 virsh snapshot-create-as --domain k3s-cp stable-v1 --description "Before security testing"
 virsh snapshot-list --domain k3s-cp
 virsh snapshot-revert --domain k3s-cp stable-v1
+```
+
+**VirtualBox** (also works from the lab directory via `vagrant snapshot`):
+
+```bash
+vagrant snapshot save k3s-cp stable-v1
+vagrant snapshot list k3s-cp
+vagrant snapshot restore k3s-cp stable-v1
 ```
 
 ### Workflow 3: SSH into Multiple VMs
@@ -411,6 +508,8 @@ vagrant up k3s-w1
 
 ## Summary Table: Common Commands
 
+Vagrant-level commands (`vagrant up`, `vagrant ssh`, `vagrant status`, etc.) are identical across providers. Provider-native commands differ:
+
 | Task | Command | Example |
 |------|---------|---------|
 | Start lab | `vagrant up` | `cd labs/infrastructure/devops-linux-lab && vagrant up` |
@@ -419,13 +518,18 @@ vagrant up k3s-w1
 | SSH to VM | `vagrant ssh <name>` | `vagrant ssh k3s-cp` |
 | Run command | `vagrant ssh <name> -c 'cmd'` | `vagrant ssh k3s-cp -c 'kubectl get nodes'` |
 | Check status | `vagrant status` | `vagrant status` |
-| List VMs | `virsh list` | `virsh list --all` |
-| Create snapshot | `virsh snapshot-create-as` | `virsh snapshot-create-as --domain k3s-cp backup1` |
-| Revert snapshot | `virsh snapshot-revert` | `virsh snapshot-revert --domain k3s-cp backup1` |
-| Monitor resources | `virt-top` | `virt-top` |
-| Check network | `virsh net-list` | `virsh net-list --all` |
+| List VMs (libvirt) | `virsh list` | `virsh list --all` |
+| List VMs (VirtualBox) | `VBoxManage list vms` | `VBoxManage list runningvms` |
+| Create snapshot (libvirt) | `virsh snapshot-create-as` | `virsh snapshot-create-as --domain k3s-cp backup1` |
+| Create snapshot (VirtualBox) | `vagrant snapshot save` | `vagrant snapshot save k3s-cp backup1` |
+| Revert snapshot (libvirt) | `virsh snapshot-revert` | `virsh snapshot-revert --domain k3s-cp backup1` |
+| Revert snapshot (VirtualBox) | `vagrant snapshot restore` | `vagrant snapshot restore k3s-cp backup1` |
+| Monitor resources (libvirt) | `virt-top` | `virt-top` |
+| Monitor resources (VirtualBox) | `VBoxManage list runningvms` | `watch -n 5 'VBoxManage list runningvms'` |
+| Check network (libvirt) | `virsh net-list` | `virsh net-list --all` |
+| Check network (VirtualBox) | `VBoxManage list hostonlyifs` | `VBoxManage list hostonlyifs` |
 
 ---
 
-**Last Updated:** 2026-06-26  
+**Last Updated:** 2026-08-15  
 **Status:** Active & Maintained

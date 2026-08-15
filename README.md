@@ -25,6 +25,42 @@ This repository is designed to be **runnable, not static**. The environments, au
 Start here: [Learning Path](./docs/project/learning-path.md) provides the recommended path through the labs, from Active Directory security fundamentals to segmented environments and DevSecOps workflows.
 
 
+## Supported providers
+
+
+Every lab ships with a Vagrantfile for each of the following providers. Pick whichever matches your host:
+
+
+| Provider | Best for | Vagrantfile location |
+|---|---|---|
+| **KVM/libvirt** (default) | Linux hosts with nested virtualization; best performance and the environment each lab is developed against | `<lab-path>/Vagrantfile` |
+| **VirtualBox** | Cross-platform hosts (Windows, macOS, Linux) without KVM/libvirt, or hosts where libvirt isn't available | `<lab-path>/virtualbox/Vagrantfile` |
+
+
+Run a lab with an explicit provider from the lab's directory:
+
+
+```bash
+# KVM/libvirt (default; run from the lab root)
+vagrant up
+
+# VirtualBox (run from the lab's virtualbox/ subdirectory)
+cd virtualbox
+vagrant up
+```
+
+
+You can also set a default provider for your shell session instead of `cd`-ing into `virtualbox/`:
+
+
+```bash
+export VAGRANT_DEFAULT_PROVIDER=virtualbox
+```
+
+
+See [Installation Guide](./docs/setup/installation.md) for full per-provider prerequisites and setup steps, and [Known limitations](#known-limitations) below for provider differences (networking, performance, and nested virtualization).
+
+
 ## What this project demonstrates
 
 
@@ -406,6 +442,7 @@ Unauthorized access, testing, or exploitation of external systems is prohibited.
 
 - Full deployment requires significant CPU, RAM, and storage.
 - The default provider is KVM/QEMU with libvirt and requires a Linux host. Each lab includes a VirtualBox-compatible `Vagrantfile` for macOS, Windows, and Linux hosts without libvirt. VirtualBox itself is Intel/AMD (x86_64) only and does not run on Apple Silicon/ARM.
+- **Provider differences:** KVM/libvirt generally outperforms VirtualBox for CPU- and I/O-heavy workloads (e.g., the DevOps/DevSecOps lab's Kubernetes nodes) because it uses hardware-accelerated virtio devices by default. VirtualBox networking (host-only/NAT) behaves differently from libvirt's NAT/bridged networks, so IP ranges and port-forwarding assumptions in some guides are libvirt-oriented; check the lab's `virtualbox/Vagrantfile` and its README for the VirtualBox-specific network configuration. Nested virtualization (needed for K3s/Kind/K3d workloads) must be enabled explicitly on VirtualBox (`--nested-hw-virt on`) and is not guaranteed to perform as well as libvirt's KVM-backed nesting.
 - Windows evaluation media is used for laboratory environments.
 - Some systems represent simulated enterprise services for safe security practice.
 - Third-party Vagrant boxes may change independently.

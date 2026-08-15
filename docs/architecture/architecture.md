@@ -4,7 +4,7 @@
 
 security-engineering-lab is organized as a modular DevSecOps and security-learning platform. The repository separates runnable labs, reusable tools, operational scripts, and long-form documentation so each part can be reviewed or improved independently.
 
-The project is intentionally local-first: labs are designed for Vagrant, KVM/QEMU, and libvirt rather than public cloud infrastructure. This keeps security testing contained and makes the environments repeatable on a workstation.
+The project is intentionally local-first: labs are designed for Vagrant rather than public cloud infrastructure, with KVM/QEMU and libvirt as the default provider and VirtualBox supported as a cross-platform alternative (see the [README's Supported providers section](../../README.md#supported-providers)). This keeps security testing contained and makes the environments repeatable on a workstation.
 
 ---
 
@@ -86,7 +86,7 @@ Runnable environments for infrastructure and security practice.
 
 | Lab | Focus |
 |-----|-------|
-| `labs/infrastructure/devops-linux-lab/` | Linux administration, Vagrant/libvirt, Kubernetes, DevOps workflow documentation |
+| `labs/infrastructure/devops-linux-lab/` | Linux administration, Vagrant/libvirt (with a VirtualBox-compatible Vagrantfile under `virtualbox/`), Kubernetes, DevOps workflow documentation |
 | `labs/security/active-directory/base/` | Active Directory attack-chain practice in a controlled lab |
 | `labs/security/active-directory/vlan-segmented/` | VLAN segmentation, subnet design, and network isolation testing |
 
@@ -138,7 +138,8 @@ oversight:
   time, so a dedicated control-node/inventory/role structure would add
   process without solving a problem this repo actually has.
 - **Fewer moving parts to install and keep working.** A contributor only
-  needs Vagrant, KVM/libvirt, and their host package manager. Adding
+  needs Vagrant, a provider (KVM/libvirt or VirtualBox), and their host
+  package manager. Adding
   Ansible as a hard dependency would mean another tool, another version to
   pin, and another thing that can drift from what's documented.
 - **Provisioning logic stays next to what it provisions.** Everything a VM

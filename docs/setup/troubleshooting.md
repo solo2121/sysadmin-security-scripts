@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Common issues and fixes for the security-engineering-lab environment.
+Common issues and fixes for the security-engineering-lab environment. Most entries below are provider-agnostic Vagrant issues or KVM/libvirt-specific (the repository default); VirtualBox-specific issues are called out explicitly. See [Installation Guide](installation.md) for full provider setup.
 
 ## How to use this guide
 
@@ -47,7 +47,7 @@ If something fails:
    sudo apt install --only-upgrade -y vagrant
    ```
 
-### Libvirt service will not start
+### Libvirt service will not start (KVM/libvirt)
 
 **Problem:** `Failed to start libvirtd service`
 
@@ -64,7 +64,7 @@ If something fails:
    ```
 3. Check for virtualization conflicts only if needed.
 
-### Libvirt permission denied
+### Libvirt permission denied (KVM/libvirt)
 
 **Problem:** `Permission denied` when running libvirt commands
 
@@ -81,6 +81,36 @@ If something fails:
    ```bash
    virsh list --all
    ```
+
+### VirtualBox kernel module fails to load (VirtualBox, Linux hosts)
+
+**Problem:** `vagrant up` fails with a message that the VirtualBox kernel driver is not loaded, or `VBoxManage` commands fail with a kernel-module error.
+
+**Fix:**
+1. Load the module:
+   ```bash
+   sudo modprobe vboxdrv
+   ```
+2. If it's missing after a kernel upgrade, reinstall the DKMS package so it rebuilds:
+   ```bash
+   sudo dpkg-reconfigure virtualbox-dkms   # Debian/Ubuntu
+   ```
+3. Confirm VirtualBox can now enumerate the module:
+   ```bash
+   VBoxManage --version
+   ```
+
+### VirtualBox and KVM/libvirt conflict on the same host (VirtualBox)
+
+**Problem:** VirtualBox VMs fail to start (or hang) on a Linux host that also has KVM/libvirt installed and running, because both hypervisors want exclusive access to hardware virtualization extensions.
+
+**Fix:**
+1. Stop libvirt-managed VMs before starting VirtualBox VMs, or vice versa:
+   ```bash
+   virsh list --all
+   virsh shutdown <domain>
+   ```
+2. If conflicts persist, run only one provider's daemon at a time (`sudo systemctl stop libvirtd` before starting VirtualBox), or use separate host sessions/profiles for each provider.
 
 ### Ansible missing dependencies
 
@@ -167,7 +197,12 @@ If something fails:
 1. Check status:
    ```bash
    vagrant status
+
+   # KVM/libvirt
    virsh list --all
+
+   # VirtualBox
+   VBoxManage list vms
    ```
 2. Destroy and recreate:
    ```bash
@@ -201,7 +236,7 @@ If something fails:
 
 **Problem:** Virtual machines cannot reach the internet
 
-**Fix:**
+**Fix (KVM/libvirt):**
 1. Check libvirt networks:
    ```bash
    virsh net-list --all
@@ -212,6 +247,22 @@ If something fails:
    sudo systemctl restart libvirtd
    virsh net-destroy default
    virsh net-start default
+   ```
+3. Check host routing:
+   ```bash
+   ip route
+   ```
+
+**Fix (VirtualBox):**
+1. Check the VM's network adapters and the host-only network:
+   ```bash
+   VBoxManage showvminfo <vm-name> --machinereadable | grep ^nic
+   VBoxManage list hostonlyifs
+   ```
+2. Recreate the host-only adapter if it's missing or misconfigured:
+   ```bash
+   VBoxManage hostonlyif create
+   VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.56.1 --netmask 255.255.255.0
    ```
 3. Check host routing:
    ```bash
@@ -412,8 +463,14 @@ If something fails:
 ```bash
 VAGRANT_LOG=debug vagrant up
 ansible-playbook -vvv playbook.yml
+
+# KVM/libvirt
 export LIBVIRT_LOG_OUTPUTS="1:stderr"
 virsh list --all
+
+# VirtualBox
+VBoxManage list vms
+VBoxManage showvminfo <vm-name>
 ```
 
 ### Check system logs
@@ -466,8 +523,9 @@ When reporting an issue, include:
 - The exact error message.
 - The command you ran.
 - Your host OS and version.
+- Which provider you're using (KVM/libvirt or VirtualBox).
 - `vagrant --version`
-- `virsh --version`
+- `virsh --version` (KVM/libvirt) or `VBoxManage --version` (VirtualBox)
 - Relevant logs.
 
 ---
