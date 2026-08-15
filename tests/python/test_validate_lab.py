@@ -24,8 +24,11 @@ def test_discover_vagrantfiles_finds_all_three_labs():
     found = {str(p.relative_to(PROJECT_ROOT)) for p in validate_lab.discover_vagrantfiles()}
     assert found == {
         "labs/security/active-directory/base/Vagrantfile",
+        "labs/security/active-directory/base/virtualbox/Vagrantfile",
         "labs/security/active-directory/vlan-segmented/Vagrantfile",
+        "labs/security/active-directory/vlan-segmented/virtualbox/Vagrantfile",
         "labs/infrastructure/devops-linux-lab/Vagrantfile",
+        "labs/infrastructure/devops-linux-lab/virtualbox/Vagrantfile",
     }
 
 
