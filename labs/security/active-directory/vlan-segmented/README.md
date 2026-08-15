@@ -31,6 +31,7 @@ For the simpler flat network Active Directory environment, see:
 - [Security Notice](#security-notice)
 - [Key Differences from Flat AD Lab](#key-differences-from-flat-ad-lab)
 - [Requirements](#requirements)
+- [VirtualBox Provider](#virtualbox-provider)
 - [Repository Structure](#repository-structure)
 - [Network Architecture](#network-architecture)
 - [Target Systems](#target-systems)
@@ -191,6 +192,48 @@ bridge-utils
 
 ---
 
+## VirtualBox Provider
+
+For hosts without KVM/libvirt (macOS, Windows, or Linux hosts where libvirt
+isn't available), this lab also ships
+[`virtualbox/Vagrantfile`](virtualbox/Vagrantfile) — the same VLAN topology,
+VM inventory, static IPs, and provisioning logic as the libvirt `Vagrantfile`
+in this directory, targeting the VirtualBox provider instead. Shared files
+(`configs/`, `scripts/`, `docs/`) are unchanged and reused as-is; only the
+`Vagrantfile` differs.
+
+**Requirements:** VirtualBox 7.0+, Vagrant >= 2.2 (VirtualBox support is
+built in — no provider plugin needed), and the same `vagrant-reload` /
+`vagrant-winrm` plugins used above. Not supported on Apple Silicon/ARM
+hosts, since VirtualBox is Intel/AMD (x86_64) only.
+
+**Usage:**
+
+```bash
+git clone https://github.com/solo2121/security-engineering-lab.git
+cd security-engineering-lab/labs/security/active-directory/vlan-segmented/virtualbox
+vagrant validate
+vagrant up --provider=virtualbox
+vagrant status
+```
+
+```bash
+vagrant provision
+vagrant reload
+vagrant halt
+vagrant destroy -f
+```
+
+**Configuration:** same environment variables as the libvirt lab, plus
+`LAB_GUI=true` to run VMs with a VirtualBox GUI console instead of headless.
+
+**Troubleshooting:** see the [VirtualBox Provider troubleshooting
+table](../base/README.md#troubleshooting) in the base lab's README — the
+same VirtualBox-level issues (missing `VBoxManage`, `vboxusers` group,
+internal-network conflicts, Guest Additions mismatches) apply here.
+
+---
+
 ## Repository Structure
 
 Relative to:
@@ -200,6 +243,8 @@ Relative to:
 ```text
 .
 ├── Vagrantfile
+├── virtualbox/
+│   └── Vagrantfile
 ├── scripts/
 ├── configs/
 ├── docs/
@@ -211,7 +256,8 @@ Key components:
 
 | Path | Purpose |
 |---|---|
-| `Vagrantfile` | VM definitions, profiles, networking |
+| `Vagrantfile` | VM definitions, profiles, networking (KVM/libvirt, default provider) |
+| `virtualbox/Vagrantfile` | Same VM definitions and networking, targeting the VirtualBox provider — see [VirtualBox Provider](#virtualbox-provider) |
 | `scripts/` | Lab automation and management tools |
 | `configs/` | Service and VM configuration files |
 | `diagrams/` | Network architecture diagrams |

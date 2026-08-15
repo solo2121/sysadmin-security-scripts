@@ -90,6 +90,51 @@ jobs:
           VAGRANT_DEFAULT_PROVIDER: libvirt
 
   # ---------------------------------------------------------------------------
+  # Job 1b: Validate all three VirtualBox Vagrantfiles
+  #
+  # GitHub-hosted ubuntu-latest runners ship VirtualBox preinstalled, so
+  # unlike the libvirt job above, no provider install step is needed here —
+  # just Vagrant itself (the VirtualBox provider is built in).
+  # ---------------------------------------------------------------------------
+  validate-vagrantfiles-virtualbox:
+    name: Validate Vagrantfiles (VirtualBox)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Vagrant
+        run: |
+          wget -O - https://apt.releases.hashicorp.com/gpg \
+            | sudo gpg --dearmor \
+                -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) \
+            signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+            https://apt.releases.hashicorp.com $(lsb_release -cs) main" \
+            | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt-get update -qq
+          sudo apt-get install -y vagrant
+
+      - name: Validate AD Pentest VirtualBox Vagrantfile
+        run: vagrant validate
+        working-directory: labs/security/active-directory/base/virtualbox
+        env:
+          VAGRANT_DEFAULT_PROVIDER: virtualbox
+
+      - name: Validate AD Pentest VLAN VirtualBox Vagrantfile
+        run: vagrant validate
+        working-directory: labs/security/active-directory/vlan-segmented/virtualbox
+        env:
+          VAGRANT_DEFAULT_PROVIDER: virtualbox
+
+      - name: Validate DevOps Lab VirtualBox Vagrantfile
+        run: vagrant validate
+        working-directory: labs/infrastructure/devops-linux-lab/virtualbox
+        env:
+          VAGRANT_DEFAULT_PROVIDER: virtualbox
+
+  # ---------------------------------------------------------------------------
   # Job 2: Shell script linting — errors only, not style warnings
   # ---------------------------------------------------------------------------
   lint-shell-scripts:

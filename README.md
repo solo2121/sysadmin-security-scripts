@@ -9,7 +9,7 @@
 
 **Security Engineering Lab is a modular, Vagrant-provisioned security and infrastructure engineering lab repository for practicing Active Directory security, network segmentation, Kubernetes, DevSecOps workflows, Linux administration, and infrastructure automation on Linux hosts.**
 
-This repository is designed to be **runnable, not static**. The environments, automation, documentation, and workflows are implemented as deployable lab systems using Vagrant and KVM/libvirt.
+This repository is designed to be **runnable, not static**. The environments, automation, documentation, and workflows are implemented as deployable lab systems using Vagrant and KVM/libvirt. Every lab also ships a VirtualBox-compatible `Vagrantfile` (see [Known limitations](#known-limitations)) for hosts without KVM/libvirt.
 
 **Maintained by:** Miguel A. Carlo (solo2121)  
 **Project status:** Active development
@@ -34,7 +34,7 @@ Start here: [Learning Path](./docs/project/learning-path.md) provides the recomm
 
 [![Enterprise Infrastructure Architecture](assets/diagrams/architecture-overview.png)](https://github.com/solo2121/security-engineering-lab/tree/main/assets/diagrams)
 
-The repository contains independent lab environments. Each environment can be deployed separately using its own Vagrant configuration on KVM/QEMU virtualization infrastructure.
+The repository contains independent lab environments. Each environment can be deployed separately using its own Vagrant configuration, on either KVM/QEMU (default) or VirtualBox virtualization infrastructure.
 
 See:
 
@@ -209,7 +209,9 @@ security-engineering-lab/
 │   └── security/
 │       ├── active-directory/
 │       │   ├── base/
+│       │   │   └── virtualbox/
 │       │   └── vlan-segmented/
+│       │       └── virtualbox/
 │       ├── README.md
 │       └── requirements.txt
 ├── scripts/
@@ -271,7 +273,7 @@ security-engineering-lab/
 | Area | Technologies |
 |---|---|
 | Linux Administration | Ubuntu, Rocky Linux, AlmaLinux, openSUSE |
-| Virtualization | KVM, QEMU, libvirt, Vagrant |
+| Virtualization | KVM, QEMU, libvirt, VirtualBox, Vagrant |
 | Infrastructure as Code | Terraform, OpenTofu, Ansible |
 | DevOps | Git, GitHub Actions, CI/CD workflows |
 | Kubernetes | k3s, Kind, K3d |
@@ -327,7 +329,7 @@ Unauthorized access, testing, or exploitation of external systems is prohibited.
 ## Known limitations
 
 - Full deployment requires significant CPU, RAM, and storage.
-- Linux hosts only due to KVM/libvirt requirements.
+- The default provider (KVM/libvirt) requires a Linux host. Each lab also ships a VirtualBox-compatible `Vagrantfile` (see that lab's README) for macOS, Windows, or Linux hosts without libvirt — VirtualBox itself is Intel/AMD (x86_64) only and does not run on Apple Silicon/ARM.
 - Windows evaluation media is used for laboratory environments.
 - Some systems represent simulated enterprise services for safe security practice.
 - Third-party Vagrant boxes may change independently.

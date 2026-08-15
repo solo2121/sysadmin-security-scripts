@@ -164,6 +164,51 @@ vagrant plugin install vagrant-libvirt
 
 ---
 
+## VirtualBox Provider
+
+For hosts without KVM/libvirt (macOS, Windows, or Linux hosts where libvirt
+isn't available), this lab also ships
+[`virtualbox/Vagrantfile`](virtualbox/Vagrantfile) — the same VM inventory,
+`LAB_PROFILE`/`START_VMS` selection logic, and provisioning scripts as the
+libvirt `Vagrantfile` above, targeting the VirtualBox provider instead.
+
+**Requirements:** VirtualBox 7.0+, Vagrant >= 2.4 (VirtualBox support is
+built in, no provider plugin required), Ruby >= 2.5. Not supported on Apple
+Silicon/ARM hosts (VirtualBox is Intel/AMD x86_64 only).
+
+```bash
+git clone https://github.com/solo2121/security-engineering-lab.git
+cd security-engineering-lab/labs/infrastructure/devops-linux-lab/virtualbox
+export HARBOR_PASS='YourStrongPassword'   # or answer the interactive prompt
+vagrant validate
+vagrant up --provider=virtualbox
+vagrant status
+```
+
+```bash
+vagrant provision
+vagrant reload
+vagrant halt
+vagrant destroy -f
+```
+
+Deployment profiles (`LAB_PROFILE=minimal|dev|full`) and `START_VMS=` work
+the same as documented under [Quick Start](#quick-start). Set
+`LAB_GUI=true` to open a VirtualBox GUI console per VM instead of running
+headless.
+
+**Known limitation:** nested virtualization for Kind/K3d/K3s is enabled via
+`--nested-hw-virt` on the VirtualBox provider block; confirm your host CPU
+and VirtualBox version support nested virtualization if those workloads
+fail to start.
+
+**Troubleshooting:** VirtualBox-specific issues (missing `VBoxManage`,
+`vboxusers` group permissions, internal-network conflicts, Guest Additions
+mismatches) are the same as documented in the [AD Pentest Lab's VirtualBox
+Provider troubleshooting table](../../security/active-directory/base/README.md#troubleshooting).
+
+---
+
 ## Quick Start
 
 ### Set Harbor password before starting

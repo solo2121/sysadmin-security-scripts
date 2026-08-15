@@ -8,17 +8,18 @@
 # Requires: pip install -r requirements-dev.txt
 # =============================================================================
 
-.PHONY: help lint test validate validate-repo security docs docs-refs coverage prereq format typecheck
+.PHONY: help lint test validate validate-virtualbox validate-repo security docs docs-refs coverage prereq format typecheck
 
 help:
 	@echo "Available targets:"
-	@echo "  make lint          - shellcheck (errors) + flake8 (informational)"
-	@echo "  make format        - ruff check + black --check (informational, opt-in)"
-	@echo "  make typecheck     - mypy (informational, opt-in)"
-	@echo "  make test          - run pytest and bats unit test suites"
-	@echo "  make coverage      - run pytest with coverage report"
-	@echo "  make validate      - vagrant validate on all three lab Vagrantfiles"
-	@echo "  make validate-repo - repository structure/docs/Vagrantfile health check (scripts/validate_lab.py)"
+	@echo "  make lint               - shellcheck (errors) + flake8 (informational)"
+	@echo "  make format             - ruff check + black --check (informational, opt-in)"
+	@echo "  make typecheck          - mypy (informational, opt-in)"
+	@echo "  make test               - run pytest and bats unit test suites"
+	@echo "  make coverage           - run pytest with coverage report"
+	@echo "  make validate           - vagrant validate on all three lab Vagrantfiles (KVM/libvirt)"
+	@echo "  make validate-virtualbox - vagrant validate on all three VirtualBox Vagrantfiles"
+	@echo "  make validate-repo      - repository structure/docs/Vagrantfile health check (scripts/validate_lab.py)"
 	@echo "  make security      - bandit (informational) + detect-secrets scan"
 	@echo "  make docs          - markdown link check across the repo"
 	@echo "  make docs-refs     - catch dangling filenames in doc index bullets/tables (scripts/check_doc_references.py)"
@@ -61,6 +62,14 @@ validate:
 	cd labs/security/active-directory/vlan-segmented && vagrant validate
 	@echo "==> vagrant validate (devops-linux-lab)"
 	cd labs/infrastructure/devops-linux-lab && vagrant validate
+
+validate-virtualbox:
+	@echo "==> vagrant validate (active-directory/base, VirtualBox)"
+	cd labs/security/active-directory/base/virtualbox && vagrant validate
+	@echo "==> vagrant validate (active-directory/vlan-segmented, VirtualBox)"
+	cd labs/security/active-directory/vlan-segmented/virtualbox && vagrant validate
+	@echo "==> vagrant validate (devops-linux-lab, VirtualBox)"
+	cd labs/infrastructure/devops-linux-lab/virtualbox && vagrant validate
 
 validate-repo:
 	@echo "==> repository health validation (scripts/validate_lab.py)"

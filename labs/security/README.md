@@ -131,6 +131,7 @@ See [`active-directory/vlan-segmented/README.md`](active-directory/vlan-segmente
 - **`docs/lab-credentials.md`** – All seeded credentials and service accounts.
 - **`docs/dc01-deployment-validation.md`** – Recorded validation of a successful `dc01` deployment (static IP, AD promotion, scenario configuration).
 - **`Vagrantfile`** – Full provisioning (v1.13 – FLAT NETWORK – OPTIMIZED).
+- **`virtualbox/Vagrantfile`** – Same lab, targeting the VirtualBox provider (for hosts without KVM/libvirt).
 - **`scripts/lab_attack_automation.py`** – Optional automated attack chain.
 
 ### VLAN Enterprise Lab (`active-directory/vlan-segmented/`)
@@ -139,6 +140,7 @@ See [`active-directory/vlan-segmented/README.md`](active-directory/vlan-segmente
 - **`docs/attack-guide.md`** – VLAN-specific attack paths and scenarios.
 - **`docs/lab-credentials.md`** – Credentials for the VLAN environment.
 - **`Vagrantfile`** – Provisioning with VLAN configuration (v2.1.5).
+- **`virtualbox/Vagrantfile`** – Same lab, targeting the VirtualBox provider (for hosts without KVM/libvirt).
 
 ---
 
@@ -146,8 +148,8 @@ See [`active-directory/vlan-segmented/README.md`](active-directory/vlan-segmente
 
 Before starting either lab:
 
-- **Host OS:** Linux with hardware virtualization (KVM/QEMU).
-- **Vagrant:** Latest version with `vagrant-libvirt` and `vagrant-reload` plugins.
+- **Host OS:** Linux with hardware virtualization (KVM/QEMU). Alternatively, any VirtualBox-supported x86_64 host (macOS, Windows, or Linux) — see each lab's `virtualbox/Vagrantfile` and README "VirtualBox Provider" section.
+- **Vagrant:** Latest version with `vagrant-libvirt` and `vagrant-reload` plugins (libvirt); or just Vagrant + `vagrant-reload`/`vagrant-winrm` for VirtualBox, since the VirtualBox provider ships built in.
 - **RAM:** 16 GB minimum (8 GB can run a reduced profile, but will be slow).
 - **Disk:** 100 GB free (each lab uses ~40–50 GB).
 - **Tools (preinstalled inside the Kali VM):**

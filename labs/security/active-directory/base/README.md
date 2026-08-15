@@ -9,6 +9,8 @@
 
 Enterprise-grade Active Directory penetration testing lab built with Vagrant and KVM/libvirt. Simulates modern corporate attack surfaces with up to 11 VMs and 60+ realistic attack paths, selectable via [Lab Profiles](#lab-profiles) — the default `ad` profile brings up 6 VMs (~19GB RAM); `LAB_PROFILE=full` brings up all 11 (~29.5GB RAM).
 
+> **VirtualBox users:** this lab now also ships a VirtualBox-compatible Vagrant environment for hosts without KVM/libvirt (including macOS and Windows). See [VirtualBox Provider](#virtualbox-provider).
+
 ---
 
 ## Table of Contents
@@ -19,6 +21,7 @@ Enterprise-grade Active Directory penetration testing lab built with Vagrant and
 - [Lab Architecture](#lab-architecture)
 - [Lab Profiles](#lab-profiles)
 - [Quick Start](#quick-start)
+- [VirtualBox Provider](#virtualbox-provider)
 - [Platform-Specific Guides](#platform-specific-guides)
 - [Attack Scenarios](#attack-scenarios)
 - [Credentials](#credentials)
@@ -425,6 +428,95 @@ To stop and remove all VMs for this lab and reclaim host resources:
 cd labs/security/active-directory/base
 vagrant destroy -f
 ```
+
+---
+
+## VirtualBox Provider
+
+This lab ships a dedicated VirtualBox-compatible `Vagrantfile` at
+[`virtualbox/Vagrantfile`](virtualbox/Vagrantfile), alongside the default
+KVM/libvirt `Vagrantfile` in this directory. It defines the same VM names,
+hostnames, static IPs, `LAB_PROFILE` values, and provisioning logic as the
+libvirt lab — only the provider block, base boxes, and network driver
+differ. Use it on hosts that don't have KVM/libvirt (macOS, Windows, or
+Linux hosts where libvirt isn't available or desired).
+
+**Which file is shared vs. VirtualBox-specific:**
+- Shared: VM naming, static IP allocation, `LAB_PROFILE` selection logic, provisioning shell/PowerShell scripts embedded in each Vagrantfile, credentials, and attack scenarios — all identical to the libvirt lab described elsewhere in this README.
+- VirtualBox-specific: `virtualbox/Vagrantfile` itself (provider block, `vb.customize` calls, VirtualBox base boxes, `virtualbox__intnet` private networking).
+- Not shared: `config.rb` (if you use one) is per-directory — see [Configuration](#configuration) below.
+
+### Requirements
+
+- [VirtualBox](https://www.virtualbox.org/) 7.0+ (Extension Pack recommended for USB/RDP passthrough, not required for this lab).
+- [Vagrant](https://www.vagrantup.com/) >= 2.2. The VirtualBox provider is built into Vagrant — no extra provider plugin is required (unlike `vagrant-libvirt`).
+- `vagrant-reload` and `vagrant-winrm` plugins (same as the libvirt lab):
+  ```bash
+  vagrant plugin install vagrant-reload
+  vagrant plugin install vagrant-winrm
+  ```
+- Hardware virtualization (Intel VT-x / AMD-V) enabled in the host BIOS/UEFI. On **Apple Silicon (ARM/M1–M4) Macs, VirtualBox is not supported** — VirtualBox only runs on Intel/AMD (x86_64) hosts. Use UTM, VMware Fusion, or a cloud x86 host instead, or run this lab's libvirt Vagrantfile on a Linux x86_64 host.
+- Same RAM/disk sizing as the libvirt lab (see [Version 1.13 Highlights](#version-113-highlights)).
+
+### Usage
+
+```bash
+git clone https://github.com/solo2121/security-engineering-lab.git
+cd security-engineering-lab/labs/security/active-directory/base/virtualbox
+vagrant validate
+vagrant up --provider=virtualbox
+vagrant status
+```
+
+Other lifecycle commands, run from the same directory:
+
+```bash
+vagrant provision   # re-run provisioning without recreating VMs
+vagrant reload       # restart VMs and re-apply network/provider settings
+vagrant halt         # stop VMs, keep disks
+vagrant destroy -f   # remove all VMs for this lab (does not touch other environments)
+```
+
+As with the libvirt lab, `LAB_PROFILE` controls which VMs are created (default `ad`, 6 VMs):
+
+```bash
+LAB_PROFILE=minimal vagrant up --provider=virtualbox
+LAB_PROFILE=full vagrant up --provider=virtualbox
+```
+
+### Configuration
+
+All settings are controlled with the same environment variables as the libvirt lab (`DOMAIN_NAME`, `DC_IP`, `KALI_MEMORY`, `DC01_CPUS`, etc. — see the constants near the top of `virtualbox/Vagrantfile`), plus one VirtualBox-only variable:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `LAB_GUI` | `false` | Set to `true` to open a VirtualBox GUI console window per VM instead of running headless. |
+| `<VM>_MEMORY`, `<VM>_CPUS` | per-VM defaults | Override memory (MB) / CPU count for a given VM, e.g. `DC01_MEMORY=8192`. |
+| `<VM>_IP` | per-VM defaults | Override a VM's static IP (must stay inside `LAB_SUBNET`). |
+| `LAB_PROFILE` | `ad` | Selects which VMs are created — see [Lab Profiles](#lab-profiles). |
+
+An optional `config.rb` in the `virtualbox/` directory is loaded automatically if present, same as the libvirt lab, for host-specific overrides you don't want to export as environment variables.
+
+VirtualBox base boxes are switched from the libvirt lab's boxes to VirtualBox-native equivalents (e.g. `kalilinux/rolling`, `generic/ubuntu2204`, `peru/windows-10-enterprise-x64-eval`, `peru/windows-server-2022-standard-x64-eval`) — these are pulled automatically by `vagrant up` and require no manual download.
+
+### Known limitations
+
+- VirtualBox does not support nested KVM the way `vagrant-libvirt` does; if a scenario in this lab relies on nested virtualization, expect it to behave differently or be unavailable under VirtualBox.
+- Not supported on Apple Silicon / ARM hosts (see Requirements above).
+- Network isolation uses a VirtualBox internal network (`virtualbox__intnet`) rather than libvirt's isolated `vagrant0` bridge; behavior is equivalent for this lab but the underlying VirtualBox networking model differs.
+
+### Troubleshooting
+
+| Issue | Cause | Solution |
+|---|---|---|
+| `vagrant up` fails with "provider virtualbox not found" | VirtualBox not installed, or Vagrant can't find `VBoxManage` | Install VirtualBox and ensure `VBoxManage` is on your `PATH`. |
+| `VBoxManage: error: ... rc=E_ACCESSDENIED` on Linux | Current user isn't in the `vboxusers` group, or kernel modules aren't loaded | `sudo usermod -aG vboxusers $USER`, log out/in, then `sudo modprobe vboxdrv`. |
+| Host-only/internal network conflicts with another VirtualBox lab | Two labs both requesting `172.28.128.0/24` on `pentest_lab` | Run only one lab at a time, or set a different `LAB_SUBNET`/IP variables for one of them. |
+| VM name already exists | A previous `vagrant destroy` didn't fully clean up | `VBoxManage list vms` to find stragglers, then `VBoxManage unregistervm <name> --delete`. |
+| Guest Additions version mismatch warnings | Base box's Guest Additions predate your VirtualBox version | Install the `vagrant-vbguest` plugin (`vagrant plugin install vagrant-vbguest`) to auto-update Guest Additions on boot. |
+| Provisioning hangs on a Windows VM | WinRM not yet ready | Wait for the boot timeout (up to 2 hours for Windows Server boxes on first boot), or check `vagrant winrm list`. |
+| Insufficient CPU/RAM errors from VirtualBox | Host doesn't have enough free resources for the selected `LAB_PROFILE` | Use `LAB_PROFILE=minimal`, or reduce individual `<VM>_MEMORY`/`<VM>_CPUS` values. |
+| Apple Silicon Mac: "provider not found" or box download fails | VirtualBox does not run on ARM hosts | Not supported — see Requirements above. |
 
 ---
 
