@@ -7,6 +7,8 @@
 #   lint-shell-scripts     — shellcheck errors only (not warnings)
 #   lint-python-scripts    — syntax check only (flake8 informational)
 #   security-scan          — bandit informational only (never blocks)
+#   detect-secrets-scan    — detect-secrets against .secrets.baseline
+#                            (blocks only on new/unaudited findings)
 #   run-tests              — pytest (Python), bats (Bash), and repo health checks
 #   check-doc-links        — markdown link check (informational) + doc-index
 #                            reference check (blocks — local, no network)
@@ -306,6 +308,62 @@ jobs:
 
           echo "Bandit scan complete (see findings above for review)"
           exit 0
+
+  # ---------------------------------------------------------------------------
+  # Job 4a: detect-secrets — blocks only on new/unaudited findings
+  #
+  # .secrets.baseline already records every known intentional training
+  # string in this repo (decoy AWS keys, GPP cpassword examples, lab
+  # credentials, etc.). This job re-scans the tree against that baseline
+  # and fails only if the scan produces a *diff* from the checked-in
+  # baseline — i.e. a genuinely new, unaudited secret-like string. It does
+  # not fail on anything already reviewed and recorded in the baseline.
+  # ---------------------------------------------------------------------------
+  detect-secrets-scan:
+    name: Detect Secrets (blocks on new/unaudited findings)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install tools
+        # Version kept in sync with requirements-dev.txt's detect-secrets
+        # floor so local installs and CI run the same tool version.
+        run: pip install detect-secrets --quiet
+
+      - name: Scan against baseline (blocks on new findings)
+        run: |
+          echo "Re-scanning the tree against .secrets.baseline..."
+
+          # "generated_at" changes on every scan even when nothing else
+          # does, so it's stripped (via jq, preinstalled on GitHub-hosted
+          # runners) before comparing -- otherwise this check would report
+          # a false failure on every single run.
+          jq 'del(.generated_at)' .secrets.baseline > /tmp/baseline-before.json
+          detect-secrets scan --baseline .secrets.baseline
+          jq 'del(.generated_at)' .secrets.baseline > /tmp/baseline-after.json
+
+          if ! diff -q /tmp/baseline-before.json /tmp/baseline-after.json > /dev/null; then
+            echo
+            echo "New, unaudited secret-like findings detected -- .secrets.baseline"
+            echo "would change (beyond its timestamp) if this scan's output were"
+            echo "committed. Review each new finding: if it is a real secret,"
+            echo "remove it from the source file and rotate it. If it is"
+            echo "intentional training material, regenerate and commit an"
+            echo "updated .secrets.baseline."
+            echo
+            diff /tmp/baseline-before.json /tmp/baseline-after.json || true
+            exit 1
+          fi
+
+          echo "No new or unaudited findings -- .secrets.baseline is up to date."
 
   # ---------------------------------------------------------------------------
   # Job 4b: Modern Python tooling — ruff/black/mypy, informational only
