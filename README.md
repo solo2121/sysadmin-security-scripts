@@ -37,6 +37,17 @@ Every lab ships with a Vagrantfile for each of the following providers. Pick whi
 | **VirtualBox** | Cross-platform hosts (Windows, macOS, Linux) without KVM/libvirt, or hosts where libvirt isn't available | `<lab-path>/virtualbox/Vagrantfile` |
 
 
+Before your first `vagrant up`, run the host-readiness check — it validates
+hardware virtualization, KVM/libvirt or VirtualBox, required Vagrant plugins,
+and available disk/RAM, and prints an actionable fix for anything that fails:
+
+
+```bash
+./scripts/check-prerequisites.sh
+# or: make prereq
+```
+
+
 Run a lab with an explicit provider from the lab's directory:
 
 

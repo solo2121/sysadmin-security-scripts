@@ -211,6 +211,13 @@ Provider troubleshooting table](../../security/active-directory/base/README.md#t
 
 ## Quick Start
 
+### Check host readiness
+
+```bash
+# From the repo root — validates virtualization, provider, plugins, disk/RAM
+./scripts/check-prerequisites.sh
+```
+
 ### Set Harbor password before starting
 
 ```bash

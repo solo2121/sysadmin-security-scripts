@@ -387,6 +387,13 @@ git clone https://github.com/solo2121/security-engineering-lab.git
 cd security-engineering-lab/labs/security/active-directory/base
 ```
 
+### Step 4.5: Verify Host Readiness
+
+```bash
+# Run from this lab's directory — also checks the vagrant-winrm plugin this lab needs
+../../../../scripts/check-prerequisites.sh --lab1
+```
+
 ### Step 5: Start Domain Controller First
 
 ```bash

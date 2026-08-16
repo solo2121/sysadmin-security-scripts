@@ -540,6 +540,9 @@ Features include:
 Recommended startup sequence:
 
 ```bash
+# Verify host readiness first — also checks the vagrant-winrm plugin this lab needs
+../../../../scripts/check-prerequisites.sh --lab2
+
 # Start the domain controller first
 vagrant up DC01
 
