@@ -86,7 +86,7 @@ Runnable environments for infrastructure and security practice.
 
 | Lab | Focus |
 |-----|-------|
-| `labs/infrastructure/devops-linux-lab/` | Linux administration, Vagrant/libvirt (with a VirtualBox-compatible Vagrantfile under `virtualbox/`), Kubernetes, DevOps workflow documentation |
+| `labs/infrastructure/devops-linux-lab/` | Linux administration, Vagrant with a single unified Vagrantfile supporting both KVM/libvirt and VirtualBox, Kubernetes, DevOps workflow documentation |
 | `labs/security/active-directory/base/` | Active Directory attack-chain practice in a controlled lab |
 | `labs/security/active-directory/vlan-segmented/` | VLAN segmentation, subnet design, and network isolation testing |
 

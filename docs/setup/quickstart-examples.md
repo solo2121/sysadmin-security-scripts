@@ -260,11 +260,8 @@ end
 #### Step 1: Navigate to Lab Directory
 
 ```bash
-# KVM/libvirt
+# devops-linux-lab uses one unified Vagrantfile for both providers
 cd security-engineering-lab/labs/infrastructure/devops-linux-lab
-
-# VirtualBox
-cd security-engineering-lab/labs/infrastructure/devops-linux-lab/virtualbox
 
 ls -la
 ```
@@ -284,7 +281,11 @@ vagrant box list
 #### Step 3: Start Lab with Status Monitoring
 
 ```bash
-vagrant up
+# KVM/libvirt
+vagrant up --provider=libvirt
+
+# VirtualBox
+vagrant up --provider=virtualbox
 ```
 
 In another terminal, monitor the VMs if needed:

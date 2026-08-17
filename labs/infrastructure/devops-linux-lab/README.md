@@ -56,7 +56,7 @@ A full enterprise-grade cloud-native lab built with Vagrant and KVM/libvirt. Des
 - Added **K3d lab** — K3s in Docker with automatic cluster creation.
 - **No hardcoded Harbor password** — interactive prompt or `HARBOR_PASS` env var.
 - Dynamic architecture detection for binary downloads (`amd64` / `arm64`).
-- `vagrant-manager.sh` — interactive TUI for managing all VMs by group.
+- `vagrant_manager.py` — interactive TUI for managing all VMs by group, supporting both KVM/libvirt and VirtualBox.
 - `validate-lab.sh` — automated health checks for the full lab stack.
 - `--wait=false` on CRD deletion to prevent Argo CD finalizer hangs.
 - Kyverno retry logic with namespace cleanup between attempts.
@@ -167,10 +167,11 @@ vagrant plugin install vagrant-libvirt
 ## VirtualBox Provider
 
 For hosts without KVM/libvirt (macOS, Windows, or Linux hosts where libvirt
-isn't available), this lab also ships
-[`virtualbox/Vagrantfile`](virtualbox/Vagrantfile) — the same VM inventory,
-`LAB_PROFILE`/`START_VMS` selection logic, and provisioning scripts as the
-libvirt `Vagrantfile` above, targeting the VirtualBox provider instead.
+isn't available): this lab uses a single unified
+[`Vagrantfile`](Vagrantfile) that supports both KVM/libvirt and
+VirtualBox — the same VM inventory, `LAB_PROFILE`/`START_VMS` selection
+logic, and provisioning scripts, targeting whichever provider you select
+with `--provider` (or `VAGRANT_DEFAULT_PROVIDER`).
 
 **Requirements:** VirtualBox 7.0+, Vagrant >= 2.4 (VirtualBox support is
 built in, no provider plugin required), Ruby >= 2.5. Not supported on Apple
@@ -178,7 +179,7 @@ Silicon/ARM hosts (VirtualBox is Intel/AMD x86_64 only).
 
 ```bash
 git clone https://github.com/solo2121/security-engineering-lab.git
-cd security-engineering-lab/labs/infrastructure/devops-linux-lab/virtualbox
+cd security-engineering-lab/labs/infrastructure/devops-linux-lab
 export HARBOR_PASS='YourStrongPassword'   # or answer the interactive prompt
 vagrant validate
 vagrant up --provider=virtualbox
@@ -262,8 +263,12 @@ START_VMS=kind-lab,k3d-lab vagrant up
 Use the included manager script instead of typing raw vagrant commands:
 
 ```bash
-./scripts/vagrant-manager.sh
+python3 ./scripts/vagrant_manager.py
 ```
+
+Targets KVM/libvirt by default on Linux (VirtualBox elsewhere), matching
+the Vagrantfile's own default. Override with `--provider virtualbox` or
+`--provider libvirt`, or set `VAGRANT_DEFAULT_PROVIDER`.
 
 Groups available from the menu:
 - DevOps (requires Harbor password once per session).

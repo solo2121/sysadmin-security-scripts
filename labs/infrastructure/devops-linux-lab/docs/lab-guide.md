@@ -109,7 +109,7 @@ START_VMS=devops-1,worker-1,kind-lab vagrant up
 ### Use the Lab Manager
 
 ```bash
-./scripts/vagrant-manager.sh
+python3 ./scripts/vagrant_manager.py
 ```
 
 ### Verify the Lab Is Ready

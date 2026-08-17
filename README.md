@@ -28,13 +28,17 @@ Start here: [Learning Path](./docs/project/learning-path.md) provides the recomm
 ## Supported providers
 
 
-Every lab ships with a Vagrantfile for each of the following providers. Pick whichever matches your host:
+Every lab supports both KVM/libvirt and VirtualBox. The two Active
+Directory labs ship a separate Vagrantfile per provider; `devops-linux-lab`
+uses a single unified Vagrantfile that supports both (selected via
+`--provider` or `VAGRANT_DEFAULT_PROVIDER`) — see that lab's README for
+details.
 
 
 | Provider | Best for | Vagrantfile location |
 |---|---|---|
 | **KVM/libvirt** (default) | Linux hosts with nested virtualization; best performance and the environment each lab is developed against | `<lab-path>/Vagrantfile` |
-| **VirtualBox** | Cross-platform hosts (Windows, macOS, Linux) without KVM/libvirt, or hosts where libvirt isn't available | `<lab-path>/virtualbox/Vagrantfile` |
+| **VirtualBox** | Cross-platform hosts (Windows, macOS, Linux) without KVM/libvirt, or hosts where libvirt isn't available | `<lab-path>/virtualbox/Vagrantfile` for the AD labs; same `<lab-path>/Vagrantfile` for `devops-linux-lab` (pass `--provider=virtualbox`) |
 
 
 Before your first `vagrant up`, run the host-readiness check — it validates
@@ -52,16 +56,20 @@ Run a lab with an explicit provider from the lab's directory:
 
 
 ```bash
-# KVM/libvirt (default; run from the lab root)
+# AD labs -- KVM/libvirt (default; run from the lab root)
 vagrant up
 
-# VirtualBox (run from the lab's virtualbox/ subdirectory)
+# AD labs -- VirtualBox (run from the lab's virtualbox/ subdirectory)
 cd virtualbox
 vagrant up
+
+# devops-linux-lab -- either provider, from the lab root
+vagrant up --provider=libvirt
+vagrant up --provider=virtualbox
 ```
 
 
-You can also set a default provider for your shell session instead of `cd`-ing into `virtualbox/`:
+You can also set a default provider for your shell session instead of passing `--provider` each time:
 
 
 ```bash
@@ -180,7 +188,7 @@ Focus areas:
 - Integrated CI/CD and security validation workflows.
 
 
-**VirtualBox support:** VirtualBox-compatible Vagrantfiles are available in `labs/infrastructure/devops-linux-lab/virtualbox/`. See the lab README for provider-specific instructions.
+**VirtualBox support:** This lab uses a single unified Vagrantfile supporting both KVM/libvirt and VirtualBox — select the provider with `vagrant up --provider=virtualbox` (or `--provider=libvirt`). See the lab README for provider-specific instructions.
 
 
 ---

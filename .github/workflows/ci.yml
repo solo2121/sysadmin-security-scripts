@@ -156,9 +156,13 @@ jobs:
         env:
           VAGRANT_DEFAULT_PROVIDER: virtualbox
 
-      - name: Validate DevOps Lab VirtualBox Vagrantfile
+      - name: Validate DevOps Lab Vagrantfile (VirtualBox)
+        # devops-linux-lab uses a single unified Vagrantfile supporting
+        # both providers (see labs/infrastructure/devops-linux-lab/Vagrantfile
+        # header comment) -- unlike the two AD labs above, there is no
+        # separate virtualbox/ subdirectory to validate.
         run: vagrant validate
-        working-directory: labs/infrastructure/devops-linux-lab/virtualbox
+        working-directory: labs/infrastructure/devops-linux-lab
         env:
           VAGRANT_DEFAULT_PROVIDER: virtualbox
 
