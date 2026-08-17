@@ -464,54 +464,6 @@ def attach_disks(vm, vm_name)
 end
 
 # =============================================================================
-# PRE-PROVISIONING CHECK
-# =============================================================================
-def pre_provision_check
-  <<-SHELL
-    echo "=========================================="
-    echo "PRE-PROVISIONING SYSTEM CHECK"
-    echo "=========================================="
-    echo "Provider: #{PROVIDER}"
-
-    if [ "#{PROVIDER}" = "libvirt" ]; then
-      if ! command -v virsh >/dev/null 2>&1; then
-        echo "ERROR: libvirt not installed or virsh not in PATH"
-        echo "Please install libvirt and ensure virsh is available."
-        exit 1
-      fi
-      echo "✓ libvirt found"
-    else
-      if ! command -v VBoxManage >/dev/null 2>&1; then
-        echo "ERROR: VirtualBox not installed or VBoxManage not in PATH"
-        echo "Please install VirtualBox and ensure VBoxManage is available."
-        exit 1
-      fi
-      VBOX_VERSION=$(VBoxManage --version | cut -d. -f1)
-      if [ "$VBOX_VERSION" -lt 6 ]; then
-        echo "WARNING: VirtualBox version $VBOX_VERSION detected. Version 6+ recommended."
-      else
-        echo "✓ VirtualBox version $VBOX_VERSION found"
-      fi
-    fi
-
-    echo "Checking system resources..."
-    TOTAL_MEM=$(grep MemTotal /proc/meminfo | awk '{print int($2/1024/1024)}' 2>/dev/null || echo "0")
-    TOTAL_CPU=$(nproc 2>/dev/null || echo "0")
-
-    if [ "$TOTAL_MEM" -gt 0 ] && [ "$TOTAL_MEM" -lt 8 ]; then
-      echo "WARNING: System has ${TOTAL_MEM}GB RAM. Full lab requires 16GB+."
-      echo "         Consider using LAB_PROFILE=minimal or dev."
-    fi
-
-    if [ "$TOTAL_CPU" -gt 0 ] && [ "$TOTAL_CPU" -lt 4 ]; then
-      echo "WARNING: System has ${TOTAL_CPU} CPU cores. Full lab requires 4+ cores."
-    fi
-
-    echo "=========================================="
-  SHELL
-end
-
-# =============================================================================
 # VM DEFINITIONS
 # =============================================================================
 cluster = {
@@ -599,7 +551,10 @@ Vagrant.configure("2") do |config|
   config.trigger.before :up do |trigger|
     trigger.name = "Pre-flight host check"
     trigger.info = "Checking host virtualization tooling before creating any VM..."
-    trigger.run = { inline: pre_provision_check }
+    trigger.run = {
+      path: File.expand_path("scripts/pre-flight-host-check.sh", __dir__),
+      args: PROVIDER.to_s
+    }
   end
 
   # Lab environment file
