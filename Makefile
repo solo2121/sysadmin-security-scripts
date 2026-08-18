@@ -65,11 +65,11 @@ validate:
 
 validate-virtualbox:
 	@echo "==> vagrant validate (active-directory/base, VirtualBox)"
-	cd labs/security/active-directory/base/virtualbox && vagrant validate
+	cd labs/security/active-directory/base && vagrant validate --provider=virtualbox
 	@echo "==> vagrant validate (active-directory/vlan-segmented, VirtualBox)"
 	cd labs/security/active-directory/vlan-segmented/virtualbox && vagrant validate
 	@echo "==> vagrant validate (devops-linux-lab, VirtualBox)"
-	cd labs/infrastructure/devops-linux-lab/virtualbox && vagrant validate
+	cd labs/infrastructure/devops-linux-lab && vagrant validate --provider=virtualbox
 
 validate-repo:
 	@echo "==> repository health validation (scripts/validate_lab.py)"

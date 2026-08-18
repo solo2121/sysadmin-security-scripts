@@ -1,15 +1,15 @@
-# Active Directory Penetration Testing Lab (KVM/libvirt) v1.13
+# Active Directory Penetration Testing Lab (KVM/libvirt + VirtualBox) v1.13
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/platform-KVM%2Flibvirt-blue)](https://www.linux-kvm.org/)
+[![Platform](https://img.shields.io/badge/platform-KVM%2Flibvirt%20%7C%20VirtualBox-blue)](https://www.linux-kvm.org/)
 [![VMs](https://img.shields.io/badge/VMs-11-orange)](https://www.vagrantup.com/)
 [![Attack Paths](https://img.shields.io/badge/Attack%20Paths-60%2B-red)](https://github.com/solo2121/security-engineering-lab)
 [![Python](https://img.shields.io/badge/Python-57%25-blue)](https://www.python.org/)
 [![Shell](https://img.shields.io/badge/Shell-42%25-darkgreen)](https://www.gnu.org/software/bash/)
 
-Enterprise-grade Active Directory penetration testing lab built with Vagrant and KVM/libvirt. Simulates modern corporate attack surfaces with up to 11 VMs and 60+ realistic attack paths, selectable via [Lab Profiles](#lab-profiles) — the default `ad` profile brings up 6 VMs (~19GB RAM); `LAB_PROFILE=full` brings up all 11 (~29.5GB RAM).
+Enterprise-grade Active Directory penetration testing lab built with Vagrant, supporting both KVM/libvirt and VirtualBox from a single unified Vagrantfile. Simulates modern corporate attack surfaces with up to 11 VMs and 60+ realistic attack paths, selectable via [Lab Profiles](#lab-profiles) — the default `ad` profile brings up 6 VMs (~19GB RAM); `LAB_PROFILE=full` brings up all 11 (~29.5GB RAM).
 
-> **VirtualBox users:** this lab now also ships a VirtualBox-compatible Vagrant environment for hosts without KVM/libvirt (including macOS and Windows). See [VirtualBox Provider](#virtualbox-provider).
+> **VirtualBox users:** this lab's `Vagrantfile` supports VirtualBox as well as KVM/libvirt (for hosts without KVM/libvirt, including macOS and Windows) — select it with `--provider=virtualbox`. See [VirtualBox Provider](#virtualbox-provider).
 
 ---
 
@@ -440,37 +440,40 @@ vagrant destroy -f
 
 ## VirtualBox Provider
 
-This lab ships a dedicated VirtualBox-compatible `Vagrantfile` at
-[`virtualbox/Vagrantfile`](virtualbox/Vagrantfile), alongside the default
-KVM/libvirt `Vagrantfile` in this directory. It defines the same VM names,
-hostnames, static IPs, `LAB_PROFILE` values, and provisioning logic as the
-libvirt lab — only the provider block, base boxes, and network driver
-differ. Use it on hosts that don't have KVM/libvirt (macOS, Windows, or
-Linux hosts where libvirt isn't available or desired).
+This lab's [`Vagrantfile`](Vagrantfile) supports both KVM/libvirt and
+VirtualBox from the same file — select the provider with `--provider` (or
+`VAGRANT_DEFAULT_PROVIDER`). It defines the same VM names, hostnames,
+static IPs, `LAB_PROFILE` values, provisioning logic, and Vagrant Cloud
+boxes for both providers; only the `config.vm.provider` block (memory/CPU
+settings, disk/NIC driver, VirtualBox `vb.customize` calls vs. libvirt
+`lv`/`libvirt` settings) and the private-network configuration
+(`virtualbox__intnet` vs. libvirt's `vagrant0` bridge) differ. Use
+VirtualBox on hosts that don't have KVM/libvirt (macOS, Windows, or Linux
+hosts where libvirt isn't available or desired).
 
-**Which file is shared vs. VirtualBox-specific:**
-- Shared: VM naming, static IP allocation, `LAB_PROFILE` selection logic, provisioning shell/PowerShell scripts embedded in each Vagrantfile, credentials, and attack scenarios — all identical to the libvirt lab described elsewhere in this README.
-- VirtualBox-specific: `virtualbox/Vagrantfile` itself (provider block, `vb.customize` calls, VirtualBox base boxes, `virtualbox__intnet` private networking).
-- Not shared: `config.rb` (if you use one) is per-directory — see [Configuration](#configuration) below.
+**Which parts are shared vs. provider-specific:**
+- Shared: VM naming, static IP allocation, `LAB_PROFILE` selection logic, base boxes, provisioning shell/PowerShell scripts, credentials, and attack scenarios — identical regardless of provider, since it's the same `Vagrantfile`.
+- Provider-specific: the `configure_libvirt`/`configure_virtualbox` functions (provider resource/driver settings), `configure_network` (private network implementation), and the Windows adapter-detection PowerShell (adapter names and NAT IP ranges differ between libvirt's and VirtualBox's default networking).
+- `config.rb` (if you use one) is shared too now — one file in this directory, loaded regardless of which provider you select. See [Configuration](#configuration) below.
 
 ### Requirements
 
 - [VirtualBox](https://www.virtualbox.org/) 7.0+ (Extension Pack recommended for USB/RDP passthrough, not required for this lab).
-- [Vagrant](https://www.vagrantup.com/) >= 2.2. The VirtualBox provider is built into Vagrant — no extra provider plugin is required (unlike `vagrant-libvirt`).
-- `vagrant-reload` and `vagrant-winrm` plugins (same as the libvirt lab):
+- [Vagrant](https://www.vagrantup.com/) >= 2.2. The VirtualBox provider is built into Vagrant — no extra provider plugin is required (unlike `vagrant-libvirt`, which this Vagrantfile only requires when you select `--provider=libvirt`).
+- `vagrant-reload` and `vagrant-winrm` plugins (same as libvirt):
   ```bash
   vagrant plugin install vagrant-reload
   vagrant plugin install vagrant-winrm
   ```
-- Hardware virtualization (Intel VT-x / AMD-V) enabled in the host BIOS/UEFI. On **Apple Silicon (ARM/M1–M4) Macs, VirtualBox is not supported** — VirtualBox only runs on Intel/AMD (x86_64) hosts. Use UTM, VMware Fusion, or a cloud x86 host instead, or run this lab's libvirt Vagrantfile on a Linux x86_64 host.
-- Same RAM/disk sizing as the libvirt lab (see [Version 1.13 Highlights](#version-113-highlights)).
+- Hardware virtualization (Intel VT-x / AMD-V) enabled in the host BIOS/UEFI. On **Apple Silicon (ARM/M1–M4) Macs, VirtualBox is not supported** — VirtualBox only runs on Intel/AMD (x86_64) hosts. Use UTM, VMware Fusion, or a cloud x86 host instead, or run this same Vagrantfile with `--provider=libvirt` on a Linux x86_64 host.
+- Same RAM/disk sizing as libvirt (see [Version 1.13 Highlights](#version-113-highlights)).
 
 ### Usage
 
 ```bash
 git clone https://github.com/solo2121/security-engineering-lab.git
-cd security-engineering-lab/labs/security/active-directory/base/virtualbox
-vagrant validate
+cd security-engineering-lab/labs/security/active-directory/base
+vagrant validate --provider=virtualbox
 vagrant up --provider=virtualbox
 vagrant status
 ```
@@ -484,27 +487,34 @@ vagrant halt         # stop VMs, keep disks
 vagrant destroy -f   # remove all VMs for this lab (does not touch other environments)
 ```
 
-As with the libvirt lab, `LAB_PROFILE` controls which VMs are created (default `ad`, 6 VMs):
+As with libvirt, `LAB_PROFILE` controls which VMs are created (default `ad`, 6 VMs):
 
 ```bash
 LAB_PROFILE=minimal vagrant up --provider=virtualbox
 LAB_PROFILE=full vagrant up --provider=virtualbox
 ```
 
+You can also avoid passing `--provider` every time:
+
+```bash
+export VAGRANT_DEFAULT_PROVIDER=virtualbox
+vagrant up
+```
+
 ### Configuration
 
-All settings are controlled with the same environment variables as the libvirt lab (`DOMAIN_NAME`, `DC_IP`, `KALI_MEMORY`, `DC01_CPUS`, etc. — see the constants near the top of `virtualbox/Vagrantfile`), plus one VirtualBox-only variable:
+All settings are controlled with the same environment variables regardless of provider (`DOMAIN_NAME`, `DC_IP`, `KALI_MEMORY`, `DC01_CPUS`, etc. — see the constants near the top of [`Vagrantfile`](Vagrantfile)), plus one VirtualBox-only variable:
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `LAB_GUI` | `false` | Set to `true` to open a VirtualBox GUI console window per VM instead of running headless. |
+| `LAB_GUI` | `false` | Set to `true` to open a VirtualBox GUI console window per VM instead of running headless. No effect under libvirt. |
 | `<VM>_MEMORY`, `<VM>_CPUS` | per-VM defaults | Override memory (MB) / CPU count for a given VM, e.g. `DC01_MEMORY=8192`. |
 | `<VM>_IP` | per-VM defaults | Override a VM's static IP (must stay inside `LAB_SUBNET`). |
 | `LAB_PROFILE` | `ad` | Selects which VMs are created — see [Lab Profiles](#lab-profiles). |
 
-An optional `config.rb` in the `virtualbox/` directory is loaded automatically if present, same as the libvirt lab, for host-specific overrides you don't want to export as environment variables.
+An optional `config.rb` in this directory is loaded automatically if present, for host-specific overrides you don't want to export as environment variables — shared between both providers since there's now one Vagrantfile.
 
-VirtualBox base boxes are switched from the libvirt lab's boxes to VirtualBox-native equivalents (e.g. `kalilinux/rolling`, `generic/ubuntu2204`, `peru/windows-10-enterprise-x64-eval`, `peru/windows-server-2022-standard-x64-eval`) — these are pulled automatically by `vagrant up` and require no manual download.
+Both providers pull the same Vagrant Cloud boxes (`kalilinux/rolling`, `generic/ubuntu2204`, `peru/windows-10-enterprise-x64-eval`, `peru/windows-server-2022-standard-x64-eval`, etc.) — these are pulled automatically by `vagrant up` and require no manual download.
 
 ### Known limitations
 

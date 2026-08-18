@@ -145,8 +145,11 @@ jobs:
           vagrant plugin list
 
       - name: Validate AD Pentest VirtualBox Vagrantfile
+        # active-directory/base uses a single unified Vagrantfile supporting
+        # both providers -- unlike vlan-segmented below, there is no
+        # separate virtualbox/ subdirectory to validate.
         run: vagrant validate
-        working-directory: labs/security/active-directory/base/virtualbox
+        working-directory: labs/security/active-directory/base
         env:
           VAGRANT_DEFAULT_PROVIDER: virtualbox
 
