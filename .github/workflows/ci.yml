@@ -69,8 +69,12 @@ jobs:
 
       - name: Install Vagrant plugins
         run: |
-          vagrant plugin install vagrant-reload
-          vagrant plugin install vagrant-libvirt
+          # Use RubyGems directly; the default HashiCorp gem source can
+          # intermittently reset TLS connections on GitHub-hosted runners.
+          vagrant plugin install --plugin-clean-sources \
+            --plugin-source https://rubygems.org vagrant-reload
+          vagrant plugin install --plugin-clean-sources \
+            --plugin-source https://rubygems.org vagrant-libvirt
           vagrant plugin list
 
       - name: Validate AD Pentest Vagrantfile
@@ -139,9 +143,14 @@ jobs:
 
       - name: Install Vagrant plugins
         run: |
-          vagrant plugin install vagrant-reload
-          vagrant plugin install vagrant-hostmanager
-          vagrant plugin install vagrant-vbguest
+          # Use RubyGems directly; the default HashiCorp gem source can
+          # intermittently reset TLS connections on GitHub-hosted runners.
+          vagrant plugin install --plugin-clean-sources \
+            --plugin-source https://rubygems.org vagrant-reload
+          vagrant plugin install --plugin-clean-sources \
+            --plugin-source https://rubygems.org vagrant-hostmanager
+          vagrant plugin install --plugin-clean-sources \
+            --plugin-source https://rubygems.org vagrant-vbguest
           vagrant plugin list
 
       - name: Validate AD Pentest VirtualBox Vagrantfile
