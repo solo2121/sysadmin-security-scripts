@@ -428,60 +428,6 @@ def configure_provider(vm, overrides = {})
 end
 
 # ------------------------------------------------------------
-# VIRTUALBOX PROVIDER CONFIG
-# ------------------------------------------------------------
-def configure_virtualbox(vm, overrides = {})
-  settings = DEFAULT_CONFIG.merge(overrides)
-
-  vm.vm.provider :virtualbox do |vb|
-    vb.memory = settings[:memory]
-    vb.cpus = settings[:cpus]
-    vb.gui = LAB_GUI
-    vb.linked_clone = true
-
-    # Enable hardware virtualization for better performance
-    vb.customize ["modifyvm", :id, "--vtxvpid", "on"]
-    vb.customize ["modifyvm", :id, "--vtxux", "on"]
-    vb.customize ["modifyvm", :id, "--hwvirtex", "on"]
-    vb.customize ["modifyvm", :id, "--nestedpaging", "on"]
-    vb.customize ["modifyvm", :id, "--largepages", "on"]
-
-    # Network settings
-    vb.customize ["modifyvm", :id, "--nictype1", "virtio"]
-    vb.customize ["modifyvm", :id, "--nictype2", "virtio"]
-
-    # Graphics settings for Windows
-    if settings[:guest] == :windows
-      vb.customize ["modifyvm", :id, "--vram", "128"]
-      vb.customize ["modifyvm", :id, "--graphicscontroller", "vboxsvga"]
-      vb.customize ["modifyvm", :id, "--audio", "none"]
-      vb.customize ["modifyvm", :id, "--usb", "on"]
-      vb.customize ["modifyvm", :id, "--usbehci", "on"]
-    end
-
-    # Performance optimizations
-    vb.customize ["modifyvm", :id, "--ioapic", "on"]
-    vb.customize ["modifyvm", :id, "--rtcuseutc", "on"]
-
-    # Network adapter order: NAT for internet, Host-Only for lab
-    vb.customize ["modifyvm", :id, "--nic1", "nat"]
-    vb.customize ["modifyvm", :id, "--nic2", "hostonly"]
-  end
-end
-
-# ------------------------------------------------------------
-# PROVIDER DISPATCH - calls the configuration function matching
-# the active PROVIDER so call sites don't need to branch.
-# ------------------------------------------------------------
-def configure_provider(vm, overrides = {})
-  if PROVIDER == :libvirt
-    configure_libvirt(vm, overrides)
-  else
-    configure_virtualbox(vm, overrides)
-  end
-end
-
-# ------------------------------------------------------------
 # WINDOWS COMMUNICATION - WITH TIMEOUT PARAMETER FOR FLEXIBILITY
 # ------------------------------------------------------------
 def configure_windows_comm(vm, user, pass, boot_timeout = 7200, winrm_timeout = 3600)

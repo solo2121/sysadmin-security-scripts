@@ -23,12 +23,12 @@ validate_lab = _load_module()
 def test_discover_vagrantfiles_finds_all_labs():
     found = {str(p.relative_to(PROJECT_ROOT)) for p in validate_lab.discover_vagrantfiles()}
     assert found == {
-        # active-directory/base uses one unified Vagrantfile supporting both
-        # KVM/libvirt and VirtualBox (selected via --provider), same as
-        # devops-linux-lab below.
+        # All three labs now use one unified Vagrantfile supporting both
+        # KVM/libvirt and VirtualBox (selected via --provider). None of
+        # them ship a separate virtualbox/ subdirectory Vagrantfile
+        # anymore.
         "labs/security/active-directory/base/Vagrantfile",
         "labs/security/active-directory/vlan-segmented/Vagrantfile",
-        "labs/security/active-directory/vlan-segmented/virtualbox/Vagrantfile",
         "labs/infrastructure/devops-linux-lab/Vagrantfile",
     }
 

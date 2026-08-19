@@ -69,12 +69,8 @@ jobs:
 
       - name: Install Vagrant plugins
         run: |
-          # Use RubyGems directly; the default HashiCorp gem source can
-          # intermittently reset TLS connections on GitHub-hosted runners.
-          vagrant plugin install --plugin-clean-sources \
-            --plugin-source https://rubygems.org vagrant-reload
-          vagrant plugin install --plugin-clean-sources \
-            --plugin-source https://rubygems.org vagrant-libvirt
+          vagrant plugin install vagrant-reload
+          vagrant plugin install vagrant-libvirt
           vagrant plugin list
 
       - name: Validate AD Pentest Vagrantfile
@@ -143,36 +139,31 @@ jobs:
 
       - name: Install Vagrant plugins
         run: |
-          # Use RubyGems directly; the default HashiCorp gem source can
-          # intermittently reset TLS connections on GitHub-hosted runners.
-          vagrant plugin install --plugin-clean-sources \
-            --plugin-source https://rubygems.org vagrant-reload
-          vagrant plugin install --plugin-clean-sources \
-            --plugin-source https://rubygems.org vagrant-hostmanager
-          vagrant plugin install --plugin-clean-sources \
-            --plugin-source https://rubygems.org vagrant-vbguest
+          vagrant plugin install vagrant-reload
+          vagrant plugin install vagrant-hostmanager
+          vagrant plugin install vagrant-vbguest
           vagrant plugin list
 
       - name: Validate AD Pentest VirtualBox Vagrantfile
-        # active-directory/base uses a single unified Vagrantfile supporting
-        # both providers -- unlike vlan-segmented below, there is no
-        # separate virtualbox/ subdirectory to validate.
+        # active-directory/base uses a single unified Vagrantfile
+        # supporting both providers, same as vlan-segmented below.
         run: vagrant validate
         working-directory: labs/security/active-directory/base
         env:
           VAGRANT_DEFAULT_PROVIDER: virtualbox
 
       - name: Validate AD Pentest VLAN VirtualBox Vagrantfile
+        # vlan-segmented now also uses a single unified Vagrantfile
+        # supporting both providers, same as base above.
         run: vagrant validate
-        working-directory: labs/security/active-directory/vlan-segmented/virtualbox
+        working-directory: labs/security/active-directory/vlan-segmented
         env:
           VAGRANT_DEFAULT_PROVIDER: virtualbox
 
       - name: Validate DevOps Lab Vagrantfile (VirtualBox)
-        # devops-linux-lab uses a single unified Vagrantfile supporting
-        # both providers (see labs/infrastructure/devops-linux-lab/Vagrantfile
-        # header comment) -- unlike the two AD labs above, there is no
-        # separate virtualbox/ subdirectory to validate.
+        # All three labs now use a single unified Vagrantfile supporting
+        # both providers -- there is no longer a separate virtualbox/
+        # subdirectory to validate anywhere in the repo.
         run: vagrant validate
         working-directory: labs/infrastructure/devops-linux-lab
         env:

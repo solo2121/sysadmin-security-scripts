@@ -28,19 +28,15 @@ Start here: [Learning Path](./docs/project/learning-path.md) provides the recomm
 ## Supported providers
 
 
-Every lab supports both KVM/libvirt and VirtualBox. `active-directory/base`
-and `devops-linux-lab` each ship a single unified Vagrantfile that supports
-both providers (selected via `--provider` or `VAGRANT_DEFAULT_PROVIDER`).
-`active-directory/vlan-segmented` currently still ships a separate
-Vagrantfile per provider (`Vagrantfile` for libvirt, `virtualbox/Vagrantfile`
-for VirtualBox) — see that lab's README for details. This is a known,
-tracked inconsistency; see [Known limitations](#known-limitations).
+Every lab supports both KVM/libvirt and VirtualBox from a single, unified
+`Vagrantfile` per lab — select a provider via `--provider` or
+`VAGRANT_DEFAULT_PROVIDER`.
 
 
 | Provider | Best for | Vagrantfile location |
 |---|---|---|
 | **KVM/libvirt** (default) | Linux hosts with nested virtualization; best performance and the environment each lab is developed against | `<lab-path>/Vagrantfile` |
-| **VirtualBox** | Cross-platform hosts (Windows, macOS, Linux) without KVM/libvirt, or hosts where libvirt isn't available | `<lab-path>/Vagrantfile` (pass `--provider=virtualbox`) for `active-directory/base` and `devops-linux-lab`; `<lab-path>/virtualbox/Vagrantfile` for `active-directory/vlan-segmented` |
+| **VirtualBox** | Cross-platform hosts (Windows, macOS, Linux) without KVM/libvirt, or hosts where libvirt isn't available | `<lab-path>/Vagrantfile` (pass `--provider=virtualbox`) |
 
 
 Before your first `vagrant up`, run the host-readiness check — it validates
@@ -54,20 +50,12 @@ and available disk/RAM, and prints an actionable fix for anything that fails:
 ```
 
 
-Run a lab with an explicit provider from the lab's directory:
+Run any lab with an explicit provider from the lab's directory:
 
 
 ```bash
-# active-directory/base and devops-linux-lab -- either provider, from the lab root
 vagrant up --provider=libvirt
 vagrant up --provider=virtualbox
-
-# active-directory/vlan-segmented -- KVM/libvirt (default; run from the lab root)
-vagrant up
-
-# active-directory/vlan-segmented -- VirtualBox (run from the lab's virtualbox/ subdirectory)
-cd virtualbox
-vagrant up
 ```
 
 
@@ -327,7 +315,6 @@ security-engineering-lab/
 │       ├── active-directory/
 │       │   ├── base/
 │       │   ├── vlan-segmented/
-│       │   │   └── virtualbox/
 │       ├── README.md
 │       └── requirements.txt
 ├── scripts/
@@ -460,8 +447,8 @@ Unauthorized access, testing, or exploitation of external systems is prohibited.
 
 
 - Full deployment requires significant CPU, RAM, and storage.
-- The default provider is KVM/QEMU with libvirt and requires a Linux host. VirtualBox is supported on macOS, Windows, and Linux hosts without libvirt (Intel/AMD x86_64 only; does not run on Apple Silicon/ARM). `active-directory/base` and `devops-linux-lab` select the provider from a single unified `Vagrantfile` via `--provider`; `active-directory/vlan-segmented` still ships a separate `virtualbox/Vagrantfile` — the two have functionally diverged over time (the VirtualBox variant contains lab content the libvirt variant doesn't), so consolidating them needs a deliberate content reconciliation rather than a mechanical provider-config merge, and is tracked as pending work.
-- **Provider differences:** KVM/libvirt generally outperforms VirtualBox for CPU- and I/O-heavy workloads (e.g., the DevOps/DevSecOps lab's Kubernetes nodes) because it uses hardware-accelerated virtio devices by default. VirtualBox networking (host-only/NAT) behaves differently from libvirt's NAT/bridged networks, so IP ranges and port-forwarding assumptions in some guides are libvirt-oriented; check the lab's Vagrantfile (and, for `vlan-segmented`, its `virtualbox/Vagrantfile`) and its README for the VirtualBox-specific network configuration. Nested virtualization (needed for K3s/Kind/K3d workloads) must be enabled explicitly on VirtualBox (`--nested-hw-virt on`) and is not guaranteed to perform as well as libvirt's KVM-backed nesting.
+- The default provider is KVM/QEMU with libvirt and requires a Linux host. VirtualBox is supported on macOS, Windows, and Linux hosts without libvirt (Intel/AMD x86_64 only; does not run on Apple Silicon/ARM). Every lab selects the provider from a single unified `Vagrantfile` via `--provider`. Note: `active-directory/vlan-segmented`'s libvirt and VirtualBox configurations had functionally diverged before being unified (the VirtualBox variant had accumulated a fuller LLM01 OWASP Top-10 module, a Terraform state-file secrets-exposure scenario for cloud-pentest, and an LDIF-based AD CS template-creation technique that the libvirt variant never received); the unified Vagrantfile now runs that fuller content under both providers.
+- **Provider differences:** KVM/libvirt generally outperforms VirtualBox for CPU- and I/O-heavy workloads (e.g., the DevOps/DevSecOps lab's Kubernetes nodes) because it uses hardware-accelerated virtio devices by default. VirtualBox networking (host-only/NAT) behaves differently from libvirt's NAT/bridged networks, so IP ranges and port-forwarding assumptions in some guides are libvirt-oriented; check the lab's Vagrantfile and its README for the VirtualBox-specific network configuration. Nested virtualization (needed for K3s/Kind/K3d workloads) must be enabled explicitly on VirtualBox (`--nested-hw-virt on`) and is not guaranteed to perform as well as libvirt's KVM-backed nesting.
 - Windows evaluation media is used for laboratory environments.
 - Some systems represent simulated enterprise services for safe security practice.
 - Third-party Vagrant boxes may change independently.

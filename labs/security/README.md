@@ -146,7 +146,7 @@ See [`active-directory/vlan-segmented/README.md`](active-directory/vlan-segmente
 
 Before starting either lab:
 
-- **Host OS:** Linux with hardware virtualization (KVM/QEMU). Alternatively, any VirtualBox-supported x86_64 host (macOS, Windows, or Linux) — see the AD base lab's `Vagrantfile` (`--provider=virtualbox`) or the VLAN lab's `virtualbox/Vagrantfile`, and each lab's README "VirtualBox Provider" section.
+- **Host OS:** Linux with hardware virtualization (KVM/QEMU). Alternatively, any VirtualBox-supported x86_64 host (macOS, Windows, or Linux) — both labs select the provider from their single `Vagrantfile` via `--provider=virtualbox`; see each lab's README "VirtualBox Provider" section.
 - **Vagrant:** Latest version with `vagrant-libvirt` and `vagrant-reload` plugins (libvirt); or just Vagrant + `vagrant-reload`/`vagrant-winrm` for VirtualBox, since the VirtualBox provider ships built in.
 - **RAM:** 16 GB minimum (8 GB can run a reduced profile, but will be slow).
 - **Disk:** 100 GB free (each lab uses ~40–50 GB).
