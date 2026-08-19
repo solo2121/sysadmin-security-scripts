@@ -165,7 +165,7 @@ Focus areas:
 This environment demonstrates how segmentation influences attack paths, trust boundaries, and adversary movement.
 
 
-**VirtualBox support:** VirtualBox-compatible Vagrantfiles are available in `labs/security/active-directory/vlan-segmented/virtualbox/`. See the lab README for provider-specific instructions.
+**VirtualBox support:** this lab now ships a single unified `Vagrantfile` supporting both KVM/QEMU (libvirt) and VirtualBox — select a provider with `vagrant up --provider=libvirt` or `vagrant up --provider=virtualbox`. See the lab README for provider-specific instructions.
 
 
 ---

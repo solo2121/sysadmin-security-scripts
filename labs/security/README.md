@@ -138,8 +138,7 @@ See [`active-directory/vlan-segmented/README.md`](active-directory/vlan-segmente
 - **`README.md`** – Lab overview, VLAN topology, setup guide.
 - **`docs/attack-guide.md`** – VLAN-specific attack paths and scenarios.
 - **`docs/lab-credentials.md`** – Credentials for the VLAN environment.
-- **`Vagrantfile`** – Provisioning with VLAN configuration (v2.1.5).
-- **`virtualbox/Vagrantfile`** – Same lab, targeting the VirtualBox provider (for hosts without KVM/libvirt).
+- **`Vagrantfile`** – Provisioning with VLAN configuration (v2.1.6), unified for both KVM/libvirt and VirtualBox (select with `--provider`).
 
 ---
 

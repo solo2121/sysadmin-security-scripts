@@ -322,10 +322,12 @@ vagrant up --provider=virtualbox
 If you want the segmented network edition, use:
 
 ```bash
-cd ../vlan-segmented          # KVM/libvirt
-# or: cd ../vlan-segmented/virtualbox   # VirtualBox
-vagrant up dc01
+cd ../vlan-segmented
+vagrant up dc01                          # KVM/libvirt
 vagrant up
+# or, for VirtualBox:
+vagrant up dc01 --provider=virtualbox
+vagrant up --provider=virtualbox
 ```
 
 ### Verify Lab 1

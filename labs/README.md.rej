@@ -1,0 +1,30 @@
+diff a/labs/README.md b/labs/README.md	(rejected hunks)
+@@ -12,7 +12,7 @@ This directory contains reproducible lab environments for infrastructure enginee
+ |  Active Directory Pentest Lab (base)| [`security/active-directory/base/`](security/active-directory/base/) | Active Directory enumeration, Kerberos attacks, lateral movement, privilege escalation, and remediation practice |
+ |  Active Directory Pentest Lab (vlan-segmented)| [`security/active-directory/vlan-segmented/`](security/active-directory/vlan-segmented/) | VLAN segmentation, multi-subnet enterprise simulation, topology validation, and network isolation testing |
+ 
+-Each lab above also ships a VirtualBox-compatible `Vagrantfile` under its own `virtualbox/` subdirectory (e.g. `security/active-directory/base/virtualbox/`), for hosts without KVM/libvirt. See that lab's README for VirtualBox-specific setup, configuration, and troubleshooting.
++Every lab ships a single unified `Vagrantfile` supporting both KVM/libvirt and VirtualBox (select with `--provider`). See each lab's README for VirtualBox-specific setup, configuration, and troubleshooting.
+ 
+ ---
+ 
+@@ -31,13 +31,12 @@ Recommended host setup (KVM/libvirt, the default provider):
+ See [`../docs/setup/installation.md`](../docs/setup/installation.md) for full setup instructions.
+ 
+ **No KVM/libvirt available (macOS, Windows, or a Linux host without libvirt)?**
+-Each lab also has a `virtualbox/Vagrantfile` — same VMs, IPs, and
+-provisioning, targeting VirtualBox instead. Requires
+-[VirtualBox](https://www.virtualbox.org/) 7.0+ and Vagrant >= 2.2 (the
+-VirtualBox provider is built into Vagrant, no extra plugin needed). Not
+-supported on Apple Silicon/ARM hosts. `cd` into a lab's `virtualbox/`
+-subdirectory and run `vagrant up --provider=virtualbox` instead of step
+-below. See each lab's README for details.
++Run `vagrant up --provider=virtualbox` from the lab's own directory — same
++VMs, IPs, and provisioning as libvirt, just a different provider block in
++the same Vagrantfile. Requires [VirtualBox](https://www.virtualbox.org/)
++7.0+ and Vagrant >= 2.2 (the VirtualBox provider is built into Vagrant, no
++extra plugin needed). Not supported on Apple Silicon/ARM hosts. See each
++lab's README for details.
+ 
+ ---
+ 

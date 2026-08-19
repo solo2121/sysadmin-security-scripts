@@ -1,0 +1,372 @@
+diff a/labs/security/active-directory/base/Vagrantfile b/labs/security/active-directory/base/Vagrantfile	(rejected hunks)
+@@ -12,6 +12,15 @@
+ # Version: 1.13 - Enterprise Edition (FLAT NETWORK - PROFILE-BASED)
+ # Release Date: unreleased
+ #
++# UNIFIED VAGRANTFILE: this single file supports both KVM/QEMU via
++# vagrant-libvirt and VirtualBox. Select a provider explicitly, e.g.:
++#   vagrant up --provider=libvirt
++#   vagrant up --provider=virtualbox
++# or set VAGRANT_DEFAULT_PROVIDER. If neither is set, libvirt is used on
++# Linux hosts and VirtualBox elsewhere (see current_provider below).
++# Set LAB_GUI=true to run VirtualBox VMs with a GUI window (headless by
++# default; no effect under libvirt).
++#
+ # Changes in v1.13:
+ # - Added LAB_PROFILE (minimal/ad/web/cloud/full) to control which
+ #   optional VMs are created; "vagrant up" no longer always builds
+@@ -45,6 +54,33 @@ rescue => e
+   puts "[WARN] config.rb loaded with errors: #{e.message}"
+ end
+ 
++# ------------------------------------------------------------
++# PROVIDER DETECTION (unified libvirt + VirtualBox Vagrantfile)
++# ------------------------------------------------------------
++# Checks, in Vagrant's own precedence order: CLI --provider flag,
++# then VAGRANT_DEFAULT_PROVIDER, then a host-OS-based default
++# (libvirt on Linux, VirtualBox elsewhere).
++def current_provider
++  ARGV.each_with_index do |arg, idx|
++    if arg == '--provider' && ARGV[idx + 1]
++      return ARGV[idx + 1].to_sym
++    elsif arg =~ /\A--provider=(.+)\z/
++      return Regexp.last_match(1).to_sym
++    end
++  end
++
++  return ENV['VAGRANT_DEFAULT_PROVIDER'].to_sym if ENV['VAGRANT_DEFAULT_PROVIDER']
++
++  RbConfig::CONFIG['host_os'] =~ /linux/ ? :libvirt : :virtualbox
++end
++
++PROVIDER = current_provider
++puts "Provider: #{PROVIDER}"
++
++# Set LAB_GUI=true to open a VirtualBox GUI window per VM (default: headless).
++# No effect under libvirt.
++LAB_GUI = ENV.fetch('LAB_GUI', 'false').downcase == 'true'
++
+ # ------------------------------------------------------------
+ # DOMAIN CONSTANTS
+ # ------------------------------------------------------------
+@@ -197,9 +233,11 @@ end
+ # ------------------------------------------------------------
+ # ENVIRONMENT CONFIGURATION
+ # ------------------------------------------------------------
+-ENV['LIBVIRT_DEFAULT_URI'] = 'qemu:///system'
+-ENV['VAGRANT_LIBVIRT_SKIP_NETWORK_VALIDATION'] = 'true'
+-ENV['VAGRANT_LIBVIRT_VALIDATE_XML'] = 'false'
++if PROVIDER == :libvirt
++  ENV['LIBVIRT_DEFAULT_URI'] = 'qemu:///system'
++  ENV['VAGRANT_LIBVIRT_SKIP_NETWORK_VALIDATION'] = 'true'
++  ENV['VAGRANT_LIBVIRT_VALIDATE_XML'] = 'false'
++end
+ ENV['VAGRANT_WINRM_TIMEOUT'] = '3600'
+ 
+ Vagrant.require_version ">= 2.2.0"
+@@ -272,16 +310,20 @@ WINDOWS_CONFIG = {
+ }.freeze
+ 
+ # ------------------------------------------------------------
+-# FIXED NETWORK FUNCTION - STATIC IP ONLY, NO DHCP
++# NETWORK FUNCTION - STATIC IP ONLY, NO DHCP (provider-aware)
+ # ------------------------------------------------------------
+ def configure_network(vm, ip)
+-  vm.vm.network :private_network,
+-    ip: ip,
+-    libvirt__network_name: LAB_NET,
+-    libvirt__forward_mode: "none",
+-    libvirt__dhcp_enabled: false,
+-    libvirt__driver_name: "qemu",
+-    auto_config: false
++  if PROVIDER == :libvirt
++    vm.vm.network :private_network,
++      ip: ip,
++      libvirt__network_name: LAB_NET,
++      libvirt__forward_mode: "none",
++      libvirt__dhcp_enabled: false,
++      libvirt__driver_name: "qemu",
++      auto_config: false
++  else
++    vm.vm.network "private_network", ip: ip, virtualbox__intnet: "pentest_lab"
++  end
+ end
+ 
+ # ------------------------------------------------------------
+@@ -347,6 +443,13 @@ def configure_windows_comm(vm, user, pass, boot_timeout = 7200, winrm_timeout =
+   vm.winrm.retry_delay = 30
+   vm.winrm.timeout = winrm_timeout
+   vm.winrm.basic_auth_only = true
++
++  # VirtualBox-specific Windows settings (Vagrant only applies this block
++  # when actually running under the virtualbox provider)
++  vm.vm.provider :virtualbox do |vb|
++    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
++    vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
++  end
+ end
+ 
+ # ------------------------------------------------------------
+@@ -354,6 +457,71 @@ end
+ # 5-Method adapter detection with DAD disabled and SkipAsSource=false
+ # ------------------------------------------------------------
+ def configure_windows_static_ip(vm, ip)
++  # Adapter naming and the provider's NAT range differ between providers:
++  # libvirt commonly surfaces the lab NIC as "Ethernet 1" with the default
++  # NAT network on 192.168.121.0/24, while VirtualBox surfaces it as
++  # "Ethernet"/"Ethernet 2" with NAT on 10.0.2.0/24.
++  if PROVIDER == :libvirt
++    adapter_detect_ps = <<-PS
++          # Method 3: Look for adapter named "Ethernet 1" (most common for libvirt)
++          $adapter = Get-NetAdapter -Name "Ethernet 1" -ErrorAction SilentlyContinue
++
++          if ($adapter) {
++            Write-Host "[OK] Found adapter by name: Ethernet 1"
++          } else {
++            # Method 4: Look for any adapter that's NOT the NAT one (exclude 192.168.121.x)
++            $natIp = Get-NetIPAddress -IPAddress 192.168.121.* -ErrorAction SilentlyContinue |
++                     Select-Object -First 1
++            if ($natIp) {
++              $natAdapter = Get-NetAdapter -InterfaceIndex $natIp.InterfaceIndex -ErrorAction SilentlyContinue
++              Write-Host "[INFO] NAT adapter: $($natAdapter.Name) (192.168.121.x)"
++
++              # Get all adapters except the NAT one
++              $allAdapters = Get-NetAdapter -ErrorAction SilentlyContinue |
++                             Where-Object { $_.Status -eq 'Up' -and $_.Name -notlike "*Loopback*" }
++              $adapter = $allAdapters | Where-Object { $_.Name -ne $natAdapter.Name } | Select-Object -First 1
++
++              if ($adapter) {
++                Write-Host "[OK] Found non-NAT adapter: $($adapter.Name)"
++              }
++            }
++          }
++    PS
++  else
++    adapter_detect_ps = <<-PS
++          # Method 3: Look for adapter named "Ethernet 2" (common for VirtualBox)
++          $adapter = Get-NetAdapter -Name "Ethernet 2" -ErrorAction SilentlyContinue
++
++          if ($adapter) {
++            Write-Host "[OK] Found adapter by name: Ethernet 2"
++          } else {
++            # Method 4: Look for adapter named "Ethernet" (VirtualBox default)
++            $adapter = Get-NetAdapter -Name "Ethernet" -ErrorAction SilentlyContinue
++
++            if ($adapter) {
++              Write-Host "[OK] Found adapter by name: Ethernet"
++            } else {
++              # Method 5: Look for any non-NAT adapter (exclude 10.0.2.x)
++              $natIp = Get-NetIPAddress -IPAddress 10.0.2.* -ErrorAction SilentlyContinue |
++                       Select-Object -First 1
++              if ($natIp) {
++                $natAdapter = Get-NetAdapter -InterfaceIndex $natIp.InterfaceIndex -ErrorAction SilentlyContinue
++                Write-Host "[INFO] NAT adapter: $($natAdapter.Name) (10.0.2.x)"
++
++                # Get all adapters except the NAT one
++                $allAdapters = Get-NetAdapter -ErrorAction SilentlyContinue |
++                               Where-Object { $_.Status -eq 'Up' -and $_.Name -notlike "*Loopback*" }
++                $adapter = $allAdapters | Where-Object { $_.Name -ne $natAdapter.Name } | Select-Object -First 1
++
++                if ($adapter) {
++                  Write-Host "[OK] Found non-NAT adapter: $($adapter.Name)"
++                }
++              }
++            }
++          }
++    PS
++  end
++
+   vm.vm.provision "shell",
+     name: "fixed-static-ip",
+     privileged: true,
+@@ -389,33 +557,11 @@ def configure_windows_static_ip(vm, ip)
+         if ($adapter) {
+           Write-Host "[OK] Found adapter on lab subnet: $($adapter.Name)"
+         } else {
+-          # Method 3: Look for adapter named "Ethernet 1" (most common for libvirt)
+-          $adapter = Get-NetAdapter -Name "Ethernet 1" -ErrorAction SilentlyContinue
+-          
+-          if ($adapter) {
+-            Write-Host "[OK] Found adapter by name: Ethernet 1"
+-          } else {
+-            # Method 4: Look for any adapter that's NOT the NAT one (exclude 192.168.121.x)
+-            $natIp = Get-NetIPAddress -IPAddress 192.168.121.* -ErrorAction SilentlyContinue | 
+-                     Select-Object -First 1
+-            if ($natIp) {
+-              $natAdapter = Get-NetAdapter -InterfaceIndex $natIp.InterfaceIndex -ErrorAction SilentlyContinue
+-              Write-Host "[INFO] NAT adapter: $($natAdapter.Name) (192.168.121.x)"
+-              
+-              # Get all adapters except the NAT one
+-              $allAdapters = Get-NetAdapter -ErrorAction SilentlyContinue | 
+-                             Where-Object { $_.Status -eq 'Up' -and $_.Name -notlike "*Loopback*" }
+-              $adapter = $allAdapters | Where-Object { $_.Name -ne $natAdapter.Name } | Select-Object -First 1
+-              
+-              if ($adapter) {
+-                Write-Host "[OK] Found non-NAT adapter: $($adapter.Name)"
+-              }
+-            }
+-          }
++#{adapter_detect_ps}
+         }
+       }
+       
+-      # Method 5: Last resort - show all adapters for debugging
++      # Last resort - show all adapters for debugging
+       if (-not $adapter) {
+         Write-Host "[WARNING] Could not find correct adapter, showing all adapters for debugging:"
+         Write-Host "=== ALL NETWORK ADAPTERS ==="
+@@ -549,6 +695,26 @@ end
+ # SAFE INTERNET ISOLATION FUNCTION - WORKING VERSION FROM 1.2
+ # ------------------------------------------------------------
+ def disable_internet_gateway(vm, vm_name)
++  # The NAT adapter's name/IP range differs between providers: libvirt
++  # exposes it via a virtio NIC on 192.168.121.0/24, VirtualBox names it
++  # "NAT"/"VirtualBox Host-Only" on 10.0.2.0/24.
++  if PROVIDER == :libvirt
++    nat_match_ps = <<-PS.strip
++          $_.Name -like "*eth0*" -or
++          $_.InterfaceDescription -like "*virtio*" -or
++          (Get-NetIPAddress -InterfaceIndex $_.ifIndex -ErrorAction SilentlyContinue |
++           Where-Object { $_.IPAddress -like "192.168.121.*" })
++    PS
++  else
++    nat_match_ps = <<-PS.strip
++          $_.Name -like "*eth0*" -or
++          $_.Name -like "*NAT*" -or
++          $_.Name -like "*VirtualBox Host-Only*" -or
++          (Get-NetIPAddress -InterfaceIndex $_.ifIndex -ErrorAction SilentlyContinue |
++           Where-Object { $_.IPAddress -like "10.0.2.*" })
++    PS
++  end
++
+   vm.vm.provision "shell",
+     name: "disable-internet-gateway-#{vm_name}",
+     privileged: true,
+@@ -563,10 +729,7 @@ def disable_internet_gateway(vm, vm_name)
+       
+       $natAdapter = Get-NetAdapter | Where-Object { 
+         $_.Status -eq 'Up' -and (
+-          $_.Name -like "*eth0*" -or 
+-          $_.InterfaceDescription -like "*virtio*" -or
+-          (Get-NetIPAddress -InterfaceIndex $_.ifIndex -ErrorAction SilentlyContinue | 
+-           Where-Object { $_.IPAddress -like "192.168.121.*" })
++          #{nat_match_ps}
+         )
+       } | Select-Object -First 1
+       
+@@ -659,7 +822,7 @@ end
+ # ------------------------------------------------------------
+ def domain_join_windows(vm, hostname, ip, memory = 2048, disk_size = 40)
+   configure_network(vm, ip)
+-  configure_libvirt(vm, WINDOWS_CONFIG.merge(memory: memory, disk_size: disk_size))
++  configure_provider(vm, WINDOWS_CONFIG.merge(memory: memory, disk_size: disk_size))
+   configure_windows_static_ip(vm, ip)
+   disable_windows_defender(vm)
+   wait_for_dc(vm)
+@@ -772,8 +935,10 @@ Vagrant.configure("2") do |config|
+     raise "ERROR: vagrant-reload plugin is required. Please run: vagrant plugin install vagrant-reload"
+   end
+ 
+-  unless Vagrant.has_plugin?("vagrant-libvirt")
+-    raise "ERROR: vagrant-libvirt plugin is required. Please run: vagrant plugin install vagrant-libvirt"
++  if PROVIDER == :libvirt
++    unless Vagrant.has_plugin?("vagrant-libvirt")
++      raise "ERROR: vagrant-libvirt plugin is required. Please run: vagrant plugin install vagrant-libvirt"
++    end
+   end
+ 
+   # ----------------------------------------------------------------------------
+@@ -785,6 +950,10 @@ Vagrant.configure("2") do |config|
+ 
+   if Vagrant.has_plugin?("vagrant-vbguest")
+     puts "[INFO] vagrant-vbguest plugin detected - guest additions will auto-update"
++    if PROVIDER == :virtualbox
++      config.vbguest.auto_update = true
++      config.vbguest.no_install = false
++    end
+   end
+ 
+   # ----------------------------------------------------------------------------
+@@ -821,7 +990,7 @@ Vagrant.configure("2") do |config|
+     vm.vm.hostname = "kali.lab.local"
+     configure_network(vm, VM_IPS[:kali])
+ 
+-    configure_libvirt(vm, memory: VM_MEMORY[:kali], cpus: VM_CPUS[:kali])
++    configure_provider(vm, memory: VM_MEMORY[:kali], cpus: VM_CPUS[:kali])
+ 
+     write_lab_hosts(vm)
+ 
+@@ -853,7 +1022,7 @@ Vagrant.configure("2") do |config|
+     configure_windows_comm(vm, "vagrant", "vagrant", 7200, 7200)
+ 
+     configure_network(vm, VM_IPS[:dc01])
+-    configure_libvirt(vm, WINDOWS_CONFIG.merge(memory: VM_MEMORY[:dc01], disk_size: 60))
++    configure_provider(vm, WINDOWS_CONFIG.merge(memory: VM_MEMORY[:dc01], disk_size: 60))
+     configure_windows_static_ip(vm, VM_IPS[:dc01])
+     disable_windows_defender(vm)
+ 
+@@ -1838,12 +2007,7 @@ msPKI-Template-Schema-Version: 1
+ 
+     configure_network(vm, VM_IPS[:linux01])
+ 
+-    vm.vm.provider :libvirt do |lv|
+-      lv.memory = VM_MEMORY[:linux01]
+-      lv.cpus = VM_CPUS[:linux01]
+-      lv.nic_model_type = "virtio"
+-      lv.disk_bus = "virtio"
+-    end
++    configure_provider(vm, memory: VM_MEMORY[:linux01], cpus: VM_CPUS[:linux01])
+ 
+     # Add SSH key for secure access
+     vm.ssh.insert_key = true
+@@ -1937,7 +2101,7 @@ EOF
+ 
+     configure_network(vm, VM_IPS[:llm01])
+     
+-    configure_libvirt(vm,
++    configure_provider(vm,
+       memory: VM_MEMORY[:llm01],
+       cpus: VM_CPUS[:llm01],
+       disk_size: 100
+@@ -2277,12 +2441,7 @@ EOF
+     
+     configure_network(vm, VM_IPS[:metasploitable2])
+     
+-    vm.vm.provider :libvirt do |lv|
+-      lv.memory = VM_MEMORY[:metasploitable2]
+-      lv.cpus = VM_CPUS[:metasploitable2]
+-      lv.nic_model_type = "virtio"
+-      lv.disk_bus = "virtio"
+-    end
++    configure_provider(vm, memory: VM_MEMORY[:metasploitable2], cpus: VM_CPUS[:metasploitable2])
+     
+     vm.vm.synced_folder ".", "/vagrant", disabled: true
+     vm.ssh.username = "msfadmin"
+@@ -2309,12 +2468,7 @@ EOF
+     
+     configure_network(vm, VM_IPS[:juice_shop])
+ 
+-    vm.vm.provider :libvirt do |lv|
+-      lv.memory = VM_MEMORY[:juice_shop]
+-      lv.cpus = VM_CPUS[:juice_shop]
+-      lv.nic_model_type = "virtio"
+-      lv.disk_bus = "virtio"
+-    end
++    configure_provider(vm, memory: VM_MEMORY[:juice_shop], cpus: VM_CPUS[:juice_shop])
+ 
+     vm.ssh.insert_key = true
+ 
+@@ -2343,12 +2497,7 @@ EOF
+ 
+     configure_network(vm, VM_IPS[:cloud_pentest])
+ 
+-    vm.vm.provider :libvirt do |lv|
+-      lv.memory = VM_MEMORY[:cloud_pentest]
+-      lv.cpus = VM_CPUS[:cloud_pentest]
+-      lv.disk_bus = "virtio"
+-      lv.nic_model_type = "virtio"
+-    end
++    configure_provider(vm, memory: VM_MEMORY[:cloud_pentest], cpus: VM_CPUS[:cloud_pentest])
+ 
+     vm.vm.synced_folder ".", "/vagrant", disabled: true
+     vm.ssh.insert_key = true

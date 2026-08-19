@@ -1,10 +1,10 @@
 # Advanced Active Directory Penetration Testing Lab (VLAN-Segmented)
 
-## Version 2.1.5 – Production-Ready Edition
+## Version 2.1.6 – Unified Edition (KVM/libvirt + VirtualBox)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../../LICENSE) [![Platform](https://img.shields.io/badge/platform-KVM%2Flibvirt-blue)](https://www.linux-kvm.org/) [![VMs](https://img.shields.io/badge/VMs-12-orange)](https://www.vagrantup.com/) [![Attack Paths](https://img.shields.io/badge/Attack%20Scenarios-55%2B-red)](https://github.com/solo2121/security-engineering-lab)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../../LICENSE) [![Platform](https://img.shields.io/badge/platform-KVM%2Flibvirt%20%7C%20VirtualBox-blue)](https://www.linux-kvm.org/) [![VMs](https://img.shields.io/badge/VMs-12-orange)](https://www.vagrantup.com/) [![Attack Paths](https://img.shields.io/badge/Attack%20Scenarios-55%2B-red)](https://github.com/solo2121/security-engineering-lab)
 
-This directory contains an **enterprise-style, VLAN-segmented Active Directory penetration testing lab** built on Vagrant and KVM/libvirt.
+This directory contains an **enterprise-style, VLAN-segmented Active Directory penetration testing lab** built on Vagrant, supporting both KVM/libvirt and VirtualBox from a single unified Vagrantfile.
 
 The lab provides a realistic security training environment featuring:
 
@@ -194,13 +194,24 @@ bridge-utils
 
 ## VirtualBox Provider
 
-For hosts without KVM/libvirt (macOS, Windows, or Linux hosts where libvirt
-isn't available), this lab also ships
-[`virtualbox/Vagrantfile`](virtualbox/Vagrantfile) — the same VLAN topology,
-VM inventory, static IPs, and provisioning logic as the libvirt `Vagrantfile`
-in this directory, targeting the VirtualBox provider instead. Shared files
-(`configs/`, `scripts/`, `docs/`) are unchanged and reused as-is; only the
-`Vagrantfile` differs.
+This lab's [`Vagrantfile`](Vagrantfile) supports both KVM/libvirt and
+VirtualBox from the same file — select the provider with `--provider` (or
+`VAGRANT_DEFAULT_PROVIDER`). It defines the same VLAN topology, VM
+inventory, static IPs, and provisioning logic for both providers; only the
+`config.vm.provider` block (memory/CPU/disk driver settings), the VLAN
+network implementation (libvirt bridges vs. VirtualBox internal networks),
+MAC address generation, and the Windows adapter-detection PowerShell
+(adapter names and NAT IP ranges differ between the two providers' default
+networking) are provider-specific.
+
+> **Note on this lab's history:** before this file was unified, the
+> libvirt and VirtualBox Vagrantfiles had functionally diverged — the
+> VirtualBox variant had accumulated a fuller LLM01 OWASP Top-10 module, a
+> Terraform state-file secrets-exposure scenario for `cloud-pentest`, and
+> an LDIF-based AD CS template-creation technique that the libvirt variant
+> never received. The unified Vagrantfile now runs that fuller content
+> under both providers, so behavior may differ slightly from an older
+> libvirt-only checkout of this lab.
 
 **Requirements:** VirtualBox 7.0+, Vagrant >= 2.2 (VirtualBox support is
 built in — no provider plugin needed), and the same `vagrant-reload` /
@@ -211,21 +222,29 @@ hosts, since VirtualBox is Intel/AMD (x86_64) only.
 
 ```bash
 git clone https://github.com/solo2121/security-engineering-lab.git
-cd security-engineering-lab/labs/security/active-directory/vlan-segmented/virtualbox
-vagrant validate
+cd security-engineering-lab/labs/security/active-directory/vlan-segmented
+vagrant validate --provider=virtualbox
 vagrant up --provider=virtualbox
 vagrant status
 ```
 
 ```bash
-vagrant provision
+vagrant provision --provider=virtualbox
 vagrant reload
 vagrant halt
 vagrant destroy -f
 ```
 
-**Configuration:** same environment variables as the libvirt lab, plus
-`LAB_GUI=true` to run VMs with a VirtualBox GUI console instead of headless.
+You can also avoid passing `--provider` every time:
+
+```bash
+export VAGRANT_DEFAULT_PROVIDER=virtualbox
+vagrant up
+```
+
+**Configuration:** same environment variables as libvirt, plus `LAB_GUI=true`
+to run VMs with a VirtualBox GUI console instead of headless (no effect
+under libvirt).
 
 **Troubleshooting:** see the [VirtualBox Provider troubleshooting
 table](../base/README.md#troubleshooting) in the base lab's README — the
@@ -243,8 +262,6 @@ Relative to:
 ```text
 .
 ├── Vagrantfile
-├── virtualbox/
-│   └── Vagrantfile
 ├── scripts/
 ├── configs/
 ├── docs/
@@ -256,8 +273,7 @@ Key components:
 
 | Path | Purpose |
 |---|---|
-| `Vagrantfile` | VM definitions, profiles, networking (KVM/libvirt, default provider) |
-| `virtualbox/Vagrantfile` | Same VM definitions and networking, targeting the VirtualBox provider — see [VirtualBox Provider](#virtualbox-provider) |
+| `Vagrantfile` | VM definitions, profiles, networking — unified for both KVM/libvirt (default) and VirtualBox, select with `--provider`. See [VirtualBox Provider](#virtualbox-provider) |
 | `scripts/` | Lab automation and management tools |
 | `configs/` | Service and VM configuration files |
 | `diagrams/` | Network architecture diagrams |
