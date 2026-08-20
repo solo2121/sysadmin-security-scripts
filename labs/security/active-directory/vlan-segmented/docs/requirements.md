@@ -130,4 +130,4 @@ After meeting all requirements, proceed to network setup:
 sudo ./scripts/setup-vlans.sh
 ```
 
-If errors occur, refer to [`troubleshooting.md`](../../../../docs/setup/troubleshooting.md).
+If errors occur, refer to [`troubleshooting.md`](../../../../../docs/setup/troubleshooting.md).

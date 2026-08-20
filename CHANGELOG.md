@@ -9,6 +9,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Provider-aware `vagrant_manager.py` for `active-directory/base` and
+  `active-directory/vlan-segmented`.** Both managers gained a
+  `resolve_provider()` helper (CLI `--provider` flag → `VAGRANT_DEFAULT_PROVIDER`
+  → OS-based default), matching the pattern already used by
+  `devops-linux-lab`'s manager and the Vagrantfiles' own
+  `current_provider()` logic. `--provider` is now passed explicitly to
+  `vagrant up`/`reload`, and the resolved provider is shown in the
+  startup banner and interactive menu title. The VLAN lab's manager
+  previously hardcoded `VAGRANT_DEFAULT_PROVIDER=libvirt` in
+  `build_vagrant_environment()`, silently ignoring any VirtualBox
+  selection made at the Vagrantfile level; this is fixed.
+
+### Changed
+- **Unified `Vagrantfile` architecture for `active-directory/base` and
+  `active-directory/vlan-segmented`.** Both labs previously shipped two
+  provider-specific Vagrantfiles (`Vagrantfile` for libvirt,
+  `virtualbox/Vagrantfile` for VirtualBox) with duplicated VM
+  definitions and provisioning logic. Each lab now has a single
+  `Vagrantfile` with `config.vm.provider` blocks for both libvirt and
+  VirtualBox, selected via `--provider` or `VAGRANT_DEFAULT_PROVIDER`
+  (same convention as `devops-linux-lab`, which was already unified).
+  No VM names, IPs, profiles, or provisioning logic changed for
+  `active-directory/base`.
+  For `active-directory/vlan-segmented`, the two source Vagrantfiles had
+  functionally diverged before this merge — the VirtualBox variant had
+  accumulated a fuller LLM01 OWASP Top-10 module, a Terraform
+  state-file secrets-exposure scenario for `cloud-pentest`, and an
+  LDIF-based AD CS template-creation technique that the libvirt variant
+  never received. The unified Vagrantfile runs that fuller content
+  under both providers; the libvirt-only VM_CONFIG box_version pinning
+  (silently missing from the old VirtualBox file) was also restored for
+  both providers, and OPNsense's box name is now provider-conditional
+  (`harmonnine/opnsense-kvm` vs. `harmonnine/opnsense` — different
+  builds per hypervisor).
+  Both obsolete `virtualbox/Vagrantfile`s were removed, along with every
+  reference to them in `Makefile`, `.github/workflows/ci.yml`,
+  `tests/python/test_validate_lab.py`, `.secrets.baseline`
+  (regenerated), and README/docs repository-wide.
+- Root `README.md` gained a table of contents, a dedicated
+  **Prerequisites** section, a **Quick start** section (clone → validate
+  host → `vagrant up`), a **Common workflows** section (rebuild,
+  snapshot, `vagrant_manager.py` usage, attack-simulation pointers), and
+  a **Troubleshooting** section — previously this content only existed
+  scattered across `docs/setup/*.md` with no root-level summary or
+  entry point. Also fixed two lines left over from before the
+  Vagrantfile unification above that still described "a VirtualBox-compatible
+  `Vagrantfile`" as a separate per-provider file.
+- Fixed four broken relative links found in a repository-wide audit:
+  two `../../../LICENSE` links in `active-directory/base/README.md` and
+  `active-directory/vlan-segmented/README.md` were one directory level
+  too shallow (both files are four levels below the repo root, not
+  three); a `../../infrastructure/devops-linux-lab/` link in the
+  VLAN lab's README was similarly one level too shallow; and
+  `vlan-segmented/docs/requirements.md`'s link to
+  `docs/setup/troubleshooting.md` was one level too shallow.
+
 ### Changed
 - **Documentation sync for the `active-directory/` rename and `LAB_PROFILE`
   rollout.** `labs/security/ad-pentest/` and `labs/security/ad-pentest-vlan/`

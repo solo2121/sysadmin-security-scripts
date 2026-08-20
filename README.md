@@ -12,7 +12,7 @@
 **Security Engineering Lab is a modular, Vagrant-provisioned security and infrastructure engineering lab repository for practicing Active Directory security, network segmentation, Kubernetes, DevSecOps workflows, Linux administration, and infrastructure automation.**
 
 
-This repository is designed to be **runnable, not static**. The environments, automation, documentation, and workflows are implemented as deployable lab systems using Vagrant and KVM/QEMU with libvirt. Each lab also includes a VirtualBox-compatible `Vagrantfile` (see [Known limitations](#known-limitations)) for hosts without KVM/libvirt.
+This repository is designed to be **runnable, not static**. The environments, automation, documentation, and workflows are implemented as deployable lab systems using Vagrant and KVM/QEMU with libvirt. Every lab's `Vagrantfile` also supports VirtualBox for hosts without KVM/libvirt (see [Supported providers](#supported-providers)).
 
 
 **Maintained by:** Miguel A. Carlo (solo2121)  
@@ -23,6 +23,29 @@ This repository is designed to be **runnable, not static**. The environments, au
 
 
 Start here: [Learning Path](./docs/project/learning-path.md) provides the recommended path through the labs, from Active Directory security fundamentals to segmented environments and DevSecOps workflows.
+
+
+## Table of contents
+
+- [Supported providers](#supported-providers)
+- [Prerequisites](#prerequisites)
+- [Quick start](#quick-start)
+- [What this project demonstrates](#what-this-project-demonstrates)
+- [Architecture overview](#architecture-overview)
+- [Lab environments](#lab-environments)
+- [Project overview](#project-overview)
+- [Highlights](#highlights)
+- [Portfolio and learning goals](#portfolio-and-learning-goals)
+- [Repository structure](#repository-structure)
+- [Common workflows](#common-workflows)
+- [Troubleshooting](#troubleshooting)
+- [Skills demonstrated](#skills-demonstrated)
+- [Documentation hub](#documentation-hub)
+- [Security and ethics](#security-and-ethics)
+- [Known limitations](#known-limitations)
+- [Development quickstart](#development-quickstart)
+- [Contributing](#contributing)
+- [License](#license)
 
 
 ## Supported providers
@@ -70,6 +93,44 @@ export VAGRANT_DEFAULT_PROVIDER=virtualbox
 See [Installation Guide](./docs/setup/installation.md) for full per-provider prerequisites and setup steps, and [Known limitations](#known-limitations) below for provider differences (networking, performance, and nested virtualization).
 
 
+## Prerequisites
+
+- **Host OS:** Linux (for KVM/libvirt, the default provider) — or macOS, Windows, or Linux without libvirt (for VirtualBox). See [Supported providers](#supported-providers).
+- **Virtualization:** [Vagrant](https://developer.hashicorp.com/vagrant/docs) >= 2.2, plus either [vagrant-libvirt](https://github.com/vagrant-libvirt/vagrant-libvirt) (KVM/QEMU) or [VirtualBox](https://www.virtualbox.org/) 7.0+ (built into Vagrant, no plugin needed). Hardware virtualization (Intel VT-x / AMD-V) enabled in the host BIOS/UEFI.
+- **Vagrant plugins:** `vagrant-reload`, `vagrant-winrm` (all labs); `vagrant-libvirt`, `vagrant-hostmanager` (libvirt); `vagrant-vbguest` (VirtualBox, optional).
+- **Resources:** 16 GB RAM minimum (32 GB+ recommended for full-profile deployments), 100–200 GB free disk depending on the lab and profile.
+- **Python:** 3.10+ with `pip`, for the contributor tooling in [Development quickstart](#development-quickstart) and each lab's `vagrant_manager.py`.
+
+Run `./scripts/check-prerequisites.sh` (or `make prereq`) to validate all of the above automatically before your first `vagrant up` — see [Quick start](#quick-start).
+
+
+## Quick start
+
+```bash
+git clone https://github.com/solo2121/security-engineering-lab.git
+cd security-engineering-lab
+
+# Validate your host meets the prerequisites above
+./scripts/check-prerequisites.sh
+
+# Pick a lab and bring it up (KVM/libvirt is the default provider)
+cd labs/security/active-directory/base
+vagrant up
+vagrant status
+
+# Or explicitly choose a provider
+vagrant up --provider=virtualbox
+```
+
+> **Note:** Each lab also ships a `vagrant_manager.py` (Python, `rich`-based)
+> for interactive or scripted VM management — start/stop individual VMs,
+> switch `LAB_PROFILE`, and select `--provider` without hand-typing raw
+> `vagrant` commands. See [Common workflows](#common-workflows) below and
+> each lab's own README.
+
+See [Installation Guide](./docs/setup/installation.md) for the full walkthrough per lab, and [Quickstart Examples](./docs/setup/quickstart-examples.md) for more deployment patterns.
+
+
 ## What this project demonstrates
 
 
@@ -91,7 +152,7 @@ See [Installation Guide](./docs/setup/installation.md) for full per-provider pre
 [![Enterprise Infrastructure Architecture](assets/diagrams/architecture-overview.png)](./assets/diagrams/)
 
 
-Lab environments are deployed independently using their own Vagrant configurations. KVM/QEMU with libvirt is the default provider; each lab also includes VirtualBox-compatible Vagrantfiles for hosts without libvirt.
+Lab environments are deployed independently using their own Vagrant configurations. KVM/QEMU with libvirt is the default provider; each lab's `Vagrantfile` also supports VirtualBox for hosts without libvirt (`--provider=virtualbox`) — see [Supported providers](#supported-providers).
 
 
 See:
@@ -368,6 +429,63 @@ security-engineering-lab/
 ├── requirements-dev.txt
 └── SECURITY.md
 ```
+
+
+---
+
+
+## Common workflows
+
+```bash
+# Rebuild a single VM from scratch
+vagrant destroy dc01 -f && vagrant up dc01
+
+# Snapshot before a risky attack step, and roll back after
+vagrant snapshot save dc01 clean-install
+vagrant snapshot restore dc01 clean-install
+
+# Re-run provisioning without recreating VMs
+vagrant provision
+
+# Interactive VM management (start/stop individual VMs, switch
+# LAB_PROFILE, select --provider) instead of raw vagrant commands
+python3 scripts/vagrant_manager.py
+python3 scripts/vagrant_manager.py up kali dc01
+python3 scripts/vagrant_manager.py up --provider virtualbox
+
+# Tear the lab down completely
+vagrant destroy -f
+```
+
+For full attack-simulation walkthroughs (domain compromise, AD CS
+abuse, password attacks, LLM/OWASP scenarios, cloud-pentest scenarios),
+see [Guides](./docs/guides/) and each lab's `docs/attack-guide.md`. For
+more snapshot/rebuild patterns per provider, see [Vagrant Management
+Tutorial](./docs/guides/infrastructure/vagrant-management-tutorial.md)
+and [Quickstart Examples](./docs/setup/quickstart-examples.md).
+
+
+## Troubleshooting
+
+Common first steps for a stuck lab:
+
+- **`vagrant up` hangs or times out:** confirm hardware virtualization
+  is enabled in your BIOS/UEFI and that `./scripts/check-prerequisites.sh`
+  passes. See [Prerequisites](#prerequisites).
+- **Wrong provider, or a mid-deployment provider switch:** `vagrant
+  destroy -f` and re-run `vagrant up --provider=<libvirt|virtualbox>`
+  explicitly — a VM created under one provider can't be reused under
+  the other.
+- **WinRM/SSH connection failures on Windows VMs:** usually a slow boot,
+  not a real failure; re-run `vagrant up` (or `vagrant provision`) once
+  the VM finishes booting.
+- **Network/VLAN conflicts:** check for a stale `br-*` (libvirt) or
+  internal-network (VirtualBox) definition left over from a prior
+  `vagrant destroy` that didn't clean up networking.
+
+Full common-issues reference with exact error messages and fixes:
+[Troubleshooting Guide](./docs/setup/troubleshooting.md). Lab-specific
+troubleshooting: [vlan-segmented](./labs/security/active-directory/vlan-segmented/docs/troubleshooting.md).
 
 
 ---

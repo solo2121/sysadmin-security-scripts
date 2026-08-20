@@ -2,7 +2,7 @@
 
 ## Version 2.1.6 – Unified Edition (KVM/libvirt + VirtualBox)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../../LICENSE) [![Platform](https://img.shields.io/badge/platform-KVM%2Flibvirt%20%7C%20VirtualBox-blue)](https://www.linux-kvm.org/) [![VMs](https://img.shields.io/badge/VMs-12-orange)](https://www.vagrantup.com/) [![Attack Paths](https://img.shields.io/badge/Attack%20Scenarios-55%2B-red)](https://github.com/solo2121/security-engineering-lab)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../../../../LICENSE) [![Platform](https://img.shields.io/badge/platform-KVM%2Flibvirt%20%7C%20VirtualBox-blue)](https://www.linux-kvm.org/) [![VMs](https://img.shields.io/badge/VMs-12-orange)](https://www.vagrantup.com/) [![Attack Paths](https://img.shields.io/badge/Attack%20Scenarios-55%2B-red)](https://github.com/solo2121/security-engineering-lab)
 
 This directory contains an **enterprise-style, VLAN-segmented Active Directory penetration testing lab** built on Vagrant, supporting both KVM/libvirt and VirtualBox from a single unified Vagrantfile.
 
@@ -846,7 +846,7 @@ In-depth docs for this lab live under [`docs/`](docs/):
 ## Related Labs
 
 - [`../base/`](../base/) — Flat Active Directory penetration testing lab.
-- [`../../infrastructure/devops-linux-lab/`](../../infrastructure/devops-linux-lab/) — DevOps, Kubernetes, and infrastructure security lab.
+- [`../../../infrastructure/devops-linux-lab/`](../../../infrastructure/devops-linux-lab/) — DevOps, Kubernetes, and infrastructure security lab.
 
 ---
 
@@ -856,7 +856,7 @@ This project is released under the MIT License.
 
 See:
 
-[`../../../LICENSE`](../../../LICENSE)
+[`../../../../LICENSE`](../../../../LICENSE)
 
 This project is intended for:
 

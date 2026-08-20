@@ -1053,7 +1053,7 @@ In-depth docs for this lab live under [`docs/`](docs/):
 
 ## License
 
-[MIT License](../../../LICENSE) — Free for educational and research purposes.
+[MIT License](../../../../LICENSE) — Free for educational and research purposes.
 
 ---
 
