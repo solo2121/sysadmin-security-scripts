@@ -1152,7 +1152,7 @@ EOF
             export HARBOR_PROJECT_VAL="${HARBOR_PROJECT}"
             export HARBOR_PASS_VAL="${HARBOR_PASS}"
 
-            python3 <<'PYEOF'
+            python3 -c "import sys, textwrap; exec(textwrap.dedent(sys.stdin.read()))" <<'PYEOF'
         import os
         import sys
         import yaml
