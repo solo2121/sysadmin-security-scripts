@@ -744,7 +744,7 @@ EOF
         overlay
         br_netfilter
         vxlan
-        EOF
+EOF
           echo br_netfilter | tee /etc/modules-load.d/br_netfilter.conf >/dev/null
           cat <<EOF >/etc/sysctl.d/99-kubernetes.conf
         net.bridge.bridge-nf-call-iptables=1
@@ -752,7 +752,7 @@ EOF
         net.ipv4.ip_forward=1
         net.ipv4.conf.all.rp_filter=0
         net.ipv4.conf.default.rp_filter=0
-        EOF
+EOF
           sysctl --system
 
           echo "Configuring iptables for K3s compatibility..."
@@ -801,7 +801,7 @@ EOF
         ACTUAL_VERSION=${DOCKER_ACTUAL_VERSION}
         INSTALL_METHOD=${DOCKER_INSTALL_METHOD}
         INSTALLED_AT=$(date -Iseconds)
-        EOF
+EOF
               if [ "${DOCKER_VERSION}" != "${DOCKER_ACTUAL_VERSION}" ] && [ "${FAST_BOOT}" != "true" ]; then
                 echo "WARNING: Docker version drift detected. Continuing anyway."
               fi
@@ -825,7 +825,7 @@ EOF
             "registry.k8s.io"
           ]
         }
-        EOF
+EOF
             RESTART_DOCKER=1
           fi
           [ "$RESTART_DOCKER" -eq 1 ] && systemctl restart docker || true
@@ -910,7 +910,7 @@ EOF
           "cluster_ready": true,
           "master_ip": "${MASTER_IP}"
         }
-        EOF
+EOF
           mv /vagrant/.cluster_state.json.tmp /vagrant/.cluster_state.json
 
           wait_for check_kubectl_ready "kubectl API ready" 120
@@ -978,7 +978,7 @@ EOF
               size: 5Gi
         trivy:
           enabled: true
-        EOF
+EOF
 
             helm upgrade --install harbor harbor/harbor ${HELM_VERSION_FLAG} -n harbor -f /opt/harbor-values.yaml --wait --timeout 15m || {
               echo "ERROR: Harbor install failed — rolling back"
@@ -1016,7 +1016,7 @@ EOF
             "registry.k8s.io"
           ]
         }
-        EOF
+EOF
             systemctl restart docker
             sleep 10
             echo "Docker daemon reconfigured with Harbor registry"
@@ -1205,7 +1205,7 @@ EOF
         data = yaml.safe_load(content)
         print('VALID YAML - mirrors:', list(data.get('mirrors', {}).keys()))
         sys.exit(0)
-        PYEOF
+PYEOF
 
             if [ $? -eq 0 ]; then
               echo "Registries.yaml generated and validated successfully"
@@ -1539,7 +1539,7 @@ EOF
             size: 1Gi
         alertmanager:
           enabled: true
-        EOF
+EOF
 
               helm upgrade --install prometheus-stack prometheus-community/kube-prometheus-stack \
                 --namespace monitoring \
@@ -1713,7 +1713,7 @@ EOF
             pod-security.kubernetes.io/enforce: privileged
             pod-security.kubernetes.io/audit: privileged
             pod-security.kubernetes.io/warn: privileged
-        EOF
+EOF
 
           echo "Deploying privileged escape pod..."
           cat <<EOF | kubectl apply -f - || true
@@ -1788,7 +1788,7 @@ EOF
           - name: docker-socket
             hostPath:
               path: /var/run/docker.sock
-        EOF
+EOF
 
           echo "Deploying docker breakout pod..."
           cat <<EOF | kubectl apply -f - || true
@@ -1832,7 +1832,7 @@ EOF
           - name: docker-socket
             hostPath:
               path: /var/run/docker.sock
-        EOF
+EOF
 
           echo "Deploying dangerous capabilities pod..."
           cat <<EOF | kubectl apply -f - || true
@@ -1880,7 +1880,7 @@ EOF
                 - DAC_READ_SEARCH
                 - SYS_CHROOT
                 - SYS_MODULE
-        EOF
+EOF
 
           echo "Deploying RBAC escalation scenario..."
           cat <<EOF | kubectl apply -f - || true
@@ -1966,7 +1966,7 @@ EOF
           username: ZGJhZG1pbg==
           password: U3VwZXJTZWNyZXRQYXNzMTIzIQ==
           host: cG9zdGdyZXMtZGIuZXhhbXBsZS5jb20=
-        EOF
+EOF
 
           echo "Deploying cryptominer cronjob..."
           cat <<EOF | kubectl apply -f - || true
@@ -2041,7 +2041,7 @@ EOF
                 nc -zv malicious-c2.example.com 4444 2>&1 || true
                 sleep 60
               done
-        EOF
+EOF
 
           echo "Deploying hostpath exploitation pod..."
           cat <<EOF | kubectl apply -f - || true
@@ -2088,7 +2088,7 @@ EOF
           - name: etc-kubernetes
             hostPath:
               path: /etc/kubernetes
-        EOF
+EOF
 
           echo "Creating leaked secrets file..."
           cat > /vagrant/terraform.tfstate <<'EOF'
@@ -2119,7 +2119,7 @@ EOF
             }
           ]
         }
-        EOF
+EOF
 
           cat > /vagrant/.env.production <<'EOF'
         # Production Environment Variables - LEAKED!
@@ -2128,7 +2128,7 @@ EOF
         AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
         STRIPE_SECRET_KEY=sk_live_4eC39HqLyjWDarjtT1zdp7dc
         JWT_SECRET=super-secret-jwt-key-1234567890
-        EOF
+EOF
 
           echo "Building and pushing backdoored image to Harbor..."
           for i in $(seq 1 30); do
@@ -2151,7 +2151,7 @@ EOF
             echo "[$(date)] Health check: OK"
             sleep 30
         done
-        EOS
+EOS
         RUN chmod +x /app/app.sh
         RUN cat > /app/backdoor.sh <<'EOS'
         #!/bin/bash
@@ -2162,17 +2162,17 @@ EOF
             fi
             sleep 60
         done
-        EOS
+EOS
         RUN chmod +x /app/backdoor.sh
         RUN cat > /app/start.sh <<'EOS'
         #!/bin/bash
         nohup /app/app.sh > /app/app.log 2>&1 &
         nohup /app/backdoor.sh > /app/backdoor.log 2>&1 &
         tail -f /app/*.log
-        EOS
+EOS
         RUN chmod +x /app/start.sh
         CMD ["/app/start.sh"]
-        EOF
+EOF
 
           if command -v docker >/dev/null 2>&1; then
             echo "${HARBOR_PASS}" | docker login "${MASTER_IP}:30001" -u admin --password-stdin 2>/dev/null || true
@@ -2256,7 +2256,7 @@ EOF
         overlay
         br_netfilter
         vxlan
-        EOF
+EOF
           echo br_netfilter | tee /etc/modules-load.d/br_netfilter.conf >/dev/null
           cat <<EOF >/etc/sysctl.d/99-kubernetes.conf
         net.bridge.bridge-nf-call-iptables=1
@@ -2264,7 +2264,7 @@ EOF
         net.ipv4.ip_forward=1
         net.ipv4.conf.all.rp_filter=0
         net.ipv4.conf.default.rp_filter=0
-        EOF
+EOF
           sysctl --system
           apt-get install -y iptables arptables ebtables 2>/dev/null || true
           update-alternatives --set iptables /usr/sbin/iptables-legacy 2>/dev/null || true
@@ -2367,7 +2367,7 @@ EOF
         networking:
           apiServerAddress: "0.0.0.0"
           apiServerPort: 6443
-        EOF
+EOF
 
           echo ""
           echo "Creating Kind cluster automatically..."
@@ -2391,7 +2391,7 @@ EOF
         alias kind-kill='kind delete cluster --name lab'
         alias kind-restart='kind delete cluster --name lab && kind create cluster --config /opt/kind/config.yaml --name lab'
         alias kind-status='kubectl get nodes && kubectl get pods -A'
-        EOF
+EOF
           else
             echo "ERROR: Kind cluster creation failed"
             exit 1
@@ -2469,7 +2469,7 @@ EOF
               - arg: --disable=traefik
                 nodeFilters:
                   - server:*
-        EOF
+EOF
 
           echo ""
           echo "Creating K3d cluster automatically..."
@@ -2493,7 +2493,7 @@ EOF
         alias k3d-kill='k3d cluster delete lab'
         alias k3d-restart='k3d cluster delete lab && k3d cluster create lab --config /opt/k3d/config.yaml'
         alias k3d-status='kubectl get nodes && kubectl get pods -A'
-        EOF
+EOF
           else
             echo "ERROR: K3d cluster creation failed"
             exit 1
@@ -2607,7 +2607,7 @@ EOF
         networks:
           cicd-net:
             driver: bridge
-        GITEA_EOF
+GITEA_EOF
 
           cd /opt/gitea
           /usr/local/bin/docker-compose up -d || echo "WARNING: Gitea failed to start"
@@ -2625,7 +2625,7 @@ EOF
         RUN curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
         RUN usermod -aG docker jenkins
         USER jenkins
-        JENKINS_EOF
+JENKINS_EOF
 
           cd /opt/jenkins
           docker build --build-arg JENKINS_VERSION=${JENKINS_VERSION} -t jenkins-lab . || echo "WARNING: Jenkins build failed"
@@ -2751,7 +2751,7 @@ EOF
                 }
             }
         }
-        PIPELINE_EOF
+PIPELINE_EOF
 
           # ============================================================
           # 8. CREATE SAMPLE APPLICATION
@@ -2765,7 +2765,7 @@ EOF
         RUN pip install flask
         EXPOSE 5000
         CMD ["python", "app.py"]
-        APP_EOF
+APP_EOF
 
           cat > /opt/sample-app/app.py <<'APP_EOF'
         from flask import Flask
@@ -2783,11 +2783,11 @@ EOF
 
         if __name__ == '__main__':
             app.run(host='0.0.0.0', port=5000)
-        APP_EOF
+APP_EOF
 
           cat > /opt/sample-app/requirements.txt <<'APP_EOF'
         flask==2.2.3
-        APP_EOF
+APP_EOF
 
           # ============================================================
           # 9. HARBOR PUSH SCRIPT
@@ -2809,7 +2809,7 @@ EOF
         docker tag "${IMAGE_NAME}:${TAG}" "${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${TAG}"
         docker push "${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${TAG}"
         echo "Push complete!"
-        HARBOR_EOF
+HARBOR_EOF
           chmod +x /usr/local/bin/harbor-push
 
           echo ""
