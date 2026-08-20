@@ -13,6 +13,12 @@ the Vagrantfile itself), so "all" and the default target list only include
 VMs that actually exist under your current profile, instead of all 11
 possible VM names.
 
+The lab's Vagrantfile supports both KVM/libvirt and VirtualBox; this
+manager mirrors that with --provider, VAGRANT_DEFAULT_PROVIDER, or an
+OS-based default (libvirt on Linux, virtualbox elsewhere) -- see
+resolve_provider() for the exact precedence, which matches the
+Vagrantfile's own current_provider() logic.
+
 Usage:
     python3 vagrant_manager.py
     python3 vagrant_manager.py --list
@@ -25,6 +31,9 @@ Usage:
     LAB_PROFILE=cloud python3 vagrant_manager.py up cloud-pentest
     LAB_PROFILE=full python3 vagrant_manager.py up print01
 
+    python3 vagrant_manager.py up --provider virtualbox
+    VAGRANT_DEFAULT_PROVIDER=virtualbox python3 vagrant_manager.py up
+
 Requires:
     rich
 
@@ -36,6 +45,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -52,6 +62,38 @@ from rich.table import Table
 console = Console()
 
 VAGRANTFILE_CANDIDATES = ("Vagrantfile",)
+
+SUPPORTED_PROVIDERS = ("libvirt", "virtualbox")
+
+
+def resolve_provider(cli_provider: str | None) -> str:
+    """
+    Resolve which provider this run should target.
+
+    Mirrors the Vagrantfile's own current_provider() precedence exactly,
+    so the manager and the Vagrantfile always agree on which provider is
+    active for a given invocation:
+
+        1. --provider CLI flag (highest precedence)
+        2. VAGRANT_DEFAULT_PROVIDER environment variable
+        3. OS-based default: libvirt on Linux, virtualbox otherwise
+    """
+    if cli_provider:
+        return cli_provider
+
+    env_provider = os.environ.get("VAGRANT_DEFAULT_PROVIDER")
+
+    if env_provider:
+        return env_provider
+
+    return "libvirt" if platform.system() == "Linux" else "virtualbox"
+
+
+# Resolved once in main() via resolve_provider() and read by every
+# run_vagrant() call afterward. Set to a safe default here so any code
+# path that runs before main() (e.g. tests importing this module) still
+# has a defined value rather than None.
+SELECTED_PROVIDER: str = "libvirt"
 
 # Must mirror the Vagrantfile's own defaults (see the "LAB PROFILES" block
 # near the top of the Vagrantfile). If those ever change, update here too.
@@ -311,11 +353,23 @@ def run_vagrant(
     Commands are always executed from the directory containing
     the discovered Vagrantfile.
 
+    Uses the provider resolved into SELECTED_PROVIDER (see
+    resolve_provider()). For "up" and "reload" -- the only actions where
+    provider selection actually matters, since other actions operate on
+    an already-created machine tied to whichever provider created it --
+    an explicit --provider flag is passed on the command line. This
+    matches Vagrant's own precedence (CLI flag beats
+    VAGRANT_DEFAULT_PROVIDER) and mirrors the Vagrantfile's own
+    current_provider() detection, so the two always agree.
+
     profile_override, if given, is applied only to this subprocess's
     environment (via a copy of os.environ) so a single assisted-switch
     action doesn't change LAB_PROFILE for the rest of the session.
     """
     cmd = ["vagrant", action]
+
+    if action in ("up", "reload"):
+        cmd.extend(["--provider", SELECTED_PROVIDER])
 
     if vm:
         cmd.append(vm)
@@ -325,9 +379,9 @@ def run_vagrant(
 
     label = vm or "(all)"
 
-    env = None
+    env = {**os.environ, "VAGRANT_DEFAULT_PROVIDER": SELECTED_PROVIDER}
     if profile_override:
-        env = {**os.environ, LAB_PROFILE_ENV: profile_override}
+        env[LAB_PROFILE_ENV] = profile_override
         console.print(
             f"[dim]Running this action with {LAB_PROFILE_ENV}="
             f"{profile_override} (this session stays on its own "
@@ -631,11 +685,12 @@ def interactive_menu(
         if supported:
             excluded = [name for name in vms if name not in active]
             menu_title = (
-                f"Vagrant Lab Manager -- Profile: {profile} | "
+                f"Vagrant Lab Manager -- Provider: {SELECTED_PROVIDER} | "
+                f"Profile: {profile} | "
                 f"Active: {len(active)} | Excluded: {len(excluded)}"
             )
         else:
-            menu_title = "Vagrant Lab Manager"
+            menu_title = f"Vagrant Lab Manager -- Provider: {SELECTED_PROVIDER}"
 
         console.print(
             Panel.fit(
@@ -784,7 +839,22 @@ def main() -> int:
         help="List discovered VMs and exit.",
     )
 
+    parser.add_argument(
+        "--provider",
+        choices=SUPPORTED_PROVIDERS,
+        default=None,
+        help=(
+            "Provider to use (libvirt or virtualbox). Defaults to "
+            "VAGRANT_DEFAULT_PROVIDER if set, otherwise libvirt on "
+            "Linux and virtualbox elsewhere -- matching the "
+            "Vagrantfile's own default."
+        ),
+    )
+
     args = parser.parse_args()
+
+    global SELECTED_PROVIDER
+    SELECTED_PROVIDER = resolve_provider(args.provider)
 
     vagrantfile = find_vagrantfile()
 
@@ -797,6 +867,10 @@ def main() -> int:
 
     console.print(
         f"[dim]Vagrantfile:[/dim] {vagrantfile}"
+    )
+    console.print(
+        f"[dim]Provider: [bold]{SELECTED_PROVIDER}[/bold] "
+        "(override with --provider or VAGRANT_DEFAULT_PROVIDER)[/dim]"
     )
 
     vms = discover_vms(vagrantfile)

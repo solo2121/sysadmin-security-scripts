@@ -10,7 +10,9 @@ of the original Bash manager.
 Features:
 - VLAN-based inventory grouping
 - OPNsense direct SSH
-- VAGRANT_DEFAULT_PROVIDER forced to libvirt
+- Supports both KVM/libvirt and VirtualBox against the lab's unified
+  Vagrantfile (select with --provider, or VAGRANT_DEFAULT_PROVIDER; see
+  resolve_provider() for precedence)
 - Sequential start of all VMs to preserve network boot order
 - Interactive per-VM management
 - Safe non-interactive destroy behavior
@@ -31,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -49,6 +52,38 @@ console = Console()
 # ========================== CONFIGURATION ==========================
 
 VAGRANTFILE_CANDIDATES = ("Vagrantfile",)
+
+SUPPORTED_PROVIDERS = ("libvirt", "virtualbox")
+
+
+def resolve_provider(cli_provider: str | None) -> str:
+    """
+    Resolve which provider this run should target.
+
+    Mirrors the Vagrantfile's own current_provider() precedence exactly,
+    so the manager and the Vagrantfile always agree on which provider is
+    active for a given invocation:
+
+        1. --provider CLI flag (highest precedence)
+        2. VAGRANT_DEFAULT_PROVIDER environment variable
+        3. OS-based default: libvirt on Linux, virtualbox otherwise
+    """
+    if cli_provider:
+        return cli_provider
+
+    env_provider = os.environ.get("VAGRANT_DEFAULT_PROVIDER")
+
+    if env_provider:
+        return env_provider
+
+    return "libvirt" if platform.system() == "Linux" else "virtualbox"
+
+
+# Resolved once in main() via resolve_provider() and read by every
+# run_vagrant() call afterward. Set to a safe default here so any code
+# path that runs before main() (e.g. tests importing this module) still
+# has a defined value rather than None.
+SELECTED_PROVIDER: str = "libvirt"
 
 # Explicit lab inventory.
 #
@@ -358,7 +393,7 @@ def require_vagrant() -> bool:
 def build_vagrant_environment() -> dict[str, str]:
     """Build the environment used for every Vagrant invocation."""
     env = os.environ.copy()
-    env["VAGRANT_DEFAULT_PROVIDER"] = "libvirt"
+    env["VAGRANT_DEFAULT_PROVIDER"] = SELECTED_PROVIDER
     return env
 
 
@@ -373,7 +408,14 @@ def run_vagrant(
     """
     Run a Vagrant subcommand from the Vagrantfile directory.
 
-    All Vagrant commands force the libvirt provider.
+    Uses the provider resolved into SELECTED_PROVIDER (see
+    resolve_provider()). For "up" and "reload" -- the only actions where
+    provider selection actually matters, since other actions operate on
+    an already-created machine tied to whichever provider created it --
+    an explicit --provider flag is passed on the command line. This
+    matches Vagrant's own precedence (CLI flag beats
+    VAGRANT_DEFAULT_PROVIDER) and mirrors the Vagrantfile's own
+    current_provider() detection, so the two always agree.
 
     SSH receives the normal interactive stdin. Other commands receive
     /dev/null so unexpected prompts cannot block the manager.
@@ -383,6 +425,9 @@ def run_vagrant(
     manager's own os.environ, so the rest of the session is unaffected.
     """
     cmd = ["vagrant", action]
+
+    if action in ("up", "reload"):
+        cmd.extend(["--provider", SELECTED_PROVIDER])
 
     if vms_list:
         cmd.extend(vms_list)
@@ -567,7 +612,8 @@ def show_main_menu(
 
     console.print(
         Panel.fit(
-            "[bold white]PENTEST VLAN LAB MANAGER v4.1[/bold white]",
+            "[bold white]PENTEST VLAN LAB MANAGER v4.1[/bold white]\n"
+            f"[dim]Provider: {SELECTED_PROVIDER}[/dim]",
             border_style="blue",
         )
     )
@@ -692,7 +738,8 @@ def vm_menu(
             Panel.fit(
                 "[bold white]"
                 "PENTEST VLAN LAB MANAGER v4.1"
-                "[/bold white]",
+                "[/bold white]\n"
+                f"[dim]Provider: {SELECTED_PROVIDER}[/dim]",
                 border_style="blue",
             )
         )
@@ -958,7 +1005,22 @@ def main() -> int:
         ),
     )
 
+    parser.add_argument(
+        "--provider",
+        choices=SUPPORTED_PROVIDERS,
+        default=None,
+        help=(
+            "Provider to use (libvirt or virtualbox). Defaults to "
+            "VAGRANT_DEFAULT_PROVIDER if set, otherwise libvirt on "
+            "Linux and virtualbox elsewhere -- matching the "
+            "Vagrantfile's own default."
+        ),
+    )
+
     args = parser.parse_args()
+
+    global SELECTED_PROVIDER
+    SELECTED_PROVIDER = resolve_provider(args.provider)
 
     # ------------------------------------------------------------------
     # Find Vagrantfile.
@@ -979,6 +1041,11 @@ def main() -> int:
 
     if not require_vagrant():
         return 1
+
+    console.print(
+        f"[dim]Provider: [bold]{SELECTED_PROVIDER}[/bold] "
+        "(override with --provider or VAGRANT_DEFAULT_PROVIDER)[/dim]"
+    )
 
     # ------------------------------------------------------------------
     # Non-interactive CLI mode.
