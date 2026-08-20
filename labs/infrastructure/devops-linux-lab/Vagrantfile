@@ -1682,7 +1682,7 @@ EOF
           echo "=========================================="
 
           echo "Creating vulnerable namespaces (with privileged policy)..."
-          cat <<EOF | kubectl apply -f - || true
+          cat <<EOF | python3 -c "import sys, textwrap; sys.stdout.write(textwrap.dedent(sys.stdin.read()))" | kubectl apply -f - || true
         ---
         apiVersion: v1
         kind: Namespace
@@ -1716,7 +1716,7 @@ EOF
 EOF
 
           echo "Deploying privileged escape pod..."
-          cat <<EOF | kubectl apply -f - || true
+          cat <<EOF | python3 -c "import sys, textwrap; sys.stdout.write(textwrap.dedent(sys.stdin.read()))" | kubectl apply -f - || true
         ---
         apiVersion: v1
         kind: Pod
@@ -1791,7 +1791,7 @@ EOF
 EOF
 
           echo "Deploying docker breakout pod..."
-          cat <<EOF | kubectl apply -f - || true
+          cat <<EOF | python3 -c "import sys, textwrap; sys.stdout.write(textwrap.dedent(sys.stdin.read()))" | kubectl apply -f - || true
         ---
         apiVersion: v1
         kind: Pod
@@ -1835,7 +1835,7 @@ EOF
 EOF
 
           echo "Deploying dangerous capabilities pod..."
-          cat <<EOF | kubectl apply -f - || true
+          cat <<EOF | python3 -c "import sys, textwrap; sys.stdout.write(textwrap.dedent(sys.stdin.read()))" | kubectl apply -f - || true
         ---
         apiVersion: v1
         kind: Pod
@@ -1883,7 +1883,7 @@ EOF
 EOF
 
           echo "Deploying RBAC escalation scenario..."
-          cat <<EOF | kubectl apply -f - || true
+          cat <<EOF | python3 -c "import sys, textwrap; sys.stdout.write(textwrap.dedent(sys.stdin.read()))" | kubectl apply -f - || true
         ---
         apiVersion: v1
         kind: ServiceAccount
@@ -1969,7 +1969,7 @@ EOF
 EOF
 
           echo "Deploying cryptominer cronjob..."
-          cat <<EOF | kubectl apply -f - || true
+          cat <<EOF | python3 -c "import sys, textwrap; sys.stdout.write(textwrap.dedent(sys.stdin.read()))" | kubectl apply -f - || true
         ---
         apiVersion: batch/v1
         kind: CronJob
@@ -2044,7 +2044,7 @@ EOF
 EOF
 
           echo "Deploying hostpath exploitation pod..."
-          cat <<EOF | kubectl apply -f - || true
+          cat <<EOF | python3 -c "import sys, textwrap; sys.stdout.write(textwrap.dedent(sys.stdin.read()))" | kubectl apply -f - || true
         ---
         apiVersion: v1
         kind: Pod
