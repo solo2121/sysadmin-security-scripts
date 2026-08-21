@@ -243,6 +243,7 @@ VM_CONFIG = {
     box: PROVIDER == :libvirt ? 'harmonnine/opnsense-kvm' : 'harmonnine/opnsense',
     box_version: 'latest', memory: 2048, cpus: 2, disk_size: 20,
     hostname: 'opnsense', guest: :linux, vlan: 10, host_number: 1, autostart: true,
+    ssh_username: 'root', ssh_password: 'opnsense',
     health_check: { type: :http, port: 80, path: '/', timeout: 300 }
   },
   'DC01' => {
