@@ -1160,7 +1160,11 @@ Vagrant.configure("2") do |config|
         end
         
       elsif vm_config[:guest] == :linux
-        configure_linux_network(vm, vm_ip, gateway, dns_server) if vm_ip
+        # OPNsense is FreeBSD-based: no /bin/bash, iproute2, or dhclient.
+        # Its interfaces are configured via the opnsense-init provisioner (config.xml),
+        # so the Linux network-config provisioner must be skipped here to avoid
+        # "bad interpreter: /bin/bash: No such file or directory".
+        configure_linux_network(vm, vm_ip, gateway, dns_server) if vm_ip && vm_name != 'opnsense'
         # FIX: All Linux VMs should get lab hosts entries
         write_lab_hosts(vm) unless vm_name == 'opnsense'
       end
