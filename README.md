@@ -1,6 +1,5 @@
 # Security Engineering Lab
 
-
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Linux%7CmacOS%7CWindows-blue)
 ![Vagrant](https://img.shields.io/badge/Vagrant-Lab-orange)
@@ -8,248 +7,430 @@
 ![DevSecOps](https://img.shields.io/badge/DevSecOps-Lab-purple)
 [![CI](https://github.com/solo2121/security-engineering-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/solo2121/security-engineering-lab/actions/workflows/ci.yml)
 
+**Security Engineering Lab** is a modular, Vagrant-provisioned security and infrastructure engineering lab for practicing Active Directory security, network segmentation, Kubernetes, DevSecOps workflows, Linux administration, and infrastructure automation.
 
-**Security Engineering Lab is a modular, Vagrant-provisioned security and infrastructure engineering lab repository for practicing Active Directory security, network segmentation, Kubernetes, DevSecOps workflows, Linux administration, and infrastructure automation.**
+The repository contains deployable lab environments, provisioning automation, validation workflows, and technical documentation. KVM/QEMU with libvirt is the primary development provider; VirtualBox is supported through the same provider-aware `Vagrantfile` used by each lab.
 
+This repository is designed to be **runnable, not static**. The environments, automation, documentation, and workflows are implemented as deployable lab systems using Vagrant and KVM/QEMU with libvirt. Every lab also supports VirtualBox on compatible Intel/AMD x86_64 hosts.
 
-This repository is designed to be **runnable, not static**. The environments, automation, documentation, and workflows are implemented as deployable lab systems using Vagrant and KVM/QEMU with libvirt. Every lab's `Vagrantfile` also supports VirtualBox for hosts without KVM/libvirt (see [Supported providers](#supported-providers)).
-
-
-**Maintained by:** Miguel A. Carlo (solo2121)  
+**Maintained by:** Miguel A. Carlo (`solo2121`)  
 **Project status:** Active development
-
 
 ---
 
+## At a glance
 
-Start here: [Learning Path](./docs/project/learning-path.md) provides the recommended path through the labs, from Active Directory security fundamentals to segmented environments and DevSecOps workflows.
+| Item | Details |
+|---|---|
+| Primary provider | KVM/QEMU with libvirt |
+| Alternative provider | VirtualBox on supported Intel/AMD x86_64 hosts |
+| Lab environments | Active Directory, segmented Active Directory, DevOps/DevSecOps |
+| Automation | Vagrant, Ansible, Bash, and Python |
+| Cloud-native stack | K3s, Harbor, Argo CD, Prometheus, Grafana, Loki, Falco, and Kyverno |
+| Validation | GitHub Actions, pytest, Bats, ShellCheck, and documentation checks |
+| Intended use | Authorized research, defensive security practice, and isolated education |
 
+Start here: [Learning Path](./docs/project/learning-path.md) provides the recommended progression through the labs, from Active Directory security fundamentals to segmented environments and DevSecOps workflows.
+
+---
 
 ## Table of contents
 
-- [Supported providers](#supported-providers)
-- [Prerequisites](#prerequisites)
-- [Quick start](#quick-start)
-- [What this project demonstrates](#what-this-project-demonstrates)
-- [Architecture overview](#architecture-overview)
-- [Lab environments](#lab-environments)
-- [Project overview](#project-overview)
-- [Highlights](#highlights)
-- [Portfolio and learning goals](#portfolio-and-learning-goals)
-- [Repository structure](#repository-structure)
-- [Common workflows](#common-workflows)
-- [Troubleshooting](#troubleshooting)
-- [Skills demonstrated](#skills-demonstrated)
-- [Documentation hub](#documentation-hub)
-- [Security and ethics](#security-and-ethics)
-- [Known limitations](#known-limitations)
-- [Development quickstart](#development-quickstart)
-- [Contributing](#contributing)
-- [License](#license)
+- [Security Engineering Lab](#security-engineering-lab)
+  - [At a glance](#at-a-glance)
+  - [Table of contents](#table-of-contents)
+  - [See it in action](#see-it-in-action)
+    - [Active Directory base lab](#active-directory-base-lab)
+    - [DevOps Linux lab](#devops-linux-lab)
+  - [Supported providers](#supported-providers)
+    - [Provider compatibility matrix](#provider-compatibility-matrix)
+  - [Prerequisites](#prerequisites)
+    - [Host requirements](#host-requirements)
+    - [Vagrant plugins](#vagrant-plugins)
+    - [Recommended resources](#recommended-resources)
+  - [Quick start](#quick-start)
+  - [What this project demonstrates](#what-this-project-demonstrates)
+  - [Architecture overview](#architecture-overview)
+  - [Lab environments](#lab-environments)
+    - [Lab 1 — Active Directory Pentest Lab](#lab-1--active-directory-pentest-lab)
+    - [Lab 2 — Active Directory Pentest Lab — VLAN Edition](#lab-2--active-directory-pentest-lab--vlan-edition)
+    - [Lab 3 — DevOps and DevSecOps Lab](#lab-3--devops-and-devsecops-lab)
+  - [Project overview](#project-overview)
+  - [Highlights](#highlights)
+    - [Active Directory security research](#active-directory-security-research)
+    - [Segmented security environments](#segmented-security-environments)
+    - [DevSecOps platform engineering](#devsecops-platform-engineering)
+    - [Infrastructure automation](#infrastructure-automation)
+    - [Security engineering documentation](#security-engineering-documentation)
+  - [Portfolio and learning goals](#portfolio-and-learning-goals)
+  - [Repository structure](#repository-structure)
+  - [Common workflows](#common-workflows)
+    - [Rebuild a single VM](#rebuild-a-single-vm)
+    - [Save and restore snapshots](#save-and-restore-snapshots)
+    - [Re-run provisioning](#re-run-provisioning)
+    - [Use the lab manager](#use-the-lab-manager)
+    - [Destroy the complete lab](#destroy-the-complete-lab)
+  - [Troubleshooting](#troubleshooting)
+    - [`vagrant up` hangs or times out](#vagrant-up-hangs-or-times-out)
+    - [The wrong provider was selected](#the-wrong-provider-was-selected)
+    - [WinRM or SSH connection failures](#winrm-or-ssh-connection-failures)
+    - [Network or segmentation conflicts](#network-or-segmentation-conflicts)
+  - [Skills demonstrated](#skills-demonstrated)
+  - [Documentation hub](#documentation-hub)
+  - [Security and ethics](#security-and-ethics)
+  - [Known limitations](#known-limitations)
+    - [Provider differences](#provider-differences)
+  - [Development quickstart](#development-quickstart)
+  - [Contributing](#contributing)
+  - [License](#license)
 
+---
+
+## See it in action
+
+### Active Directory base lab
+
+A complete run of the Active Directory base lab, from `vagrant up` through domain promotion and post-deployment health checks:
+
+| 1. Provider auto-detection | 2. AD promotion succeeds | 3. Health check and lab manager |
+|---|---|---|
+| ![vagrant_manager.py detecting the libvirt provider and listing available lab VMs](./assets/demos/dc01-01-boot-provider-detect.gif) | ![Active Directory promotion completing successfully on dc01, followed by a reboot](./assets/demos/dc01-02-ad-promotion-success.gif) | ![Post-boot health check passing and the interactive lab manager menu](./assets/demos/dc01-03-healthcheck-manager.gif) |
+
+Each clip was recorded end-to-end without cuts within the individual recording:
+
+1. `vagrant_manager.py` resolves the provider and lists available lab VMs.
+2. `dc01` completes Active Directory promotion and reboots.
+3. The post-boot health check confirms that the domain controller is reachable before returning to the interactive manager.
+
+### DevOps Linux lab
+
+A complete run of the DevOps Linux lab, from K3s bootstrap through Harbor image seeding and DevSecOps scenario deployment:
+
+| 1. K3s node ready | 2. Internal image seeding | 3. Attack vectors deploy |
+|---|---|---|
+| ![K3s node Ready and kubectl API ready, with Ingress NGINX installing via Helm](./assets/demos/devops1-01-k3s-ready-ingress.gif) | ![Container images being pulled, tagged, and pushed into the internal Harbor registry](./assets/demos/devops1-02-harbor-seeding.gif) | ![DevSecOps attack-vector scenarios deploying successfully and Harbor login succeeding](./assets/demos/devops1-03-attack-vectors.gif) |
+
+The `devops-1` environment:
+
+1. Brings a K3s node to `Ready`.
+2. Installs Ingress NGINX.
+3. Seeds an internal Harbor registry with the required container images.
+4. Deploys intentionally vulnerable DevSecOps scenarios.
+5. Exercises Falco and other runtime-security components.
+
+Example scenarios include privileged-container escape, Docker breakout, RBAC escalation, cryptominer persistence, and related attack paths.
+
+---
 
 ## Supported providers
 
+Each lab uses one provider-aware `Vagrantfile` that supports KVM/QEMU with libvirt and VirtualBox, subject to the provider-specific limitations documented below.
 
-Every lab supports both KVM/libvirt and VirtualBox from a single, unified
-`Vagrantfile` per lab — select a provider via `--provider` or
-`VAGRANT_DEFAULT_PROVIDER`.
-
-
-| Provider | Best for | Vagrantfile location |
+| Provider | Best for | Selection |
 |---|---|---|
-| **KVM/libvirt** (default) | Linux hosts with nested virtualization; best performance and the environment each lab is developed against | `<lab-path>/Vagrantfile` |
-| **VirtualBox** | Cross-platform hosts (Windows, macOS, Linux) without KVM/libvirt, or hosts where libvirt isn't available | `<lab-path>/Vagrantfile` (pass `--provider=virtualbox`) |
+| **KVM/libvirt** | Linux hosts with hardware virtualization and nested virtualization support | `vagrant up --provider=libvirt` |
+| **VirtualBox** | Supported x86_64 macOS, Windows, and Linux hosts without libvirt | `vagrant up --provider=virtualbox` |
 
+KVM/libvirt is the primary development provider and generally provides the best performance for CPU-, memory-, storage-, and network-intensive environments.
 
-Before your first `vagrant up`, run the host-readiness check — it validates
-hardware virtualization, KVM/libvirt or VirtualBox, required Vagrant plugins,
-and available disk/RAM, and prints an actionable fix for anything that fails:
-
+Before the first deployment, run the host-readiness check:
 
 ```bash
 ./scripts/check-prerequisites.sh
-# or: make prereq
 ```
 
+Or use the Make target:
 
-Run any lab with an explicit provider from the lab's directory:
+```bash
+make prereq
+```
 
+Run a lab with an explicit provider:
 
 ```bash
 vagrant up --provider=libvirt
 vagrant up --provider=virtualbox
 ```
 
-
-You can also set a default provider for your shell session instead of passing `--provider` each time:
-
+You can also define a default provider for the current shell session:
 
 ```bash
 export VAGRANT_DEFAULT_PROVIDER=virtualbox
 ```
 
+See the [Installation Guide](./docs/setup/installation.md) for provider-specific setup instructions.
 
-See [Installation Guide](./docs/setup/installation.md) for full per-provider prerequisites and setup steps, and [Known limitations](#known-limitations) below for provider differences (networking, performance, and nested virtualization).
+### Provider compatibility matrix
 
+| Component | KVM/libvirt | VirtualBox |
+|---|---|---|
+| DevOps Linux lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` |
+| Active Directory base lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` |
+| Active Directory VLAN-segmented lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` |
+| CI validation | Vagrantfile validation and provider-specific checks where runner support is available | Vagrantfile validation and provider-specific checks where runner support is available |
+| Networking | Libvirt networks with automatic detection and fallback configuration | Host-only networking and VirtualBox internal networks |
+| Network segmentation | Separate libvirt networks per segment | Isolated VirtualBox internal networks that model VLAN-like boundaries |
+| Disk storage | qcow2 with libvirt storage configuration | VDI attached through a SATA controller |
+| Nested virtualization | `host-passthrough` CPU configuration where required | Explicit nested hardware virtualization configuration |
+| Graphics | VNC through virtio video, loopback-oriented | VMSVGA or VBoxSVGA; optional GUI support through `LAB_GUI=true` |
+| Linked clones | Not applicable; libvirt commonly uses backing-file images | Supported through VirtualBox linked clones |
+| Guest additions | Not required for libvirt workflows | `vagrant-vbguest` is optional |
+| Recommended use | Primary development and performance-sensitive deployments | Cross-platform compatibility on supported x86_64 hosts |
+
+The provider configuration is implemented in a unified `Vagrantfile` per lab rather than separate provider-specific files.
+
+---
 
 ## Prerequisites
 
-- **Host OS:** Linux (for KVM/libvirt, the default provider) — or macOS, Windows, or Linux without libvirt (for VirtualBox). See [Supported providers](#supported-providers).
-- **Virtualization:** [Vagrant](https://developer.hashicorp.com/vagrant/docs) >= 2.2, plus either [vagrant-libvirt](https://github.com/vagrant-libvirt/vagrant-libvirt) (KVM/QEMU) or [VirtualBox](https://www.virtualbox.org/) 7.0+ (built into Vagrant, no plugin needed). Hardware virtualization (Intel VT-x / AMD-V) enabled in the host BIOS/UEFI.
-- **Vagrant plugins:** `vagrant-reload`, `vagrant-winrm` (all labs); `vagrant-libvirt`, `vagrant-hostmanager` (libvirt); `vagrant-vbguest` (VirtualBox, optional).
-- **Resources:** 16 GB RAM minimum (32 GB+ recommended for full-profile deployments), 100–200 GB free disk depending on the lab and profile.
-- **Python:** 3.10+ with `pip`, for the contributor tooling in [Development quickstart](#development-quickstart) and each lab's `vagrant_manager.py`.
+### Host requirements
 
-Run `./scripts/check-prerequisites.sh` (or `make prereq`) to validate all of the above automatically before your first `vagrant up` — see [Quick start](#quick-start).
+- **Linux host:** Required for KVM/QEMU with libvirt.
+- **macOS, Windows, or Linux host:** Supported with VirtualBox on compatible Intel/AMD x86_64 systems.
+- **Apple Silicon and ARM hosts:** Not currently supported for the VirtualBox-based labs.
+- **Hardware virtualization:** Intel VT-x or AMD-V must be enabled in the host BIOS/UEFI.
+- **Vagrant:** Version 2.2 or newer.
+- **Virtualization provider:** Either KVM/QEMU with libvirt or VirtualBox 7.0 or newer.
 
+### Vagrant plugins
+
+The required plugins vary by provider and lab. Common plugins include:
+
+- `vagrant-reload`
+- `vagrant-winrm`
+- `vagrant-libvirt`
+- `vagrant-hostmanager`
+- `vagrant-vbguest`
+
+`vagrant-vbguest` is optional and may be used to manage VirtualBox Guest Additions. It is not required for basic VirtualBox support.
+
+Install the common plugins as required by the installation documentation:
+
+```bash
+vagrant plugin install vagrant-reload
+vagrant plugin install vagrant-winrm
+vagrant plugin install vagrant-hostmanager
+```
+
+For libvirt:
+
+```bash
+vagrant plugin install vagrant-libvirt
+```
+
+For optional VirtualBox guest-addition management:
+
+```bash
+vagrant plugin install vagrant-vbguest
+```
+
+### Recommended resources
+
+- **Minimum:** 16 GB RAM and approximately 100 GB of free disk space for reduced-resource deployments.
+- **Recommended:** 32 GB or more RAM and approximately 200 GB of free disk space for full-profile deployments.
+- **CPU:** A multi-core x86_64 processor with hardware virtualization support.
+- **Network:** Internet access for initial box, package, and container-image retrieval unless using an already prepared or internally mirrored environment.
+- **Python:** Python 3.10 or newer with `pip` for contributor tooling and lab management utilities.
+
+Run the automated host-readiness check before deployment:
+
+```bash
+./scripts/check-prerequisites.sh
+```
+
+---
 
 ## Quick start
+
+Clone the repository:
 
 ```bash
 git clone https://github.com/solo2121/security-engineering-lab.git
 cd security-engineering-lab
+```
 
-# Validate your host meets the prerequisites above
+Validate the host:
+
+```bash
 ./scripts/check-prerequisites.sh
+```
 
-# Pick a lab and bring it up (KVM/libvirt is the default provider)
+Select a lab. For example:
+
+```bash
 cd labs/security/active-directory/base
-vagrant up
-vagrant status
+```
 
-# Or explicitly choose a provider
+Start the default provider:
+
+```bash
+vagrant up
+```
+
+Check the VM state:
+
+```bash
+vagrant status
+```
+
+To use VirtualBox explicitly:
+
+```bash
 vagrant up --provider=virtualbox
 ```
 
-> **Note:** Each lab also ships a `vagrant_manager.py` (Python, `rich`-based)
-> for interactive or scripted VM management — start/stop individual VMs,
-> switch `LAB_PROFILE`, and select `--provider` without hand-typing raw
-> `vagrant` commands. See [Common workflows](#common-workflows) below and
-> each lab's own README.
+To use libvirt explicitly:
 
-See [Installation Guide](./docs/setup/installation.md) for the full walkthrough per lab, and [Quickstart Examples](./docs/setup/quickstart-examples.md) for more deployment patterns.
+```bash
+vagrant up --provider=libvirt
+```
 
+Each lab includes a Python-based `vagrant_manager.py` for interactive or scripted VM management. Run it from the selected lab directory:
+
+```bash
+python3 vagrant_manager.py
+```
+
+Examples:
+
+```bash
+python3 vagrant_manager.py up kali dc01
+python3 vagrant_manager.py up --provider virtualbox
+```
+
+See the following documentation for additional deployment patterns:
+
+- [Installation Guide](./docs/setup/installation.md)
+- [Quickstart Examples](./docs/setup/quickstart-examples.md)
+- [Learning Path](./docs/project/learning-path.md)
+
+---
 
 ## What this project demonstrates
 
-
 | Domain | Capabilities | Location |
 |---|---|---|
-| Active Directory Security | Domain deployment, AD CS, credential attack paths, privilege escalation research, and post-exploitation workflows | `labs/security/active-directory/base/` |
-| Network Segmentation | VLAN design, routing boundaries, trust separation, and segmentation-aware attack paths | `labs/security/active-directory/vlan-segmented/` |
-| DevOps / DevSecOps | Kubernetes operations, GitOps, observability, runtime security, and policy enforcement | `labs/infrastructure/devops-linux-lab/` |
+| Active Directory security | Domain deployment, AD CS, credential attack paths, privilege-escalation research, and post-exploitation workflows | `labs/security/active-directory/base/` |
+| Network segmentation | VLAN-like boundaries, routing separation, trust relationships, and segmentation-aware attack paths | `labs/security/active-directory/vlan-segmented/` |
+| DevOps and DevSecOps | Kubernetes operations, GitOps, observability, runtime security, and policy enforcement | `labs/infrastructure/devops-linux-lab/` |
 | Infrastructure as Code | Vagrant, Ansible, and automation workflows | Repository-wide |
-| Security Documentation | Architecture, threat models, setup guides, troubleshooting, and learning paths | `docs/` |
-
+| Security documentation | Architecture, threat models, setup guides, troubleshooting, and learning paths | `docs/` |
+| Validation and quality engineering | Python tests, Bash tests, linting, documentation checks, and CI workflows | `.github/`, `tests/`, and `scripts/` |
 
 ---
-
 
 ## Architecture overview
 
+[![Enterprise Infrastructure Architecture](./assets/diagrams/architecture-overview.png)](./assets/diagrams/)
 
-[![Enterprise Infrastructure Architecture](assets/diagrams/architecture-overview.png)](./assets/diagrams/)
+Lab environments are deployed independently using their own Vagrant configurations.
 
+The primary architecture uses KVM/QEMU with libvirt. VirtualBox is supported through the same provider-aware Vagrantfiles for compatible x86_64 hosts.
 
-Lab environments are deployed independently using their own Vagrant configurations. KVM/QEMU with libvirt is the default provider; each lab's `Vagrantfile` also supports VirtualBox for hosts without libvirt (`--provider=virtualbox`) — see [Supported providers](#supported-providers).
+The labs are designed to demonstrate:
 
+- Isolated security research environments.
+- Enterprise-style Active Directory infrastructure.
+- Segmented network boundaries.
+- Controlled routing and trust relationships.
+- Kubernetes and containerized workloads.
+- Runtime-security monitoring.
+- Reproducible infrastructure deployment.
+- Automated validation and documentation workflows.
 
-See:
+The VLAN-segmented lab models enterprise network segmentation. Libvirt uses separate virtual networks, while VirtualBox uses isolated internal networks that provide VLAN-like boundaries. The VirtualBox implementation does not reproduce physical 802.1Q tagging.
 
+See the following documents for architecture details, trust boundaries, and design decisions:
 
 - [Architecture Overview](./docs/architecture/architecture.md)
 - [Security Scope](./docs/security-scope.md)
-
-
-for architecture details, trust boundaries, and design decisions.
-
+- [Threat Model](./docs/architecture/threat-model.md)
+- [Emergency Isolation Runbook](./docs/architecture/emergency-isolation-runbook.md)
 
 ---
-
 
 ## Lab environments
 
-
 ### Lab 1 — Active Directory Pentest Lab
-
 
 **Path:** [labs/security/active-directory/base/](./labs/security/active-directory/base/)
 
+This environment focuses on Windows enterprise-style infrastructure and Active Directory security research.
 
-Focus areas:
+Focus areas include:
 
-
-- Windows enterprise-style infrastructure.
-- Active Directory security.
+- Windows Server infrastructure.
+- Active Directory Domain Services.
 - Kerberos authentication.
-- AD Certificate Services (AD CS).
-- Privilege escalation research.
+- LDAP.
+- Active Directory Certificate Services.
+- Credential attack paths.
+- Privilege-escalation research.
 - Post-exploitation workflows.
-- Detection engineering concepts.
+- Detection-engineering concepts.
 
+The lab uses a unified `Vagrantfile` supporting both KVM/libvirt and VirtualBox on compatible hosts.
 
-**VirtualBox support:** this lab now ships a single unified `Vagrantfile` supporting both KVM/QEMU (libvirt) and VirtualBox — select a provider with `vagrant up --provider=libvirt` or `vagrant up --provider=virtualbox`. See the lab README for provider-specific instructions.
-
+See the lab README for provider-specific instructions, resource profiles, and attack-simulation guidance.
 
 ---
 
-
-### Lab 2 — Active Directory Pentest Lab (VLAN Edition)
-
+### Lab 2 — Active Directory Pentest Lab — VLAN Edition
 
 **Path:** [labs/security/active-directory/vlan-segmented/](./labs/security/active-directory/vlan-segmented/)
 
+This environment extends the Active Directory lab with segmented network architectures and controlled routing boundaries.
 
-Focus areas:
-
+Focus areas include:
 
 - Active Directory with network segmentation.
-- VLAN boundaries.
+- VLAN-like network boundaries.
 - Controlled routing.
-- Lateral movement constraints.
-- Enterprise network security concepts.
+- Trust separation.
+- Lateral-movement constraints.
+- Segmentation-aware attack paths.
+- Enterprise network-security concepts.
+- Detection and response across network boundaries.
 
+The environment demonstrates how segmentation influences attack paths, trust relationships, and adversary movement.
 
-This environment demonstrates how segmentation influences attack paths, trust boundaries, and adversary movement.
+The lab uses a unified `Vagrantfile` supporting both KVM/libvirt and VirtualBox on compatible hosts.
 
-
-**VirtualBox support:** this lab now ships a single unified `Vagrantfile` supporting both KVM/QEMU (libvirt) and VirtualBox — select a provider with `vagrant up --provider=libvirt` or `vagrant up --provider=virtualbox`. See the lab README for provider-specific instructions.
-
+See the lab README and [lab-specific troubleshooting guide](./labs/security/active-directory/vlan-segmented/docs/troubleshooting.md) for additional information.
 
 ---
 
-
-### Lab 3 — DevOps / DevSecOps Lab
-
+### Lab 3 — DevOps and DevSecOps Lab
 
 **Path:** [labs/infrastructure/devops-linux-lab/](./labs/infrastructure/devops-linux-lab/)
 
+This environment focuses on Linux-based DevOps, Kubernetes operations, platform engineering, and runtime-security workflows.
 
-Focus areas:
+Focus areas include:
 
-
-- Kubernetes operations.
+- Kubernetes administration.
+- K3s.
 - GitOps workflows.
+- Argo CD.
 - Infrastructure automation.
+- Harbor registry operations.
 - Observability.
-- Runtime security.
-- Policy enforcement.
+- Prometheus and Grafana.
+- Loki logging.
+- Falco runtime security.
+- Kyverno policy enforcement.
 - Platform engineering workflows.
-- Integrated CI/CD and security validation workflows.
+- Integrated CI/CD and security validation.
 
+The lab uses a unified `Vagrantfile` supporting both KVM/libvirt and VirtualBox on compatible hosts.
 
-**VirtualBox support:** This lab uses a single unified Vagrantfile supporting both KVM/libvirt and VirtualBox — select the provider with `vagrant up --provider=virtualbox` (or `--provider=libvirt`). See the lab README for provider-specific instructions.
-
+See the lab README for provider-specific deployment requirements and resource profiles.
 
 ---
 
-
 ## Project overview
 
-
-Security Engineering Lab demonstrates the integration of:
-
+Security Engineering Lab integrates:
 
 - Offensive security research.
 - Linux system administration.
@@ -257,81 +438,98 @@ Security Engineering Lab demonstrates the integration of:
 - Cloud-native technologies.
 - DevOps and DevSecOps practices.
 - Security validation workflows.
+- Detection-engineering concepts.
+- Reproducible lab deployment.
 
+The goal is to provide a realistic but isolated environment for learning how modern infrastructure is deployed, attacked, secured, monitored, and validated.
 
-The goal is to provide a realistic but isolated environment for learning how modern infrastructure is deployed, attacked, secured, and monitored.
-
+All security testing is intended for systems owned by the operator or explicitly authorized for testing.
 
 ---
-
 
 ## Highlights
 
+### Active Directory security research
 
-- **Active Directory security research**
-  - Kerberoasting.
-  - AS-REP roasting.
-  - AD CS abuse scenarios.
-  - NTLM relay concepts.
-  - DCSync.
-  - Kerberos ticket attacks.
+- Kerberoasting.
+- AS-REP roasting.
+- Active Directory Certificate Services abuse scenarios.
+- Credential attack paths.
+- NTLM relay concepts.
+- DCSync research.
+- Kerberos ticket attacks.
+- Privilege-escalation workflows.
+- Post-exploitation and detection concepts.
 
+### Segmented security environments
 
-- **Segmented security lab environments**
-  - VLAN-based architectures.
-  - Routing boundaries.
-  - Controlled trust relationships.
-  - Segmentation-aware testing.
+- VLAN-like network architectures.
+- Separate trust boundaries.
+- Controlled routing.
+- Segmentation-aware testing.
+- Lateral-movement constraints.
+- Enterprise network-security concepts.
 
+### DevSecOps platform engineering
 
-- **DevSecOps platform engineering**
-  - Kubernetes.
-  - GitOps.
-  - Observability.
-  - Runtime security.
-  - Policy enforcement.
+- Kubernetes.
+- K3s.
+- GitOps.
+- Argo CD.
+- Observability.
+- Runtime security.
+- Policy enforcement.
+- Harbor registry workflows.
+- Container-security testing.
+- Security validation in CI/CD.
 
+### Infrastructure automation
 
-- **Infrastructure automation**
-  - Reproducible deployments.
-  - Vagrant-based provisioning.
-  - Ansible automation.
-  - CI validation.
+- Reproducible deployments.
+- Vagrant-based provisioning.
+- KVM/libvirt automation.
+- VirtualBox provider support.
+- Ansible workflows.
+- Bash and Python tooling.
+- Host-readiness validation.
+- CI-based quality checks.
 
+### Security engineering documentation
 
-- **Security engineering documentation**
-  - Architecture documentation.
-  - Threat modeling.
-  - Deployment guides.
-  - Troubleshooting workflows.
-
+- Architecture documentation.
+- Threat modeling.
+- Security scope definition.
+- Installation guides.
+- Attack-simulation guides.
+- Troubleshooting workflows.
+- Emergency isolation procedures.
+- Learning paths and portfolio documentation.
 
 ---
 
-
 ## Portfolio and learning goals
 
-
-This repository demonstrates practical hands-on experience with:
-
+This repository demonstrates practical experience with:
 
 - Linux administration.
 - Active Directory environments.
 - Infrastructure automation.
-- KVM/libvirt and VirtualBox virtualization.
+- KVM, QEMU, libvirt, and VirtualBox.
+- Vagrant and Ansible.
 - Kubernetes administration.
 - GitOps workflows.
 - Infrastructure as Code.
 - DevSecOps engineering.
-- Detection engineering concepts.
+- Detection-engineering concepts.
 - Security testing methodologies.
+- Reproducible environment design.
+- Technical documentation and project organization.
 
+The recommended progression is documented in the [Learning Path](./docs/project/learning-path.md).
 
 ---
 
-
 ## Repository structure
-
 
 ```text
 security-engineering-lab/
@@ -343,6 +541,7 @@ security-engineering-lab/
 ├── assets/
 │   ├── diagrams/
 │   │   └── architecture-overview.png
+│   ├── demos/
 │   └── README.md
 ├── docs/
 │   ├── architecture/
@@ -375,9 +574,8 @@ security-engineering-lab/
 │   └── security/
 │       ├── active-directory/
 │       │   ├── base/
-│       │   ├── vlan-segmented/
-│       ├── README.md
-│       └── requirements.txt
+│       │   └── vlan-segmented/
+│       └── README.md
 ├── scripts/
 │   ├── check_doc_references.py
 │   ├── check-prerequisites.sh
@@ -430,212 +628,336 @@ security-engineering-lab/
 └── SECURITY.md
 ```
 
-
 ---
-
 
 ## Common workflows
 
+### Rebuild a single VM
+
+Run these commands from the lab directory:
+
 ```bash
-# Rebuild a single VM from scratch
-vagrant destroy dc01 -f && vagrant up dc01
+vagrant destroy dc01 -f
+vagrant up dc01
+```
 
-# Snapshot before a risky attack step, and roll back after
+### Save and restore snapshots
+
+Create a snapshot before a risky laboratory exercise:
+
+```bash
 vagrant snapshot save dc01 clean-install
+```
+
+Restore the snapshot afterward:
+
+```bash
 vagrant snapshot restore dc01 clean-install
+```
 
-# Re-run provisioning without recreating VMs
+### Re-run provisioning
+
+Re-run provisioning without recreating the virtual machines:
+
+```bash
 vagrant provision
+```
 
-# Interactive VM management (start/stop individual VMs, switch
-# LAB_PROFILE, select --provider) instead of raw vagrant commands
-python3 scripts/vagrant_manager.py
-python3 scripts/vagrant_manager.py up kali dc01
-python3 scripts/vagrant_manager.py up --provider virtualbox
+### Use the lab manager
 
-# Tear the lab down completely
+Run the manager from the selected lab directory:
+
+```bash
+python3 vagrant_manager.py
+```
+
+Examples:
+
+```bash
+python3 vagrant_manager.py up kali dc01
+python3 vagrant_manager.py up --provider virtualbox
+```
+
+The manager can be used to:
+
+- Start or stop individual VMs.
+- Select a provider.
+- Switch laboratory profiles.
+- Inspect VM status.
+- Run common Vagrant operations.
+
+### Destroy the complete lab
+
+```bash
 vagrant destroy -f
 ```
 
-For full attack-simulation walkthroughs (domain compromise, AD CS
-abuse, password attacks, LLM/OWASP scenarios, cloud-pentest scenarios),
-see [Guides](./docs/guides/) and each lab's `docs/attack-guide.md`. For
-more snapshot/rebuild patterns per provider, see [Vagrant Management
-Tutorial](./docs/guides/infrastructure/vagrant-management-tutorial.md)
-and [Quickstart Examples](./docs/setup/quickstart-examples.md).
+For complete attack-simulation walkthroughs, see:
 
+- [Guides](./docs/guides/)
+- Each lab's `docs/attack-guide.md`
+- [Vagrant Management Tutorial](./docs/guides/infrastructure/vagrant-management-tutorial.md)
+- [Quickstart Examples](./docs/setup/quickstart-examples.md)
+
+---
 
 ## Troubleshooting
 
-Common first steps for a stuck lab:
+### `vagrant up` hangs or times out
 
-- **`vagrant up` hangs or times out:** confirm hardware virtualization
-  is enabled in your BIOS/UEFI and that `./scripts/check-prerequisites.sh`
-  passes. See [Prerequisites](#prerequisites).
-- **Wrong provider, or a mid-deployment provider switch:** `vagrant
-  destroy -f` and re-run `vagrant up --provider=<libvirt|virtualbox>`
-  explicitly — a VM created under one provider can't be reused under
-  the other.
-- **WinRM/SSH connection failures on Windows VMs:** usually a slow boot,
-  not a real failure; re-run `vagrant up` (or `vagrant provision`) once
-  the VM finishes booting.
-- **Network/VLAN conflicts:** check for a stale `br-*` (libvirt) or
-  internal-network (VirtualBox) definition left over from a prior
-  `vagrant destroy` that didn't clean up networking.
+Confirm that:
 
-Full common-issues reference with exact error messages and fixes:
-[Troubleshooting Guide](./docs/setup/troubleshooting.md). Lab-specific
-troubleshooting: [vlan-segmented](./labs/security/active-directory/vlan-segmented/docs/troubleshooting.md).
+- Hardware virtualization is enabled in the BIOS/UEFI.
+- The selected provider is installed and available.
+- The prerequisites script completes successfully.
+- The host has sufficient CPU, RAM, and storage.
+- The selected lab profile is appropriate for the host.
 
+Run:
+
+```bash
+./scripts/check-prerequisites.sh
+```
+
+### The wrong provider was selected
+
+A VM created with one provider cannot normally be reused with another provider.
+
+Destroy the existing environment and select the provider explicitly:
+
+```bash
+vagrant destroy -f
+vagrant up --provider=libvirt
+```
+
+Or:
+
+```bash
+vagrant destroy -f
+vagrant up --provider=virtualbox
+```
+
+### WinRM or SSH connection failures
+
+Windows guests may require additional time to complete boot, networking, and service initialization.
+
+Try:
+
+```bash
+vagrant up
+```
+
+again after the VM finishes booting, or re-run provisioning:
+
+```bash
+vagrant provision
+```
+
+Also verify:
+
+- The guest has completed its reboot cycle.
+- The expected network interface is available.
+- The provider has assigned the expected address.
+- The selected Vagrant box is available and compatible.
+
+### Network or segmentation conflicts
+
+Check for stale resources left behind after an interrupted deployment:
+
+- Libvirt bridges and networks.
+- VirtualBox host-only adapters.
+- VirtualBox internal-network definitions.
+- Previously allocated IP ranges.
+- Conflicting `NETWORK_BASE` settings.
+
+A complete destroy and clean redeployment may be required:
+
+```bash
+vagrant destroy -f
+vagrant up
+```
+
+For the complete troubleshooting reference, see the [Troubleshooting Guide](./docs/setup/troubleshooting.md).
+
+For VLAN-segmented lab issues, see the [VLAN lab troubleshooting guide](./labs/security/active-directory/vlan-segmented/docs/troubleshooting.md).
 
 ---
-
 
 ## Skills demonstrated
 
-
-| Area | Technologies |
+| Area | Technologies and concepts |
 |---|---|
-| Linux Administration | Ubuntu, Rocky Linux, AlmaLinux, openSUSE |
+| Linux administration | Ubuntu, Rocky Linux, AlmaLinux, openSUSE |
 | Virtualization | KVM, QEMU, libvirt, VirtualBox, Vagrant |
 | Infrastructure as Code | Vagrant, Ansible |
 | DevOps | Git, GitHub Actions, CI/CD workflows |
-| Kubernetes | K3s |
+| Kubernetes | K3s, Kubernetes administration |
 | GitOps | Argo CD |
 | Monitoring | Prometheus, Grafana, Loki |
-| Runtime Security | Falco |
-| Policy Security | Kyverno |
+| Runtime security | Falco |
+| Policy security | Kyverno |
 | Containers | Docker, Harbor |
 | Active Directory | Windows Server, Kerberos, LDAP |
-| AD CS | Certificate services and escalation scenarios |
-| Detection Engineering | MITRE ATT&CK concepts, log analysis |
-| Security Testing | Nmap, BloodHound, Metasploit, Hashcat |
-
+| AD CS | Certificate Services and escalation scenarios |
+| Detection engineering | MITRE ATT&CK concepts and log analysis |
+| Security testing | Nmap, BloodHound, Metasploit, and Hashcat |
 
 ---
-
 
 ## Documentation hub
 
-
 | Document | Purpose |
 |---|---|
-| [Documentation Index](./docs/README.md) | Full map of every doc under `docs/`, grouped by topic |
-| [Learning Path](./docs/project/learning-path.md) | Recommended learning progression |
-| [Architecture](./docs/architecture/architecture.md) | Infrastructure design |
-| [Security Scope](./docs/security-scope.md) | Security boundaries |
-| [Roadmap](./docs/project/roadmap.md) | Planned improvements and future lab development |
+| [Documentation Index](./docs/README.md) | Map of documentation under `docs/`, grouped by topic |
+| [Learning Path](./docs/project/learning-path.md) | Recommended progression through the labs |
+| [Architecture](./docs/architecture/architecture.md) | Infrastructure design and deployment architecture |
+| [Security Scope](./docs/security-scope.md) | Security boundaries and intended use |
+| [Roadmap](./docs/project/roadmap.md) | Planned improvements and future development |
 | [Portfolio](./docs/project/portfolio.md) | Skills and competencies demonstrated |
 | [Dependencies](./docs/dependencies.md) | Project dependencies and requirements |
-| [Guides](./docs/guides/) | Security and deployment guides |
-| [Installation Guide](./docs/setup/installation.md) | Host setup |
-| [Quickstart Examples](./docs/setup/quickstart-examples.md) | Rapid deployment examples |
-| [Troubleshooting](./docs/setup/troubleshooting.md) | Common issues |
-| [Minimal Resource Deployment](./docs/guides/optimization/minimal-resource-deployment.md) | Reduced-resource deployment |
+| [Guides](./docs/guides/) | Security, infrastructure, and deployment guides |
+| [Installation Guide](./docs/setup/installation.md) | Host and provider setup |
+| [Quickstart Examples](./docs/setup/quickstart-examples.md) | Rapid deployment patterns |
+| [Troubleshooting](./docs/setup/troubleshooting.md) | Common problems and solutions |
+| [Minimal Resource Deployment](./docs/guides/optimization/minimal-resource-deployment.md) | Reduced-resource deployment guidance |
 | [Emergency Isolation Runbook](./docs/architecture/emergency-isolation-runbook.md) | Emergency isolation procedures |
 | [Threat Model](./docs/architecture/threat-model.md) | Threat modeling documentation |
-| [Scripts](./scripts/) | Repo-wide host readiness and validation helpers |
-
+| [Scripts](./scripts/) | Host-readiness and validation helpers |
 
 ---
 
-
 ## Security and ethics
 
-
 This project is intended only for:
-
 
 - Education.
 - Authorized security research.
 - Defensive security practice.
 - Isolated laboratory environments.
+- Testing systems owned by the operator or explicitly authorized for testing.
 
+Only test systems that you own or have explicit permission to assess.
 
-Only test systems you own or where you have explicit authorization.
+Unauthorized access, testing, scanning, exploitation, credential attacks, or lateral movement against external systems is prohibited.
 
+The intentionally vulnerable workloads and attack scenarios included in this repository must remain isolated from production networks and systems.
 
-Unauthorized access, testing, or exploitation of external systems is prohibited.
+For additional security information, see:
 
+- [Security Scope](./docs/security-scope.md)
+- [Threat Model](./docs/architecture/threat-model.md)
+- [SECURITY.md](./SECURITY.md)
 
 ---
-
 
 ## Known limitations
 
-
-- Full deployment requires significant CPU, RAM, and storage.
-- The default provider is KVM/QEMU with libvirt and requires a Linux host. VirtualBox is supported on macOS, Windows, and Linux hosts without libvirt (Intel/AMD x86_64 only; does not run on Apple Silicon/ARM). Every lab selects the provider from a single unified `Vagrantfile` via `--provider`. Note: `active-directory/vlan-segmented`'s libvirt and VirtualBox configurations had functionally diverged before being unified (the VirtualBox variant had accumulated a fuller LLM01 OWASP Top-10 module, a Terraform state-file secrets-exposure scenario for cloud-pentest, and an LDIF-based AD CS template-creation technique that the libvirt variant never received); the unified Vagrantfile now runs that fuller content under both providers.
-- **Provider differences:** KVM/libvirt generally outperforms VirtualBox for CPU- and I/O-heavy workloads (e.g., the DevOps/DevSecOps lab's Kubernetes nodes) because it uses hardware-accelerated virtio devices by default. VirtualBox networking (host-only/NAT) behaves differently from libvirt's NAT/bridged networks, so IP ranges and port-forwarding assumptions in some guides are libvirt-oriented; check the lab's Vagrantfile and its README for the VirtualBox-specific network configuration. Nested virtualization (needed for K3s/Kind/K3d workloads) must be enabled explicitly on VirtualBox (`--nested-hw-virt on`) and is not guaranteed to perform as well as libvirt's KVM-backed nesting.
-- Windows evaluation media is used for laboratory environments.
+- Full-profile deployments require significant CPU, RAM, and storage.
+- The recommended full-deployment target is 32 GB or more RAM and approximately 200 GB of free disk space.
+- The primary provider is KVM/QEMU with libvirt and requires a compatible Linux host.
+- VirtualBox is supported on Intel/AMD x86_64 hosts running macOS, Windows, or Linux.
+- Apple Silicon and other ARM hosts are not currently supported for the VirtualBox-based labs.
+- Windows-based labs use Microsoft evaluation media. Users are responsible for complying with the applicable Microsoft licensing terms.
 - Some systems represent simulated enterprise services for safe security practice.
 - Third-party Vagrant boxes may change independently.
-- CI validates repository quality but does not fully deploy every environment.
-- Designed for a single-host laboratory architecture.
+- CI validates repository quality and selected provider workflows but does not fully deploy every environment on every push.
+- The project is designed primarily for a single-host laboratory architecture.
 
+### Provider differences
+
+KVM/libvirt generally outperforms VirtualBox for CPU- and I/O-intensive workloads, including Kubernetes and DevSecOps deployments, because it uses hardware-accelerated virtualization and virtio devices by default.
+
+VirtualBox networking behaves differently from libvirt networking. IP ranges, host-only adapters, NAT behavior, and port-forwarding assumptions may differ between providers. Check the selected lab's `Vagrantfile` and README before relying on provider-specific network instructions.
+
+Nested virtualization is required for some Kubernetes workloads. It must be enabled explicitly where supported by VirtualBox and may not perform as well as KVM-backed virtualization.
+
+Network segmentation is implemented differently by provider:
+
+- Libvirt uses separate virtual networks or interfaces.
+- VirtualBox uses isolated internal networks that model VLAN-like boundaries.
+- The resulting behavior may not exactly match a physical 802.1Q VLAN deployment.
+
+Provider switching generally requires destroying and recreating the environment:
+
+```bash
+vagrant destroy -f
+vagrant up --provider=<libvirt|virtualbox>
+```
 
 ---
-
 
 ## Development quickstart
 
-
-Common local commands (wrapped in a `Makefile` for convenience):
-
+Install development dependencies:
 
 ```bash
 pip install -r requirements-dev.txt
-pre-commit install
-
-
-make lint       # shellcheck (errors) + flake8 (informational)
-make test       # pytest + bats unit tests
-make validate   # vagrant validate on all lab Vagrantfiles
-make security   # bandit (informational) + detect-secrets
-make docs-refs  # dangling doc-reference check (blocks CI on a real finding)
 ```
 
+Install pre-commit hooks:
 
-Run `make help` for the full target list, including `make format`,
-`make typecheck`, `make coverage`, `make validate-repo`, `make docs`, and
-`make prereq`.
+```bash
+pre-commit install
+```
 
+Common Make targets:
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full contributor workflow,
-and [tests/README.md](./tests/README.md) for what the test suites cover.
+```bash
+make lint       # ShellCheck and Python linting
+make test       # pytest and Bats unit tests
+make validate   # Validate all lab Vagrantfiles
+make security   # Bandit and detect-secrets checks
+make docs-refs  # Check for dangling documentation references
+```
 
+Additional targets may include:
+
+```bash
+make format
+make typecheck
+make coverage
+make validate-repo
+make docs
+make prereq
+```
+
+List all available targets:
+
+```bash
+make help
+```
+
+See the following documents for development details:
+
+- [CONTRIBUTING.md](./CONTRIBUTING.md)
+- [Tests README](./tests/README.md)
+- [Scripts README](./scripts/README.md)
+- [Dependencies](./docs/dependencies.md)
 
 ---
-
 
 ## Contributing
 
-
 Contributions are welcome.
 
+Before submitting a contribution:
 
-Please:
-
-
-- Open an issue before major changes.
+- Open an issue before making major changes.
 - Keep pull requests focused.
 - Update documentation when required.
-- Follow repository contribution guidelines.
+- Add or update tests for behavioral changes.
+- Run the relevant lint, test, validation, and documentation checks.
+- Follow the repository contribution guidelines.
+- Do not include credentials, secrets, private keys, or sensitive host information.
 
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
-
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the complete contributor workflow.
 
 ---
 
-
 ## License
-
 
 This project is licensed under the MIT License.
 
-
-See [LICENSE](./LICENSE) for details.
-
+See [LICENSE](./LICENSE) for the full license text.
 
 Copyright © 2023–2026 Miguel A. Carlo
