@@ -116,8 +116,13 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y wget gnupg lsb-release build-essential dkms "linux-headers-$(uname -r)"
-          wget -qO- https://www.virtualbox.org/download/oracle_vbox_2016.asc \
-            | sudo gpg --yes --dearmor -o /usr/share/keyrings/oracle-virtualbox-2016.gpg
+          wget --retry-connrefused --tries=5 --waitretry=5 -qO /tmp/oracle_vbox_2016.asc \
+            https://download.virtualbox.org/virtualbox/debian/oracle_vbox_2016.asc
+          grep -q 'BEGIN PGP PUBLIC KEY BLOCK' /tmp/oracle_vbox_2016.asc || {
+            echo "::error::Downloaded file is not a valid PGP public key (fetch likely blocked or truncated); aborting." >&2
+            exit 1
+          }
+          sudo gpg --yes --dearmor -o /usr/share/keyrings/oracle-virtualbox-2016.gpg /tmp/oracle_vbox_2016.asc
           echo "deb [arch=amd64 signed-by=/usr/share/keyrings/oracle-virtualbox-2016.gpg] \
             https://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" \
             | sudo tee /etc/apt/sources.list.d/virtualbox.list
