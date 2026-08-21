@@ -1288,10 +1288,10 @@ Vagrant.configure("2") do |config|
             chmod 600 /conf/config.xml
             
             /usr/local/sbin/configctl interface reconfigure
-            /usr/local/sbin/configctl dhcpd configure
-            /usr/local/sbin/configctl filter configure
+            /usr/local/sbin/configctl dhcpd restart
+            /usr/local/sbin/configctl filter reload
             /usr/local/sbin/configctl webgui restart
-            /usr/local/sbin/configctl system sshd restart
+            /usr/local/sbin/configctl sshd restart
             
             sleep 10
             /sbin/reboot
@@ -1306,8 +1306,8 @@ Vagrant.configure("2") do |config|
             #!/bin/sh
             sleep 60
             /usr/local/sbin/configctl interface reconfigure
-            /usr/local/sbin/configctl dhcpd configure
-            /usr/local/sbin/configctl filter configure
+            /usr/local/sbin/configctl dhcpd restart
+            /usr/local/sbin/configctl filter reload
             touch /root/opnsense-configured
             echo "OPNSENSE CONFIGURED SUCCESSFULLY"
           SHELL
