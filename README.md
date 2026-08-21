@@ -9,9 +9,7 @@
 
 **Security Engineering Lab** is a modular, Vagrant-provisioned security and infrastructure engineering lab for practicing Active Directory security, network segmentation, Kubernetes, DevSecOps workflows, Linux administration, and infrastructure automation.
 
-The repository contains deployable lab environments, provisioning automation, validation workflows, and technical documentation. KVM/QEMU with libvirt is the primary development provider; VirtualBox is supported through the same provider-aware `Vagrantfile` used by each lab.
-
-This repository is designed to be **runnable, not static**. The environments, automation, documentation, and workflows are implemented as deployable lab systems using Vagrant and KVM/QEMU with libvirt. Every lab also supports VirtualBox on compatible Intel/AMD x86_64 hosts.
+This repository is designed to be **runnable, not static**. It provides deployable lab environments, provisioning automation, validation workflows, and technical documentation. KVM/QEMU with libvirt is the primary development provider, while every lab also supports VirtualBox on compatible x86_64 hosts.
 
 **Maintained by:** Miguel A. Carlo (`solo2121`)  
 **Project status:** Active development
@@ -47,6 +45,8 @@ Start here: [Learning Path](./docs/project/learning-path.md) provides the recomm
   - [Prerequisites](#prerequisites)
     - [Host requirements](#host-requirements)
     - [Vagrant plugins](#vagrant-plugins)
+      - [Provider and lab plugins](#provider-and-lab-plugins)
+      - [Optional VirtualBox plugin](#optional-virtualbox-plugin)
     - [Recommended resources](#recommended-resources)
   - [Quick start](#quick-start)
   - [What this project demonstrates](#what-this-project-demonstrates)
@@ -167,7 +167,7 @@ See the [Installation Guide](./docs/setup/installation.md) for provider-specific
 | DevOps Linux lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` |
 | Active Directory base lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` |
 | Active Directory VLAN-segmented lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` |
-| CI validation | Vagrantfile validation and provider-specific checks where runner support is available | Vagrantfile validation and provider-specific checks where runner support is available |
+| CI validation | Repository validation and selected provider checks where runner support is available | Repository validation and selected provider checks where runner support is available |
 | Networking | Libvirt networks with automatic detection and fallback configuration | Host-only networking and VirtualBox internal networks |
 | Network segmentation | Separate libvirt networks per segment | Isolated VirtualBox internal networks that model VLAN-like boundaries |
 | Disk storage | qcow2 with libvirt storage configuration | VDI attached through a SATA controller |
@@ -194,15 +194,16 @@ The provider configuration is implemented in a unified `Vagrantfile` per lab rat
 
 ### Vagrant plugins
 
-The required plugins vary by provider and lab. Common plugins include:
+The required plugins vary by provider and lab.
+
+#### Provider and lab plugins
+
+Common provider or lab plugins include:
 
 - `vagrant-reload`
 - `vagrant-winrm`
-- `vagrant-libvirt`
 - `vagrant-hostmanager`
-- `vagrant-vbguest`
-
-`vagrant-vbguest` is optional and may be used to manage VirtualBox Guest Additions. It is not required for basic VirtualBox support.
+- `vagrant-libvirt`
 
 Install the common plugins as required by the installation documentation:
 
@@ -218,7 +219,9 @@ For libvirt:
 vagrant plugin install vagrant-libvirt
 ```
 
-For optional VirtualBox guest-addition management:
+#### Optional VirtualBox plugin
+
+`vagrant-vbguest` is optional and may be used to manage VirtualBox Guest Additions. It is not required for basic VirtualBox support:
 
 ```bash
 vagrant plugin install vagrant-vbguest
@@ -296,6 +299,13 @@ Examples:
 ```bash
 python3 vagrant_manager.py up kali dc01
 python3 vagrant_manager.py up --provider virtualbox
+```
+
+Verify the exact command syntax with:
+
+```bash
+python3 vagrant_manager.py --help
+python3 vagrant_manager.py up --help
 ```
 
 See the following documentation for additional deployment patterns:
@@ -542,6 +552,12 @@ security-engineering-lab/
 │   ├── diagrams/
 │   │   └── architecture-overview.png
 │   ├── demos/
+│   │   ├── dc01-01-boot-provider-detect.gif
+│   │   ├── dc01-02-ad-promotion-success.gif
+│   │   ├── dc01-03-healthcheck-manager.gif
+│   │   ├── devops1-01-k3s-ready-ingress.gif
+│   │   ├── devops1-02-harbor-seeding.gif
+│   │   └── devops1-03-attack-vectors.gif
 │   └── README.md
 ├── docs/
 │   ├── architecture/
@@ -685,6 +701,13 @@ The manager can be used to:
 - Switch laboratory profiles.
 - Inspect VM status.
 - Run common Vagrant operations.
+
+Verify the exact command syntax with:
+
+```bash
+python3 vagrant_manager.py --help
+python3 vagrant_manager.py up --help
+```
 
 ### Destroy the complete lab
 
