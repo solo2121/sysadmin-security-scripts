@@ -241,7 +241,7 @@ end
 VM_CONFIG = {
   'opnsense' => {
     box: PROVIDER == :libvirt ? 'harmonnine/opnsense-kvm' : 'harmonnine/opnsense',
-    box_version: (PROVIDER == :libvirt ? '24.7' : 'latest'), memory: 2048, cpus: 2, disk_size: 20,
+    box_version: 'latest', memory: 2048, cpus: 2, disk_size: 20,
     hostname: 'opnsense', guest: :linux, vlan: 10, host_number: 1, autostart: true,
     health_check: { type: :http, port: 80, path: '/', timeout: 300 }
   },
