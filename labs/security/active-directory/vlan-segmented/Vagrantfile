@@ -619,6 +619,7 @@ def configure_libvirt(vm, config)
     libvirt.qemu_use_session = false
     libvirt.uri = 'qemu:///system'
     libvirt.mgmt_attach = true
+    libvirt.ip_command = "/sbin/ip"
 
     if config[:guest] == :windows
       libvirt.cpu_mode = "host-passthrough"

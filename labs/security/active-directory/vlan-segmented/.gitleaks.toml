@@ -1,0 +1,8 @@
+[extend]
+useDefault = true
+
+[[rules]]
+id = "lab-credentials"
+description = "Lab credential patterns (intentional test data)"
+regex = '(JoinP@ss!|LabAdmin123!|Passw0rd!|Vagrant123!|opnsense|DOMAIN_JOIN_PASS)'
+ignore = true
