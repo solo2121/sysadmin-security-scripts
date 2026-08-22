@@ -1292,9 +1292,6 @@ Vagrant.configure("2") do |config|
             /usr/local/sbin/configctl filter reload
             /usr/local/sbin/configctl webgui restart
             /usr/local/sbin/configctl openssh restart
-            
-            sleep 10
-            /sbin/reboot
           SHELL
         
         vm.vm.provision :reload, name: "opnsense-reload-1"
