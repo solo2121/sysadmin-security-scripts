@@ -50,7 +50,7 @@ A complete Linux DevSecOps deployment, from K3s bootstrap through Harbor image s
 
 | 1. K3s node ready | 2. Airgapped image seeding | 3. Security-test scenarios deploy |
 |---|---|---|
-| ![K3s node Ready and kubectl API ready, with Ingress NGINX installing via Helm](./assets/demos/devops1-01-k3s-ready-ingress.gif) | ![Container images being pulled, tagged, and pushed into the airgapped Harbor registry](./assets/demos/devops1-02-harbor-seeding.gif) | ![DevSecOps attack-vector scenarios deploying successfully, ending with Harbor login succeeding](./assets/demos/devops1-03-attack-vectors.gif) |
+| ![K3s node Ready and kubectl API ready, with Ingress NGINX installing via Helm](./assets/demos/devops1-01-k3s-ready-ingress.gif) | ![Container images being pulled, tagged, and pushed into the airgapped Harbor registry](./assets/demos/devops1-02-harbor-seeding.gif) | ![Authorized DevSecOps security-test scenarios deploying successfully, ending with Harbor login succeeding](./assets/demos/devops1-03-attack-vectors.gif) |
 
 ### VLAN-segmented Active Directory lab
 
@@ -152,12 +152,12 @@ Focus areas include:
 - Kerberos authentication
 - LDAP
 - Active Directory Certificate Services
-- Credential-access and identity-attack simulation paths
+- Credential-access and identity attack-path simulation
 - Privilege-escalation simulation and detection research
 - Post-compromise simulation and detection workflows
 - Detection-engineering concepts
 
-See the [lab README](./labs/security/active-directory/base/) for provider-specific instructions, resource profiles, and authorized attack-simulation guidance.
+See the [lab README](./labs/security/active-directory/base/) for provider-specific instructions, resource profiles, and authorized security-testing guidance.
 
 ### Segmented Active Directory Lab
 
@@ -168,7 +168,7 @@ Focus areas include:
 - Active Directory with segmented network boundaries
 - Controlled routing and trust separation
 - Lateral-movement constraints
-- Segmentation-aware security testing
+- Segmentation-aware security-testing scenarios
 - Enterprise network-security concepts
 - Detection and response across network boundaries
 
@@ -254,8 +254,8 @@ See the [Installation Guide](./docs/setup/installation.md) for provider-specific
 
 ### Recommended resources
 
-- **Reduced-resource deployments:** At least 16 GB RAM and approximately 100 GB free disk space. Availability depends on the selected lab and resource profile
-- **Full-profile deployments:** 32 GB or more RAM and approximately 200 GB of free disk space
+- **Reduced-resource deployments:** At least 16 GB RAM and approximately 100 GB free disk space; availability depends on the selected lab and resource profile
+- **Full-profile deployments:** 32 GB or more RAM and approximately 200 GB free disk space
 - **CPU:** Multi-core processor with hardware virtualization support
 - **Storage:** SSD or NVMe storage is strongly recommended for Kubernetes, Windows Server, and multi-VM workloads
 
@@ -313,7 +313,7 @@ See the following documents for architecture details, trust boundaries, and desi
 | Domain | Capabilities | Location |
 |---|---|---|
 | Active Directory security | Domain deployment, AD CS, identity attack-path simulation, privilege-escalation research, and post-compromise workflows | `labs/security/active-directory/base/` |
-| Network segmentation | VLAN-like boundaries, routing separation, trust relationships, and segmentation-aware attack paths | `labs/security/active-directory/vlan-segmented/` |
+| Network segmentation | VLAN-like boundaries, routing separation, trust relationships, and segmentation-aware security-testing scenarios | `labs/security/active-directory/vlan-segmented/` |
 | DevOps and DevSecOps | Kubernetes operations, GitOps, observability, runtime security, and policy enforcement | `labs/infrastructure/devops-linux-lab/` |
 | Infrastructure as Code | Vagrant, Ansible, Bash, Python, and automation workflows | Repository-wide |
 | Security documentation | Architecture, threat models, setup guides, troubleshooting, and learning paths | `docs/` |
@@ -488,6 +488,37 @@ See the [Troubleshooting Guide](./docs/setup/troubleshooting.md) and [VLAN lab t
 | [Minimal Resource Deployment](./docs/guides/optimization/minimal-resource-deployment.md) | Reduced-resource deployment guidance |
 | [Guides](./docs/guides/) | Security, infrastructure, and deployment guides |
 | [Scripts](./scripts/) | Host-readiness and validation helpers |
+
+---
+
+## Repository structure
+
+```text
+security-engineering-lab/
+├── .github/                # CI workflows, issue templates, and repository automation
+├── assets/                 # Architecture diagrams and deployment demonstrations
+├── docs/                   # Architecture, setup, security, project, and guide documentation
+├── examples/               # Example configurations and reference material
+├── labs/
+│   ├── infrastructure/
+│   │   └── devops-linux-lab/
+│   └── security/
+│       └── active-directory/
+│           ├── base/
+│           └── vlan-segmented/
+├── scripts/                # Host-readiness, validation, and automation helpers
+├── tests/                  # pytest, Bats, and repository validation tests
+├── tools/                  # Standalone lab and security utilities
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── Makefile
+├── README.md
+├── SECURITY.md
+└── pyproject.toml
+```
+
+See the [Documentation Index](./docs/README.md) for the complete documentation map and each lab directory for provider-specific deployment instructions.
 
 ---
 
