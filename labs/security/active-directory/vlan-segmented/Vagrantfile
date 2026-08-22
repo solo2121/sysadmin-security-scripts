@@ -1251,6 +1251,14 @@ Vagrant.configure("2") do |config|
                 <opt2><if>vtnet4</if><enable>1</enable><ipaddr>172.28.30.1</ipaddr><subnet>24</subnet><descr>Servers VLAN</descr><blockpriv>0</blockpriv><blockbogons>0</blockbogons></opt2>
                 <opt3><if>vtnet5</if><enable>1</enable><ipaddr>172.28.40.1</ipaddr><subnet>24</subnet><descr>DMZ VLAN</descr><blockpriv>0</blockpriv><blockbogons>0</blockbogons></opt3>
                 <opt4><if>vtnet6</if><enable>1</enable><ipaddr>172.28.99.1</ipaddr><subnet>24</subnet><descr>Attacker VLAN</descr><blockpriv>0</blockpriv><blockbogons>0</blockbogons></opt4>
+                <!-- vtnet0 is vagrant-libvirt's implicit management NIC (192.168.121.0/24 by
+                     default), attached to every VM automatically in addition to the interfaces
+                     declared in the Vagrantfile. It carries no lab traffic and is not part of
+                     the WAN/LAN/VLAN topology. Left unassigned here, OPNsense drops it on
+                     configctl interface reconfigure, which breaks Vagrant's SSH reconnection
+                     after the post-init reboot. Assigning it DHCP (with no gateway entry below,
+                     so it cannot become the default route) keeps it reachable for Vagrant only. -->
+                <opt5><if>vtnet0</if><enable>1</enable><ipaddr>dhcp</ipaddr><descr>Vagrant Management (do not use for lab traffic)</descr><blockpriv>0</blockpriv><blockbogons>0</blockbogons></opt5>
               </interfaces>
               <gateways>
                 <gateway_item><interface>wan</interface><gateway>192.168.100.1</gateway><name>WAN_GW</name><weight>1</weight><ipprotocol>inet</ipprotocol><descr>Default Gateway</descr></gateway_item>
