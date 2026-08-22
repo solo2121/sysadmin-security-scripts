@@ -1229,7 +1229,7 @@ Vagrant.configure("2") do |config|
                   <name>root</name>
                   <descr>System Administrator</descr>
                   <group>admins</group>
-                  <password>opnsense</password>
+                  <password>$2y$10$nHvwHs9PtSI9QiAujjP8Mu7Bpk.Hl1xOKlYIetxdj5yuIj/J98BXu</password>
                   <disabled>0</disabled>
                 </user>
                 <timezone>UTC</timezone>
