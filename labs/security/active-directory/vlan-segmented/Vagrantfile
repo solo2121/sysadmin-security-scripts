@@ -1241,6 +1241,7 @@ Vagrant.configure("2") do |config|
                 <ssh>
                   <enabled>1</enabled>
                   <port>22</port>
+                  <permitrootlogin>1</permitrootlogin>
                   <passwordauth>1</passwordauth>
                 </ssh>
               </system>
