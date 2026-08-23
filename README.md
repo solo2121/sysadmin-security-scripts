@@ -520,6 +520,7 @@ See the [Troubleshooting Guide](./docs/setup/troubleshooting.md) and [VLAN lab t
 | [Installation Guide](./docs/setup/installation.md) | Host and provider setup |
 | [Quickstart Examples](./docs/setup/quickstart-examples.md) | Rapid deployment patterns |
 | [Troubleshooting](./docs/setup/troubleshooting.md) | Common problems and solutions |
+| [Lab Reset and Cleanup](./docs/guides/workflows/lab-reset-and-cleanup.md) | Snapshot revert, VM rebuild, full teardown, and host network cleanup |
 | [Minimal Resource Deployment](./docs/guides/optimization/minimal-resource-deployment.md) | Reduced-resource deployment guidance |
 | [Guides](./docs/guides/) | Security, infrastructure, and deployment guides |
 | [Scripts](./scripts/) | Host-readiness and validation helpers |

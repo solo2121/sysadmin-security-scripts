@@ -1,6 +1,6 @@
 # Lab Deployment Workflow Guide
 
-Detailed workflows and best practices for deploying and managing the security-engineering-lab.
+Detailed workflows and best practices for deploying and managing the security-engineering-lab. For the reverse operation — snapshot revert, VM rebuild, full teardown, and host network cleanup — see [`lab-reset-and-cleanup.md`](lab-reset-and-cleanup.md).
 
 ---
 

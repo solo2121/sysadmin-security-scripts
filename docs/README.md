@@ -29,6 +29,7 @@ you're not sure where to look.
 |---|---|
 | [`guides/workflows/workflows.md`](guides/workflows/workflows.md) | General repo/lab workflows |
 | [`guides/workflows/lab-deployment-workflow.md`](guides/workflows/lab-deployment-workflow.md) | Step-by-step lab deployment flow |
+| [`guides/workflows/lab-reset-and-cleanup.md`](guides/workflows/lab-reset-and-cleanup.md) | Snapshot revert, VM rebuild, full teardown, and host network cleanup |
 
 ## Infrastructure guides
 
