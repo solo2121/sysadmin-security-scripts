@@ -54,6 +54,7 @@ LAB_DIRS_REQUIRING_README = [
     "labs/security/active-directory/base",
     "labs/security/active-directory/vlan-segmented",
     "labs/infrastructure/devops-linux-lab",
+    "labs/security/windows-hardening",
 ]
 
 
