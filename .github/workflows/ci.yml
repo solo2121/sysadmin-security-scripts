@@ -354,13 +354,14 @@ jobs:
         run: |
           echo "Re-scanning the tree against .secrets.baseline..."
 
-          # "generated_at" changes on every scan even when nothing else
-          # does, so it's stripped (via jq, preinstalled on GitHub-hosted
-          # runners) before comparing -- otherwise this check would report
-          # a false failure on every single run.
-          jq 'del(.generated_at)' .secrets.baseline > /tmp/baseline-before.json
+          # "generated_at" changes on every scan, and line numbers change when
+          # content is inserted above an already-reviewed training example.
+          # Strip both pieces of volatile metadata before comparing (jq is
+          # preinstalled on GitHub-hosted runners). The finding identity,
+          # including filename, detector type, and hash, remains checked.
+          jq 'del(.generated_at) | .results |= with_entries(.value |= map(del(.line_number)))' .secrets.baseline > /tmp/baseline-before.json
           detect-secrets scan --baseline .secrets.baseline
-          jq 'del(.generated_at)' .secrets.baseline > /tmp/baseline-after.json
+          jq 'del(.generated_at) | .results |= with_entries(.value |= map(del(.line_number)))' .secrets.baseline > /tmp/baseline-after.json
 
           if ! diff -q /tmp/baseline-before.json /tmp/baseline-after.json > /dev/null; then
             echo
