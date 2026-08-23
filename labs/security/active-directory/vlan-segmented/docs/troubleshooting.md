@@ -64,7 +64,7 @@ groups | grep libvirt
 Re-attach the bridges:
 
 ```bash
-sudo ./scripts/attach-vlan-bridges.sh
+sudo ./scripts/attach-vms-to-vlans.sh
 ```
 
 ---
@@ -172,7 +172,7 @@ Re-run the setup scripts:
 
 ```bash
 sudo ./scripts/setup-vlans.sh
-sudo ./scripts/attach-vlan-bridges.sh
+sudo ./scripts/attach-vms-to-vlans.sh
 ```
 
 Persistence can be added manually if needed.
@@ -240,6 +240,31 @@ python3 scripts/vagrant_manager.py
 ```
 
 Do not use `scripts/vagrant-manager.sh` for this — it predates `LAB_PROFILE` and has no awareness of profiles, so it will hit this same error with no recovery path.
+
+---
+
+## Host Network Cleanup After `vagrant destroy`
+
+`vagrant destroy -f` removes the VMs but does **not** undo the host-side
+changes made by `scripts/setup-vlans.sh` (VLAN interfaces, bridges, and any
+persistent Netplan configuration it wrote). If you destroy the lab and plan
+to leave the host network as it was beforehand, remove these manually:
+
+```bash
+# List VLAN bridges created by setup-vlans.sh
+ip link show type bridge
+
+# Remove a bridge (repeat per bridge)
+sudo ip link set br-vlanXX down
+sudo ip link delete br-vlanXX type bridge
+
+# If setup-vlans.sh wrote a persistent Netplan file, remove or revert it,
+# then re-apply
+sudo netplan apply
+```
+
+There is currently no automated teardown script for these host-level
+changes — treat this as a manual step until one exists.
 
 ---
 
