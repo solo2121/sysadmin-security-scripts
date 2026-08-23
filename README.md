@@ -30,6 +30,16 @@ Apple Silicon is not currently supported. Oracle provides an Arm64 build of Virt
 | Validation | GitHub Actions, pytest, Bats, ShellCheck, and documentation checks |
 | Intended use | Authorized research, defensive security practice, and isolated education |
 
+### Which lab should I start with?
+
+| Lab | Default VMs | RAM (min / recommended) | Disk | Best for |
+|---|---|---|---|---|
+| [Active Directory — base](./labs/security/active-directory/base/) | 6 (up to 11 with `LAB_PROFILE=full`) | 16 GB / 32 GB+ | 150 GB+ | Learning core AD attack paths (Kerberoasting, AS-REP roasting, AD CS abuse) without network segmentation to worry about. Start here if you're new to AD security. |
+| [Active Directory — VLAN-segmented](./labs/security/active-directory/vlan-segmented/) | 12 | 16 GB / 32 GB | 80 GB+ | The same AD attack surface behind an OPNsense firewall with real VLAN segmentation — for practicing lateral movement across network boundaries once you're comfortable with the base lab. |
+| [DevOps / DevSecOps](./labs/infrastructure/devops-linux-lab/) | 12 | 16 GB (core cluster only) / 32 GB | 200 GB+ | Kubernetes (K3s), Harbor, CI/CD (Gitea/Jenkins/SonarQube/Vault/ZAP), and Linux administration practice — not AD-focused. |
+
+Run `./scripts/check-prerequisites.sh --all` before deploying any lab to confirm your host meets the requirements above.
+
 Start with the [Learning Path](./docs/project/learning-path.md) for the recommended progression through the labs, from Active Directory security fundamentals to segmented environments and DevSecOps workflows.
 
 ---
