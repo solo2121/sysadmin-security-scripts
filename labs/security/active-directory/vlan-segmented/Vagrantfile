@@ -1223,14 +1223,18 @@ Vagrant.configure("2") do |config|
                 <group>
                   <name>admins</name>
                   <description>System Administrators</description>
-                  <member>root</member>
+                  <scope>system</scope>
+                  <gid>1999</gid>
+                  <member>0</member>
+                  <priv>page-all</priv>
                 </group>
                 <user>
                   <name>root</name>
                   <descr>System Administrator</descr>
-                  <group>admins</group>
+                  <scope>system</scope>
+                  <groupname>admins</groupname>
                   <password>$2y$10$nHvwHs9PtSI9QiAujjP8Mu7Bpk.Hl1xOKlYIetxdj5yuIj/J98BXu</password>
-                  <disabled>0</disabled>
+                  <uid>0</uid>
                 </user>
                 <timezone>UTC</timezone>
                 <webgui>
