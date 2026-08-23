@@ -11,6 +11,7 @@ This directory contains reproducible lab environments for infrastructure enginee
 | DevOps Linux Lab | [`infrastructure/devops-linux-lab/`](infrastructure/devops-linux-lab/) | Vagrant/libvirt infrastructure, Linux administration, Kubernetes, DevOps workflows, and monitoring |
 |  Active Directory Pentest Lab (base)| [`security/active-directory/base/`](security/active-directory/base/) | Active Directory enumeration, Kerberos attacks, lateral movement, privilege escalation, and remediation practice |
 |  Active Directory Pentest Lab (vlan-segmented)| [`security/active-directory/vlan-segmented/`](security/active-directory/vlan-segmented/) | VLAN segmentation, multi-subnet enterprise simulation, topology validation, and network isolation testing |
+|  Windows Server Hardening Lab (experimental)| [`security/windows-hardening/`](security/windows-hardening/) | Defensive counterpart to the AD pentest lab — CIS-benchmark-inspired hardening baseline, one control mapped to one attack technique at a time |
 
 Every lab ships a single unified `Vagrantfile` supporting both KVM/libvirt and VirtualBox (select with `--provider`). See each lab's README for VirtualBox-specific setup, configuration, and troubleshooting.
 
@@ -98,6 +99,7 @@ Before launching a security lab, review [`../docs/security-scope.md`](../docs/se
 3. Explore reconnaissance and validation tooling under [`../tools/security/`](../tools/security/).
 4. Move into the  Active Directory Pentest Lab (base)for controlled attack-chain practice.
 5. Use the  Active Directory Pentest Lab (vlan-segmented)to reason about segmentation, routing, and network isolation.
+6. Once comfortable with the attack side, try the Windows Server Hardening Lab to see and validate the corresponding defensive controls for each technique.
 
 ---
 

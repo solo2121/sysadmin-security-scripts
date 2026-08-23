@@ -1,0 +1,492 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# ==============================================================================
+# WINDOWS SERVER HARDENING LAB — DEFENSIVE COUNTERPART TO THE AD PENTEST LAB
+# ==============================================================================
+#
+# Version: 0.1.0 (MVP)
+# Status : Experimental — new lab, not yet as battle-tested as the AD pentest
+#          labs. Validate on your own hardware before relying on it.
+#
+# UNIFIED VAGRANTFILE: this single file supports both KVM/QEMU via
+# vagrant-libvirt and VirtualBox, matching the convention used by the other
+# labs in this repository. Select a provider explicitly:
+#   vagrant up --provider=libvirt
+#   vagrant up --provider=virtualbox
+#
+# LAB_PROFILE:
+#   minimal (default) — dc01-hardened only (1 VM). Enough to review and
+#                        validate every hardening control in isolation.
+#   full               — adds win-member, a domain-joined member server, to
+#                         test lateral-movement resistance against a second
+#                         host (2 VMs).
+#
+# What this lab is: a Windows Server 2022 domain controller built with the
+# same base box and AD-promotion pattern as
+# labs/security/active-directory/base/Vagrantfile, but with CIS-benchmark-
+# inspired hardening controls applied instead of the intentional
+# misconfigurations the AD pentest lab uses. See docs/hardening-guide.md for
+# the full control list, each one mapped back to the specific attack
+# technique it mitigates in the AD pentest lab's attack-guide.md and this
+# repo's detection-and-blue-team.md.
+#
+# What this lab is not: a full enterprise domain. It intentionally does not
+# replicate the AD pentest lab's OUs, 45+ seeded users, AD CS server, or
+# other VMs. Start here for the hardening controls themselves; open an issue
+# or PR if you want to help extend this toward full domain parity.
+# ==============================================================================
+
+def current_provider
+  ARGV.each_with_index do |arg, idx|
+    if arg == '--provider' && ARGV[idx + 1]
+      return ARGV[idx + 1].to_sym
+    elsif arg =~ /\A--provider=(.+)\z/
+      return Regexp.last_match(1).to_sym
+    end
+  end
+  return ENV['VAGRANT_DEFAULT_PROVIDER'].to_sym if ENV['VAGRANT_DEFAULT_PROVIDER']
+  RbConfig::CONFIG['host_os'] =~ /linux/ ? :libvirt : :virtualbox
+end
+
+PROVIDER = current_provider
+puts "Provider: #{PROVIDER}"
+
+LAB_GUI = ENV.fetch('LAB_GUI', 'false').downcase == 'true'
+
+# ------------------------------------------------------------
+# DOMAIN CONSTANTS
+# ------------------------------------------------------------
+DOMAIN_NAME = ENV.fetch('HARDENED_DOMAIN_NAME', 'hardened.local')
+DOMAIN_NETBIOS = ENV.fetch('HARDENED_DOMAIN_NETBIOS', 'HARDENED')
+LAB_SUBNET = ENV.fetch('HARDENED_LAB_SUBNET', '172.29.128.0/24')
+LAB_NET = ENV.fetch('HARDENED_LAB_NET', 'winhardening0')
+
+VM_IPS = {
+  dc01_hardened: ENV.fetch('DC01_HARDENED_IP', '172.29.128.21'),
+  win_member: ENV.fetch('WIN_MEMBER_IP', '172.29.128.31')
+}
+
+VM_MEMORY = {
+  dc01_hardened: ENV.fetch('DC01_HARDENED_MEMORY', 4096).to_i,
+  win_member: ENV.fetch('WIN_MEMBER_MEMORY', 2048).to_i
+}
+
+VM_CPUS = {
+  dc01_hardened: ENV.fetch('DC01_HARDENED_CPUS', 2).to_i,
+  win_member: ENV.fetch('WIN_MEMBER_CPUS', 2).to_i
+}
+
+# ------------------------------------------------------------
+# LAB PROFILES
+# ------------------------------------------------------------
+LAB_PROFILES = {
+  'minimal' => %w[],
+  'full'    => %w[win-member]
+}.freeze
+
+DEFAULT_LAB_PROFILE = 'minimal'
+LAB_PROFILE = ENV.fetch('LAB_PROFILE', DEFAULT_LAB_PROFILE).downcase
+
+unless LAB_PROFILES.key?(LAB_PROFILE)
+  raise "Invalid LAB_PROFILE '#{LAB_PROFILE}'. Valid profiles: #{LAB_PROFILES.keys.join(', ')} " \
+        "(unset LAB_PROFILE to use the default '#{DEFAULT_LAB_PROFILE}' profile)"
+end
+
+ACTIVE_OPTIONAL_VMS = LAB_PROFILES[LAB_PROFILE]
+
+def profile_includes?(vm_name)
+  ACTIVE_OPTIONAL_VMS.include?(vm_name)
+end
+
+puts ""
+puts "=============================================================="
+puts " LAB_PROFILE: #{LAB_PROFILE}"
+puts "=============================================================="
+puts "  Always-on : dc01-hardened"
+puts "  Included  : #{ACTIVE_OPTIONAL_VMS.empty? ? '(none)' : ACTIVE_OPTIONAL_VMS.join(', ')}"
+puts "  To change : LAB_PROFILE=full vagrant up"
+puts "=============================================================="
+puts ""
+
+VAGRANT_DEFAULT_PASSWORD = ENV.fetch("VAGRANT_DEFAULT_PASSWORD", "vagrant")
+VAGRANT_UPDATED_PASSWORD = ENV.fetch("VAGRANT_UPDATED_PASSWORD", "Vagrant123!")
+
+if PROVIDER == :libvirt
+  ENV['LIBVIRT_DEFAULT_URI'] = 'qemu:///system'
+  ENV['VAGRANT_LIBVIRT_SKIP_NETWORK_VALIDATION'] = 'true'
+  ENV['VAGRANT_LIBVIRT_VALIDATE_XML'] = 'false'
+end
+ENV['VAGRANT_WINRM_TIMEOUT'] = '3600'
+
+Vagrant.require_version ">= 2.2.0"
+
+raise "Invalid domain name format" unless DOMAIN_NAME =~ /\A[a-z0-9.-]+\.[a-z]{2,}\z/i
+raise "Invalid subnet format" unless LAB_SUBNET =~ /\A\d+\.\d+\.\d+\.\d+\/\d{1,2}\z/
+
+DEFAULT_CONFIG = {
+  memory: 1024,
+  cpus: 1,
+  disk_bus: "virtio",
+  nic_model_type: "virtio",
+  video_type: "vga",
+  video_vram: 16384
+}.freeze
+
+WINDOWS_CONFIG = {
+  memory: 2048,
+  cpus: 2,
+  disk_size: 60,
+  nic_model_type: "e1000e",
+  guest: :windows,
+  communicator: "winrm",
+  boot_timeout: 7200,
+  video_type: "vga",
+  video_vram: 16384
+}.freeze
+
+def configure_network(vm, ip)
+  if PROVIDER == :libvirt
+    vm.vm.network :private_network,
+      ip: ip,
+      libvirt__network_name: LAB_NET,
+      libvirt__forward_mode: "none",
+      libvirt__dhcp_enabled: false,
+      libvirt__driver_name: "qemu",
+      auto_config: false
+  else
+    vm.vm.network "private_network", ip: ip, virtualbox__intnet: "winhardening_lab"
+  end
+end
+
+def configure_libvirt(vm, overrides = {})
+  settings = DEFAULT_CONFIG.merge(overrides)
+  vm.vm.provider :libvirt do |libvirt|
+    libvirt.memory = settings[:memory]
+    libvirt.cpus = settings[:cpus]
+    libvirt.disk_bus = settings[:disk_bus]
+    libvirt.nic_model_type = settings[:nic_model_type]
+    libvirt.video_type = settings[:video_type]
+    libvirt.video_vram = settings[:video_vram]
+    libvirt.default_prefix = ""
+    libvirt.nested = true
+    libvirt.graphics_type = "vnc"
+    libvirt.graphics_ip = "127.0.0.1"
+    libvirt.video_accel3d = false
+    libvirt.qemu_use_session = false
+    libvirt.uri = 'qemu:///system'
+    libvirt.mgmt_attach = true
+
+    if settings[:guest] == :windows
+      libvirt.cpu_mode = "host-passthrough"
+      libvirt.cpu_model = "host"
+      if libvirt.respond_to?(:channel)
+        begin
+          libvirt.channel type: "unix", target_name: "org.qemu.guest_agent.0", target_type: "virtio"
+        rescue => e
+          puts "[WARN] Failed to configure guest agent channel: #{e.message}"
+        end
+      end
+    end
+
+    if settings[:disk_size]
+      libvirt.storage :file, size: "#{settings[:disk_size]}G", type: "qcow2", bus: "virtio"
+    end
+  end
+end
+
+def configure_virtualbox(vm, overrides = {})
+  settings = DEFAULT_CONFIG.merge(overrides)
+  vm.vm.provider :virtualbox do |vb|
+    vb.memory = settings[:memory]
+    vb.cpus = settings[:cpus]
+    vb.gui = LAB_GUI
+    vb.linked_clone = true
+    vb.customize ["modifyvm", :id, "--hwvirtex", "on"]
+    vb.customize ["modifyvm", :id, "--nestedpaging", "on"]
+    if settings[:guest] == :windows
+      vb.customize ["modifyvm", :id, "--vram", "128"]
+      vb.customize ["modifyvm", :id, "--graphicscontroller", "vboxsvga"]
+      vb.customize ["modifyvm", :id, "--audio", "none"]
+    end
+    vb.customize ["modifyvm", :id, "--ioapic", "on"]
+    vb.customize ["modifyvm", :id, "--rtcuseutc", "on"]
+    vb.customize ["modifyvm", :id, "--nic1", "nat"]
+    vb.customize ["modifyvm", :id, "--nic2", "hostonly"]
+  end
+end
+
+def configure_provider(vm, overrides = {})
+  PROVIDER == :libvirt ? configure_libvirt(vm, overrides) : configure_virtualbox(vm, overrides)
+end
+
+def configure_windows_comm(vm, user, pass, boot_timeout = 7200, winrm_timeout = 3600)
+  vm.vm.communicator = "winrm"
+  vm.vm.guest = :windows
+  vm.vm.boot_timeout = boot_timeout
+  vm.winrm.username = user
+  vm.winrm.password = pass
+  vm.winrm.transport = :plaintext
+  vm.winrm.port = 5985
+  vm.winrm.retry_limit = 240
+  vm.winrm.retry_delay = 30
+  vm.winrm.timeout = winrm_timeout
+  vm.winrm.basic_auth_only = true
+
+  vm.vm.provider :virtualbox do |vb|
+    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    vb.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
+  end
+end
+
+# Static IP: same 5-method adapter-detection pattern used by the AD base
+# lab, trimmed to the two providers this lab actually supports.
+def configure_windows_static_ip(vm, ip)
+  vm.vm.provision "shell", name: "configure-static-ip", privileged: true, run: "once", inline: <<-SHELL
+    $ErrorActionPreference = 'Continue'
+    if (Test-Path 'C:\\STATIC-IP-SET.txt') { exit 0 }
+
+    $adapter = Get-NetAdapter | Where-Object { $_.Status -eq 'Up' -and $_.Name -notlike '*Loopback*' } | Select-Object -First 1
+    if (-not $adapter) {
+      $adapter = Get-NetAdapter -Name "Ethernet 1" -ErrorAction SilentlyContinue
+    }
+    if (-not $adapter) {
+      Write-Host '[ERROR] No usable adapter found for static IP configuration'
+      exit 1
+    }
+
+    Write-Host "[OK] Configuring $($adapter.Name) with static IP #{ip}"
+    Remove-NetIPAddress -InterfaceIndex $adapter.ifIndex -Confirm:$false -ErrorAction SilentlyContinue
+    New-NetIPAddress -InterfaceIndex $adapter.ifIndex -IPAddress "#{ip}" -PrefixLength 24 -ErrorAction SilentlyContinue
+    Set-DnsClientServerAddress -InterfaceIndex $adapter.ifIndex -ServerAddresses "127.0.0.1","8.8.8.8"
+
+    Set-Service WinRM -StartupType Automatic
+    Start-Service WinRM
+    winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+    winrm set winrm/config/service/auth '@{Basic="true"}'
+
+    "Static IP set" | Out-File C:\\STATIC-IP-SET.txt -Force
+    Write-Host "[OK] Static IP configuration complete"
+  SHELL
+end
+
+Vagrant.configure("2") do |config|
+  config.vm.box_check_update = false
+
+  # ==========================================================================
+  # dc01-hardened — Windows Server 2022 domain controller, hardened baseline
+  # ==========================================================================
+  config.vm.define "dc01-hardened", primary: true do |vm|
+    vm.vm.box = "peru/windows-server-2022-standard-x64-eval"
+    vm.vm.hostname = "dc01-hardened"
+    vm.vm.synced_folder ".", "/vagrant", disabled: true
+
+    configure_windows_comm(vm, "vagrant", "vagrant", 7200, 7200)
+    configure_network(vm, VM_IPS[:dc01_hardened])
+    configure_provider(vm, WINDOWS_CONFIG.merge(memory: VM_MEMORY[:dc01_hardened], disk_size: 60))
+    configure_windows_static_ip(vm, VM_IPS[:dc01_hardened])
+
+    vm.vm.provision "shell", name: "phase0-winrm-bootstrap", privileged: false, run: "once", inline: <<-SHELL
+      Write-Host 'PHASE 0: WINRM BOOTSTRAP'
+      Set-Service WinRM -StartupType Automatic -ErrorAction SilentlyContinue
+      Start-Service WinRM -ErrorAction SilentlyContinue
+      winrm set winrm/config/service '@{AllowUnencrypted="true"}' 2>$null
+      winrm set winrm/config/service/auth '@{Basic="true"}' 2>$null
+      netsh advfirewall firewall set rule group="Windows Remote Management" new enable=yes 2>$null
+      Write-Host '[OK] WinRM bootstrap complete'
+    SHELL
+
+    vm.vm.provision "shell", name: "phase1-basic-setup", privileged: false, inline: <<-SHELL
+      if (Test-Path 'C:\\DC-FINAL.txt') { exit 0 }
+      Write-Host 'PHASE 1: BASIC SETUP'
+      net user vagrant /active:yes 2>$null
+      net localgroup administrators vagrant /add 2>$null
+      Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory Private 2>$null
+      Install-WindowsFeature AD-Domain-Services, RSAT-AD-PowerShell, RSAT-ADDS -IncludeManagementTools 2>$null
+      "Phase 1 completed" | Out-File C:\\PHASE1-COMPLETE.txt -Force
+      Write-Host '[SUCCESS] Phase 1 complete!'
+    SHELL
+
+    vm.vm.provision :reload, name: "reboot-after-phase1"
+
+    vm.vm.provision "shell", name: "phase2-ad-promotion", privileged: false, inline: <<-SHELL
+      if (Test-Path 'C:\\DC-FINAL.txt') { exit 0 }
+      if (-not (Test-Path 'C:\\PHASE1-COMPLETE.txt')) { exit 1 }
+      Write-Host 'PHASE 2: AD PROMOTION (this will take a few minutes...)'
+      Import-Module ADDSDeployment -ErrorAction SilentlyContinue
+      if (-not (Get-Module ADDSDeployment)) {
+        Install-WindowsFeature AD-Domain-Services -IncludeManagementTools
+        Import-Module ADDSDeployment
+      }
+      $safeModePass = ConvertTo-SecureString 'Passw0rd!' -AsPlainText -Force
+      try {
+        Install-ADDSForest `
+          -DomainName "#{DOMAIN_NAME}" `
+          -DomainNetbiosName "#{DOMAIN_NETBIOS}" `
+          -InstallDNS `
+          -SafeModeAdministratorPassword $safeModePass `
+          -Force `
+          -NoRebootOnCompletion `
+          -WarningAction SilentlyContinue `
+          -ErrorAction Stop
+        Write-Host '[SUCCESS] AD promotion complete!'
+      } catch {
+        Write-Error "AD promotion failed: $_"
+        exit 1
+      }
+      "AD promoted" | Out-File C:\\AD-PROMOTED.txt -Force
+      Write-Host 'Rebooting in 10 seconds...'
+      shutdown /r /t 10 /f
+    SHELL
+
+    vm.vm.provision :reload, name: "reboot-after-ad-promotion"
+
+    vm.vm.provision "shell", name: "phase3-winrm-stabilizer", privileged: true, inline: <<-SHELL
+      Write-Host "Stabilizing WinRM after AD promotion..."
+      Start-Sleep -Seconds 60
+      Set-Service WinRM -StartupType Automatic
+      Start-Service WinRM
+      Write-Host "[OK] WinRM stabilized after AD promotion"
+    SHELL
+
+    # ========================================================================
+    # PHASE 4 — CIS-BENCHMARK-INSPIRED HARDENING BASELINE
+    #
+    # Each control below is documented in docs/hardening-guide.md, cross-
+    # referenced to the specific attack technique it mitigates in
+    # ../active-directory/base/docs/attack-guide.md and the corresponding
+    # detection in ../../../docs/guides/security/detection-and-blue-team.md.
+    # This is a starting baseline, not a certified CIS Benchmark pass —
+    # validate independently before treating it as a compliance artifact.
+    # ========================================================================
+    vm.vm.provision "shell", name: "phase4-hardening-baseline", privileged: true, inline: <<-'SHELL'
+      $ErrorActionPreference = 'Continue'
+      $LogFile = "C:\\HARDENING-BASELINE.log"
+      function Log { param($msg) Write-Host $msg; Add-Content -Path $LogFile -Value $msg }
+
+      if (Test-Path "C:\\DC-FINAL.txt") { Log "[INFO] Already hardened. Skipping."; exit 0 }
+      if (-not (Test-Path "C:\\AD-PROMOTED.txt")) { Log "[INFO] AD not promoted yet. Exiting."; exit 0 }
+
+      Log "[*] PHASE 4: HARDENING BASELINE"
+
+      # --- Credential-theft / lateral-movement surface reduction ---
+      Log "[*] Disabling LLMNR (mitigates Responder-style poisoning)"
+      New-Item -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient" -Force | Out-Null
+      Set-ItemProperty -Path "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient" -Name "EnableMulticast" -Value 0 -Type DWord -Force
+
+      Log "[*] Disabling NetBIOS over TCP/IP on all adapters (mitigates NBT-NS poisoning)"
+      Get-WmiObject Win32_NetworkAdapterConfiguration | Where-Object { $_.TcpipNetbiosOptions -ne $null } | ForEach-Object {
+        $_.SetTcpipNetbios(2) | Out-Null
+      }
+
+      Log "[*] Enforcing SMB signing (mitigates NTLM relay to SMB)"
+      Set-SmbServerConfiguration -RequireSecuritySignature $true -Force
+      Set-SmbClientConfiguration -RequireSecuritySignature $true -Force
+
+      Log "[*] Restricting NTLM: auditing only in this MVP baseline (see hardening-guide.md before enforcing 'Deny All')"
+      New-Item -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\MSV1_0" -Force | Out-Null
+      Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\MSV1_0" -Name "AuditReceivingNTLMTraffic" -Value 2 -Type DWord -Force
+      Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa\\MSV1_0" -Name "RestrictReceivingNTLMTraffic" -Value 1 -Type DWord -Force
+
+      Log "[*] Requiring NTLMv2 only, refusing LM and NTLMv1 (mitigates NTLMv1/LM downgrade attacks)"
+      Set-ItemProperty -Path "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Lsa" -Name "LmCompatibilityLevel" -Value 5 -Type DWord -Force
+
+      # --- Service surface reduction ---
+      Log "[*] Disabling Print Spooler service (mitigates PrintNightmare, CVE-2021-1675/34527)"
+      Stop-Service -Name Spooler -Force -ErrorAction SilentlyContinue
+      Set-Service -Name Spooler -StartupType Disabled -ErrorAction SilentlyContinue
+
+      Log "[*] Disabling SMBv1 (legacy protocol, no modern reason to keep enabled)"
+      Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart -ErrorAction SilentlyContinue | Out-Null
+
+      # --- Endpoint protection (opposite of the AD pentest lab's baseline) ---
+      Log "[*] Ensuring Windows Defender real-time protection is ENABLED (not disabled, unlike the AD pentest lab)"
+      Set-MpPreference -DisableRealtimeMonitoring $false -ErrorAction SilentlyContinue
+
+      # --- Audit policy (matches docs/guides/security/detection-and-blue-team.md §1) ---
+      Log "[*] Enabling key audit policy categories for downstream Sysmon/SIEM ingestion"
+      auditpol /set /subcategory:"Kerberos Authentication Service" /success:enable /failure:enable
+      auditpol /set /subcategory:"Kerberos Service Ticket Operations" /success:enable /failure:enable
+      auditpol /set /subcategory:"Credential Validation" /success:enable /failure:enable
+      auditpol /set /subcategory:"Directory Service Access" /success:enable /failure:enable
+      auditpol /set /subcategory:"Directory Service Changes" /success:enable /failure:enable
+      auditpol /set /subcategory:"Security Group Management" /success:enable /failure:enable
+      auditpol /set /subcategory:"User Account Management" /success:enable /failure:enable
+      auditpol /set /subcategory:"Logon" /success:enable /failure:enable
+      auditpol /set /subcategory:"Certification Services" /success:enable /failure:enable
+
+      Log "[*] Increasing Security event log size to reduce rollover before ingestion"
+      wevtutil sl Security /ms:1073741824
+
+      # --- Password / Kerberos policy ---
+      Log "[*] Enforcing a stronger default domain password policy than the AD pentest lab's intentionally weak one"
+      try {
+        Set-ADDefaultDomainPasswordPolicy -Identity "#{DOMAIN_NAME}" `
+          -ComplexityEnabled $true -MinPasswordLength 14 -MaxPasswordAge 90.00:00:00 `
+          -MinPasswordAge 1.00:00:00 -LockoutThreshold 5 -LockoutDuration 00:15:00 `
+          -LockoutObservationWindow 00:15:00 -ErrorAction Stop
+        Log "[OK] Domain password policy hardened"
+      } catch {
+        Log "[WARN] Could not set domain password policy: $_"
+      }
+
+      "Hardening baseline applied" | Out-File C:\\HARDENING-APPLIED.txt -Force
+      "DC hardening complete" | Out-File C:\\DC-FINAL.txt -Force
+      Log "[SUCCESS] Phase 4 hardening baseline complete"
+    SHELL
+  end
+
+  # ==========================================================================
+  # win-member — domain-joined member server (LAB_PROFILE=full only)
+  # ==========================================================================
+  if profile_includes?('win-member')
+    config.vm.define "win-member" do |vm|
+      vm.vm.box = "peru/windows-server-2022-standard-x64-eval"
+      vm.vm.hostname = "win-member"
+      vm.vm.synced_folder ".", "/vagrant", disabled: true
+
+      configure_windows_comm(vm, "vagrant", "vagrant", 3600, 3600)
+      configure_network(vm, VM_IPS[:win_member])
+      configure_provider(vm, WINDOWS_CONFIG.merge(memory: VM_MEMORY[:win_member], disk_size: 40))
+      configure_windows_static_ip(vm, VM_IPS[:win_member])
+
+      vm.vm.provision "shell", name: "phase0-winrm-bootstrap", privileged: false, run: "once", inline: <<-SHELL
+        Set-Service WinRM -StartupType Automatic -ErrorAction SilentlyContinue
+        Start-Service WinRM -ErrorAction SilentlyContinue
+        winrm set winrm/config/service '@{AllowUnencrypted="true"}' 2>$null
+        winrm set winrm/config/service/auth '@{Basic="true"}' 2>$null
+      SHELL
+
+      vm.vm.provision "shell", name: "phase1-domain-join", privileged: false, inline: <<-SHELL
+        if (Test-Path 'C:\\MEMBER-JOINED.txt') { exit 0 }
+        Write-Host 'PHASE 1: DOMAIN JOIN'
+        $securePass = ConvertTo-SecureString 'Passw0rd!' -AsPlainText -Force
+        $cred = New-Object System.Management.Automation.PSCredential('#{DOMAIN_NETBIOS}\\Administrator', $securePass)
+        Set-DnsClientServerAddress -InterfaceIndex (Get-NetAdapter | Where-Object Status -eq Up | Select-Object -First 1).ifIndex -ServerAddresses "#{VM_IPS[:dc01_hardened]}"
+        try {
+          Add-Computer -DomainName "#{DOMAIN_NAME}" -Credential $cred -Force -ErrorAction Stop
+          "Domain joined" | Out-File C:\\MEMBER-JOINED.txt -Force
+          Write-Host '[SUCCESS] Domain join complete, rebooting'
+          shutdown /r /t 10 /f
+        } catch {
+          Write-Error "Domain join failed: $_"
+          exit 1
+        }
+      SHELL
+
+      vm.vm.provision :reload, name: "reboot-after-domain-join"
+
+      vm.vm.provision "shell", name: "phase2-apply-baseline", privileged: true, inline: <<-'SHELL'
+        if (Test-Path "C:\\MEMBER-FINAL.txt") { exit 0 }
+        Write-Host "[*] Applying member-server hardening baseline"
+        Set-SmbServerConfiguration -RequireSecuritySignature $true -Force
+        Set-SmbClientConfiguration -RequireSecuritySignature $true -Force
+        Set-MpPreference -DisableRealtimeMonitoring $false -ErrorAction SilentlyContinue
+        Stop-Service -Name Spooler -Force -ErrorAction SilentlyContinue
+        Set-Service -Name Spooler -StartupType Disabled -ErrorAction SilentlyContinue
+        "Member baseline applied" | Out-File C:\\MEMBER-FINAL.txt -Force
+        Write-Host "[SUCCESS] Member baseline complete"
+      SHELL
+    end
+  end
+end

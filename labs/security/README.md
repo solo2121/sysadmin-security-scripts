@@ -1,6 +1,6 @@
 # Security Labs
 
-This directory contains enterprise-focused Active Directory penetration testing and security practice environments.
+This directory contains enterprise-focused Active Directory penetration testing and security practice environments, plus a defensive counterpart lab.
 
 ---
 
@@ -10,8 +10,9 @@ This directory contains enterprise-focused Active Directory penetration testing 
 |------------------------|----------------------------------|---------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------|-------|
 | Active Directory Lab   | [`active-directory/base/`](active-directory/base/)     | Complete AD attack chain from recon to Domain Admin; Kerberos attacks, AD CS exploits, lateral movement, cloud and LLM attacks | v1.13 – Enterprise Edition (FLAT NETWORK – OPTIMIZED) | up to 11 (`LAB_PROFILE=full`); 6 by default |
 | VLAN Enterprise AD Lab | [`active-directory/vlan-segmented/`](active-directory/vlan-segmented/) | Multi-subnet enterprise topology with VLAN segmentation, routing, inter-VLAN attacks, and network isolation testing       | v2.1.5                                                 | up to 12 (`LAB_PROFILE=full`); auto-detected by default |
+| Windows Server Hardening Lab (experimental) | [`windows-hardening/`](windows-hardening/) | Defensive counterpart to the AD Pentest Lab — CIS-benchmark-inspired hardening baseline, each control mapped to the AD pentest attack technique it mitigates | v0.1.0 (MVP) | up to 2 (`LAB_PROFILE=full`); 1 by default |
 
-Both labs are `LAB_PROFILE`-scoped: `vagrant up` with no profile set only creates a subset of VMs sized for the host, not every machine listed above. See each lab's own README for its profile table.
+The two AD pentest labs and the hardening lab are all `LAB_PROFILE`-scoped: `vagrant up` with no profile set only creates a subset of VMs sized for the host, not every machine listed above. See each lab's own README for its profile table.
 
 ---
 
