@@ -7,15 +7,15 @@
 ![DevSecOps](https://img.shields.io/badge/DevSecOps-Lab-purple)
 [![CI](https://github.com/solo2121/security-engineering-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/solo2121/security-engineering-lab/actions/workflows/ci.yml)
 
-**Security Engineering Lab** is a modular, Vagrant-provisioned homelab for authorized Active Directory security research, segmented networking, Kubernetes, DevSecOps workflows, Linux administration, and infrastructure automation.
+**Security Engineering Lab** is a modular, Vagrant-provisioned homelab for authorized security research and platform engineering. It includes isolated Active Directory environments, network segmentation, Kubernetes and DevSecOps workflows, Linux administration, and infrastructure automation.
 
-It is designed to be **runnable, not static**: each environment includes deployable infrastructure, provisioning automation, validation workflows, and supporting technical documentation.
+The repository is designed to be **runnable, not static**: each lab includes deployable infrastructure, provisioning automation, validation workflows, and supporting technical documentation.
 
 **Maintained by:** Miguel A. Carlo (`solo2121`)  
 **Project status:** Active development
 
 > [!IMPORTANT]
-> **Supported hosts:** KVM/QEMU with libvirt is the primary provider on Linux. VirtualBox is supported on compatible Intel/AMD x86_64 hosts running Linux, macOS, or Windows. Apple Silicon is not currently validated because the labs depend on architecture-compatible Vagrant boxes, Windows guest workflows, provisioning dependencies, and container images.
+> **Supported hosts:** KVM/QEMU with libvirt is the primary provider on Linux. VirtualBox workflows are maintained for compatible Intel/AMD x86_64 hosts running Linux, macOS, or Windows. Apple Silicon is not currently supported or validated because the labs depend on ARM64-compatible Vagrant boxes and guest media, multi-architecture container images, and provider-specific validation—particularly for Windows-based workflows.
 
 ---
 
@@ -29,10 +29,10 @@ It is designed to be **runnable, not static**: each environment includes deploya
   - [See it in action](#see-it-in-action)
     - [Active Directory base lab](#active-directory-base-lab)
     - [DevOps/DevSecOps lab](#devopsdevsecops-lab)
-    - [VLAN-segmented Active Directory lab](#vlan-segmented-active-directory-lab)
+    - [Segmented Active Directory lab](#segmented-active-directory-lab)
   - [Lab environments](#lab-environments)
     - [Active Directory Security Lab](#active-directory-security-lab)
-    - [Segmented Active Directory Lab](#segmented-active-directory-lab)
+    - [Segmented Active Directory Lab](#segmented-active-directory-lab-1)
     - [DevOps/DevSecOps platform lab](#devopsdevsecops-platform-lab)
     - [Windows Server Hardening Lab (experimental)](#windows-server-hardening-lab-experimental)
   - [Provider compatibility](#provider-compatibility)
@@ -59,6 +59,7 @@ It is designed to be **runnable, not static**: each environment includes deploya
   - [Documentation hub](#documentation-hub)
   - [Repository structure](#repository-structure)
   - [Development quickstart](#development-quickstart)
+  - [Project maturity](#project-maturity)
   - [Contributing](#contributing)
   - [Security and ethics](#security-and-ethics)
   - [Known limitations](#known-limitations)
@@ -72,27 +73,29 @@ It is designed to be **runnable, not static**: each environment includes deploya
 
 | Item | Details |
 |---|---|
-| Primary provider | KVM/QEMU with libvirt |
+| Primary provider | KVM/QEMU with libvirt on Linux |
 | Alternative provider | VirtualBox on compatible Intel/AMD x86_64 hosts |
-| Lab environments | Active Directory, segmented Active Directory, DevOps/DevSecOps, Windows Server hardening (experimental) |
+| Lab environments | Active Directory, network-segmented Active Directory, DevOps/DevSecOps, Windows Server hardening (experimental) |
 | Automation | Vagrant, Ansible, Bash, and Python |
-| Cloud-native stack | K3s, Harbor, Argo CD, Prometheus, Grafana, Loki, Falco, and Kyverno |
+| Cloud-native stack | Selected DevOps/DevSecOps profiles use K3s, Harbor, Argo CD, Prometheus, Grafana, Loki, Falco, and Kyverno |
 | Validation | GitHub Actions, pytest, Bats, ShellCheck, and documentation checks |
 | Intended use | Authorized research, defensive security practice, and isolated education |
+
+---
 
 ## Which lab should I start with?
 
 | Lab | Default VMs | Host RAM (min / recommended) | Free disk | Best for |
 |---|---:|---|---:|---|
-| [Active Directory — base](./labs/security/active-directory/base/) | 6; up to 11 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 200 GB+ | Learning core AD attack paths, including Kerberoasting, AS-REP roasting, and AD CS abuse, without network segmentation complexity. Start here if you are new to AD security. |
-| [Active Directory — VLAN-segmented](./labs/security/active-directory/vlan-segmented/) | 12 | 16 GB / 32 GB+ | 80 GB+ | Practicing lateral movement, routing controls, trust boundaries, and defensive visibility across segmented network boundaries. |
+| [Active Directory — base](./labs/security/active-directory/base/) | 6; up to 11 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 200 GB+ | Learning core AD attack paths, including Kerberoasting, AS-REP roasting, and AD CS abuse, without network-segmentation complexity. Start here if you are new to AD security. |
+| [Active Directory — segmented](./labs/security/active-directory/vlan-segmented/) | 12 | 16 GB / 32 GB+ | 80 GB+ | Practicing lateral movement, routing controls, trust boundaries, and defensive visibility across segmented network boundaries. |
 | [DevOps/DevSecOps](./labs/infrastructure/devops-linux-lab/) | 12 | 16 GB for a core cluster / 32 GB+ recommended | 200 GB+ | Kubernetes, Harbor, CI/CD, GitOps, observability, runtime security, policy enforcement, and Linux administration. Not AD-focused. |
-| [Windows Server Hardening (experimental)](./labs/security/windows-hardening/) | 1; 2 with `LAB_PROFILE=full` | 8 GB / 16 GB+ | 60 GB+ | Defensive counterpart to the AD base lab — a CIS-benchmark-inspired hardening baseline, each control mapped to a specific attack technique. Start after the AD base lab, not instead of it. |
+| [Windows Server Hardening (experimental)](./labs/security/windows-hardening/) | 1; 2 with `LAB_PROFILE=full` | 8 GB / 16 GB+ | 60 GB+ | A defensive counterpart to the AD base lab: a CIS-benchmark-inspired hardening baseline with controls mapped to specific attack techniques. Start after completing the AD base lab. |
 
 > [!NOTE]
-> Resource figures refer to practical **host capacity**, not only aggregate guest allocations. Reserve additional CPU, RAM, and disk capacity for the host OS, Vagrant/provider overhead, base boxes, snapshots, package caches, and container-image storage.
+> Resource figures represent practical **host capacity**, not only aggregate guest allocations. Reserve additional CPU, RAM, and disk capacity for the host OS, Vagrant and provider overhead, base boxes, snapshots, package caches, and container-image storage.
 
-Before deploying, run:
+Before deployment, run:
 
 ```bash
 ./scripts/check-prerequisites.sh --all
@@ -106,19 +109,24 @@ make prereq
 
 For the recommended progression from Active Directory fundamentals through segmentation and DevSecOps workflows, see the [Learning Path](./docs/project/learning-path.md).
 
+For constrained systems, see [Minimal Resource Deployment](./docs/guides/optimization/minimal-resource-deployment.md).
+
 ---
 
 ## Quick start
+
+> [!CAUTION]
+> Some labs intentionally include insecure configurations and authorized security-test scenarios. Deploy them only on an isolated host and virtual network that cannot route to production, personal, or public networks. Review the [Security Scope](./docs/security-scope.md) and [Emergency Isolation Runbook](./docs/architecture/emergency-isolation-runbook.md) before deployment.
 
 Clone the repository and validate your host:
 
 ```bash
 git clone https://github.com/solo2121/security-engineering-lab.git
 cd security-engineering-lab
-./scripts/check-prerequisites.sh --all
+make prereq
 ```
 
-Start with the Active Directory base lab:
+Start with the Active Directory base lab using the primary Linux provider:
 
 ```bash
 cd labs/security/active-directory/base
@@ -177,11 +185,11 @@ A complete Active Directory base lab deployment, from provider detection through
 
 A complete Linux DevSecOps deployment, from K3s bootstrap through Harbor image seeding and authorized security-test scenario deployment.
 
-| 1. K3s node ready | 2. Airgapped image seeding | 3. Security-test scenarios deploy |
+| 1. K3s node ready | 2. Air-gapped image seeding | 3. Security-test scenarios deploy |
 |---|---|---|
-| ![K3s node Ready and kubectl API ready, with Ingress NGINX installing via Helm](./assets/demos/devops1-01-k3s-ready-ingress.gif) | ![Container images being pulled, tagged, and pushed into the airgapped Harbor registry](./assets/demos/devops1-02-harbor-seeding.gif) | ![Authorized DevSecOps security-test scenarios deploying successfully, ending with Harbor login succeeding](./assets/demos/devops1-03-attack-vectors.gif) |
+| ![K3s node Ready and kubectl API ready, with Ingress NGINX installing via Helm](./assets/demos/devops1-01-k3s-ready-ingress.gif) | ![Container images being pulled, tagged, and pushed into the air-gapped Harbor registry](./assets/demos/devops1-02-harbor-seeding.gif) | ![Authorized DevSecOps security-test scenarios deploying successfully, ending with Harbor login succeeding](./assets/demos/devops1-03-attack-vectors.gif) |
 
-### VLAN-segmented Active Directory lab
+### Segmented Active Directory lab
 
 A complete OPNsense deployment for the segmented Active Directory lab, from initial boot through reload and interface assignment.
 
@@ -189,7 +197,7 @@ A complete OPNsense deployment for the segmented Active Directory lab, from init
 |---|---|---|
 | ![Pentest VLAN Lab Manager bringing the opnsense VM up under the libvirt provider](./assets/demos/opnsense-01-lab-manager-start.gif) | ![OPNsense reloading after configuration and coming back with Machine booted and ready](./assets/demos/opnsense-02-reload-success.gif) | ![OPNsense console showing the complete WAN, LAN, and VLAN interface assignments](./assets/demos/opnsense-03-vlan-topology.gif) |
 
-Full unedited recordings are available for the [Active Directory lab](./assets/demos/dc01.webm), [DevOps lab](./assets/demos/devops1.webm), and [VLAN-segmented lab](./assets/demos/opnsense-vlan.webm).
+Full unedited recordings are available for the [Active Directory lab](./assets/demos/dc01.webm), [DevOps lab](./assets/demos/devops1.webm), and [segmented Active Directory lab](./assets/demos/opnsense-vlan.webm).
 
 ---
 
@@ -212,11 +220,11 @@ See the [lab README](./labs/security/active-directory/base/) for provider-specif
 
 ### Segmented Active Directory Lab
 
-The VLAN-segmented lab extends the base Active Directory environment with controlled routing, separated trust boundaries, and segmentation-aware security testing.
+The segmented Active Directory lab extends the base Active Directory environment with controlled routing, separated trust boundaries, and segmentation-aware security testing.
 
 It supports research into lateral-movement constraints, network-security concepts, detection and response across boundaries, and controlled routing between lab segments.
 
-See the [lab README](./labs/security/active-directory/vlan-segmented/) and [VLAN lab troubleshooting guide](./labs/security/active-directory/vlan-segmented/docs/troubleshooting.md) for deployment and troubleshooting information.
+See the [lab README](./labs/security/active-directory/vlan-segmented/) and [segmented lab troubleshooting guide](./labs/security/active-directory/vlan-segmented/docs/troubleshooting.md) for deployment and troubleshooting information.
 
 ### DevOps/DevSecOps platform lab
 
@@ -228,9 +236,9 @@ See the [lab README](./labs/infrastructure/devops-linux-lab/) for provider-speci
 
 A defensive counterpart to the Active Directory base lab: the same base box and AD-promotion pattern, but with a hardening baseline applied instead of intentional misconfigurations. Each control is documented against the specific attack technique it mitigates, using the base lab's own attack guide as the reference point.
 
-This lab is new (v0.1.0 MVP) and has not had the same amount of real-world testing as the labs above — work through the AD base lab first, then use this one to see and validate the defensive side.
+This lab is experimental (`v0.1.0` MVP) and has not received the same level of real-world testing as the other labs. Complete the AD base lab first, then use this environment to study and validate the defensive side.
 
-See the [lab README](./labs/security/windows-hardening/) and its [hardening guide](./labs/security/windows-hardening/docs/hardening-guide.md) for the full control list, known limitations, and how to validate the baseline.
+See the [lab README](./labs/security/windows-hardening/) and its [hardening guide](./labs/security/windows-hardening/docs/hardening-guide.md) for the full control list, known limitations, and baseline-validation procedures.
 
 ---
 
@@ -240,44 +248,44 @@ Each lab uses a provider-aware `Vagrantfile` supporting KVM/QEMU with libvirt an
 
 | Provider | Best for | Start command |
 |---|---|---|
-| **KVM/libvirt** | Linux hosts with hardware virtualization and nested virtualization support | `vagrant up --provider=libvirt` |
+| **KVM/QEMU with libvirt** | Linux hosts with hardware virtualization and nested-virtualization support | `vagrant up --provider=libvirt` |
 | **VirtualBox** | Compatible Intel/AMD x86_64 hosts running Linux, macOS, or Windows | `vagrant up --provider=virtualbox` |
 
-KVM/libvirt is the primary development provider and generally provides the best performance for CPU-, memory-, storage-, and network-intensive environments.
+KVM/QEMU with libvirt is the primary development provider and generally offers the strongest performance for CPU-, memory-, storage-, and network-intensive environments.
 
 > [!NOTE]
-> “Supported” means the provider workflow is maintained and validated for the documented lab scope. It does not guarantee identical behavior across every host kernel, provider release, Vagrant plugin version, or third-party Vagrant box revision.
+> “Supported” means the provider workflow is maintained and validated for the documented lab scope. It does not guarantee identical behavior across every host kernel, provider release, Vagrant plugin version, third-party Vagrant box revision, or hardware configuration.
 
 ### Compatibility matrix
 
-| Component | KVM/libvirt | VirtualBox |
+| Component | KVM/QEMU with libvirt | VirtualBox |
 |---|---|---|
 | DevOps Linux lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
 | Active Directory base lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
-| Active Directory segmented lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
+| Segmented Active Directory lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
 | Windows Server Hardening lab (experimental) | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
 | Networking | Libvirt networks with automatic detection and fallback configuration | Host-only networking and VirtualBox internal networks |
 | Network segmentation | Separate libvirt networks per segment | Isolated internal networks that model segmentation boundaries |
 | Disk storage | qcow2 with libvirt storage configuration | VDI attached through a SATA controller |
-| Nested virtualization | `host-passthrough` CPU configuration where required | Explicit nested hardware virtualization configuration where supported |
+| Nested virtualization | `host-passthrough` CPU configuration where required | Explicit nested hardware-virtualization configuration where supported |
 | Graphics | VNC through virtio video, loopback-oriented | VMSVGA or VBoxSVGA with optional GUI support through `LAB_GUI=true` |
 | Linked clones | Backing-file images are commonly used | VirtualBox linked clones are supported |
 | Guest additions | Not required for libvirt workflows | `vagrant-vbguest` is optional |
 | Recommended use | Primary development and performance-sensitive deployments | Cross-platform compatibility on supported x86_64 hosts |
 
-The segmented lab uses separate virtual networks with libvirt and isolated internal networks with VirtualBox. VirtualBox networking models segmentation boundaries but does not reproduce physical IEEE 802.1Q VLAN tagging.
+The segmented lab uses separate libvirt networks and isolated VirtualBox internal networks to model segmentation boundaries. VirtualBox networking provides logical isolation but does not reproduce physical IEEE 802.1Q VLAN tagging.
 
 ### Apple Silicon status
 
 Oracle provides an Arm64 version of VirtualBox for Apple Silicon Macs. VirtualBox availability alone does not make a Vagrant lab architecture-compatible.
 
-This repository currently supports VirtualBox workflows on compatible Intel/AMD x86_64 hosts. Apple Silicon support requires:
+Apple Silicon is not currently supported or validated. Support would require:
 
 - ARM64-compatible Vagrant boxes
 - ARM64 guest media where required
 - Multi-architecture container images
 - Validated provider configuration for each lab
-- Documented deployment and testing workflows
+- Documented deployment, test, and troubleshooting workflows
 
 See the [Installation Guide](./docs/setup/installation.md) for provider-specific setup instructions.
 
@@ -290,22 +298,23 @@ See the [Installation Guide](./docs/setup/installation.md) for provider-specific
 - **Linux host:** Required for KVM/QEMU with libvirt
 - **Linux, macOS, or Windows host:** Supported with VirtualBox on compatible Intel/AMD x86_64 hardware
 - **CPU architecture:** Existing Windows Server and most current Vagrant box workflows require Intel/AMD x86_64 compatibility
-- **Hardware virtualization:** Intel VT-x or AMD-V enabled in BIOS/UEFI when applicable
-- **Vagrant:** Version 2.2 or newer
-- **Virtualization provider:** KVM/QEMU with libvirt or VirtualBox 7.0 or newer
-- **Python:** Python 3.10 or newer with `pip` for contributor tooling and lab-management utilities
+- **Hardware virtualization:** Intel VT-x or AMD-V enabled in BIOS/UEFI where applicable
+- **Vagrant:** A currently supported Vagrant release compatible with the selected provider
+- **Virtualization provider:** KVM/QEMU with libvirt, or a supported VirtualBox release
+- **Python:** Python 3.10+ for contributor tooling and lab-management utilities
 - **Network:** Internet access for initial box, package, and container-image retrieval unless using prepared local or internal mirrors
 
 ### Recommended resources
 
-- **Reduced-resource deployments:** At least 16 GB RAM and approximately 100 GB free disk space; availability depends on the selected lab and resource profile
-- **Full-profile deployments:** 32 GB or more RAM and approximately 200 GB free disk space
-- **CPU:** Multi-core processor with hardware virtualization support
-- **Storage:** SSD or NVMe storage is strongly recommended for Kubernetes, Windows Server, and multi-VM workloads
+Resource requirements vary by lab, selected provider, deployment profile, box-cache state, snapshot usage, and container-image storage. Use the estimates in [Which lab should I start with?](#which-lab-should-i-start-with) as a planning baseline, then review the selected lab README before deployment.
+
+For constrained systems, see [Minimal Resource Deployment](./docs/guides/optimization/minimal-resource-deployment.md).
 
 ### Vagrant plugins
 
-Install the common plugins required by the selected lab and provider:
+Install only the plugins required by your selected provider and lab. Run `make prereq` or `./scripts/check-prerequisites.sh --all` first to identify missing dependencies and review provider-specific setup guidance.
+
+**Common Windows guest workflows**
 
 ```bash
 vagrant plugin install vagrant-reload
@@ -313,13 +322,13 @@ vagrant plugin install vagrant-winrm
 vagrant plugin install vagrant-hostmanager
 ```
 
-Install the libvirt provider plugin when using KVM/QEMU:
+**KVM/QEMU with libvirt**
 
 ```bash
 vagrant plugin install vagrant-libvirt
 ```
 
-The VirtualBox Guest Additions plugin is optional:
+**Optional VirtualBox convenience plugin**
 
 ```bash
 vagrant plugin install vagrant-vbguest
@@ -340,7 +349,7 @@ The labs demonstrate:
 - Segmented network boundaries and controlled routing
 - Kubernetes and containerized workloads
 - Runtime-security monitoring
-- Defensive hardening validation, mapped one-to-one against specific offensive techniques (experimental)
+- Defensive hardening validation mapped to specific offensive techniques
 - Reproducible infrastructure deployment
 - Automated validation and documentation workflows
 
@@ -358,9 +367,9 @@ See the following documents for architecture details, trust boundaries, and desi
 | Domain | Capabilities | Location |
 |---|---|---|
 | Active Directory security | Domain deployment, AD CS, identity attack-path simulation, privilege-escalation research, and post-compromise workflows | `labs/security/active-directory/base/` |
-| Network segmentation | VLAN-like boundaries, routing separation, trust relationships, and segmentation-aware security-testing scenarios | `labs/security/active-directory/vlan-segmented/` |
+| Network segmentation | Logical segmentation boundaries, routing separation, trust relationships, and segmentation-aware security-testing scenarios | `labs/security/active-directory/vlan-segmented/` |
 | DevOps/DevSecOps | Kubernetes operations, GitOps, observability, runtime security, and policy enforcement | `labs/infrastructure/devops-linux-lab/` |
-| Defensive hardening (experimental) | CIS-benchmark-inspired hardening controls mapped to specific AD attack techniques, with a validation script to check each control | `labs/security/windows-hardening/` |
+| Defensive hardening (experimental) | CIS-benchmark-inspired hardening controls mapped to specific AD attack techniques, with validation tooling for each control | `labs/security/windows-hardening/` |
 | Infrastructure as Code | Vagrant, Ansible, Bash, Python, and automation workflows | Repository-wide |
 | Security documentation | Architecture, threat models, setup guides, troubleshooting, and learning paths | `docs/` |
 | Validation and quality engineering | Python tests, Bash tests, linting, documentation checks, and CI workflows | `.github/`, `tests/`, and `scripts/` |
@@ -391,7 +400,7 @@ See the following documents for architecture details, trust boundaries, and desi
 Run these commands from the selected lab directory.
 
 > [!WARNING]
-> `vagrant destroy -f` permanently removes the selected lab's VMs and may remove provider-managed disks. Save snapshots or export required artifacts before using it.
+> `vagrant destroy -f` permanently removes the selected lab's VMs and can remove provider-managed disks. Vagrant snapshots are provider-dependent and are not a substitute for exporting artifacts or maintaining external backups of work you need to retain.
 
 ### Rebuild a single VM
 
@@ -514,7 +523,7 @@ vagrant destroy -f
 vagrant up
 ```
 
-See the [Troubleshooting Guide](./docs/setup/troubleshooting.md) and [VLAN lab troubleshooting guide](./labs/security/active-directory/vlan-segmented/docs/troubleshooting.md) for detailed guidance.
+See the [Troubleshooting Guide](./docs/setup/troubleshooting.md) and [segmented lab troubleshooting guide](./labs/security/active-directory/vlan-segmented/docs/troubleshooting.md) for detailed guidance.
 
 ---
 
@@ -556,7 +565,7 @@ security-engineering-lab/
 │       ├── active-directory/
 │       │   ├── base/
 │       │   └── vlan-segmented/
-│       └── windows-hardening/       # experimental, v0.1.0 MVP
+│       └── windows-hardening/   # Experimental, v0.1.0 MVP
 ├── scripts/                # Host-readiness, validation, and automation helpers
 ├── tests/                  # pytest, Bats, and repository validation tests
 ├── tools/                  # Standalone lab and security utilities
@@ -578,7 +587,7 @@ See the [Documentation Index](./docs/README.md) for the complete documentation m
 Install development dependencies:
 
 ```bash
-pip install -r requirements-dev.txt
+python3 -m pip install -r requirements-dev.txt
 ```
 
 Install pre-commit hooks:
@@ -615,6 +624,17 @@ make help
 ```
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md), the [Tests README](./tests/README.md), the [Scripts README](./scripts/README.md), and [Dependencies](./docs/dependencies.md) for development details.
+
+> [!NOTE]
+> Contributor tooling may have host-specific requirements. Review the relevant setup documentation when running shell, virtualization, or Linux-oriented validation workflows from macOS or Windows.
+
+---
+
+## Project maturity
+
+The repository is actively developed. Core lab workflows are maintained through automated repository checks and documented validation procedures; individual provider, box, guest, dependency, and hardware combinations may still require host-specific troubleshooting.
+
+Review each lab README for its current validation status, supported profiles, provider requirements, and known limitations.
 
 ---
 
@@ -668,7 +688,7 @@ For additional security information, see:
 - VirtualBox support currently targets compatible Intel/AMD x86_64 hosts.
 - Apple Silicon support is a future compatibility target and requires ARM64-compatible boxes, guest media, container images, and per-lab validation.
 - Windows-based labs use Microsoft evaluation media; users are responsible for complying with applicable Microsoft licensing terms.
-- The Windows Server Hardening lab is an experimental v0.1.0 MVP with less real-world testing than the other labs, and does not yet cover AD CS hardening, LAPS, Credential Guard, or automated Sysmon deployment — see that lab's `docs/hardening-guide.md` for the full list of known gaps.
+- The Windows Server Hardening lab is an experimental `v0.1.0` MVP with less real-world testing than the other labs. It does not yet cover AD CS hardening, LAPS, Credential Guard, or automated Sysmon deployment. See that lab's `docs/hardening-guide.md` for the complete list of known gaps.
 - Third-party Vagrant boxes may change independently.
 - CI validates repository quality and selected provider workflows but does not fully deploy every environment on every push.
 - The project is designed primarily for a single-host laboratory architecture.
