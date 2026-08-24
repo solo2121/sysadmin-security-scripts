@@ -1,7 +1,7 @@
 # Security Engineering Lab
 
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-![Platform](https://img.shields.io/badge/platform-Linux%7CmacOS%7CWindows-blue)
+![Hosts](https://img.shields.io/badge/hosts-Linux%20%7C%20macOS%20%7C%20Windows-blue)
 ![Vagrant](https://img.shields.io/badge/Vagrant-Lab-orange)
 ![Security](https://img.shields.io/badge/Security-Research-red)
 ![DevSecOps](https://img.shields.io/badge/DevSecOps-Lab-purple)
@@ -19,7 +19,7 @@ The repository is designed to be **runnable, not static**: each lab includes dep
 >
 > **Apple Silicon status:** The Windows and Active Directory labs are not supported on Apple Silicon because they depend on x86_64 Windows guests, x86_64-oriented Vagrant boxes, and provider-specific validation.
 >
-> An experimental **Apple Silicon Lite / DevSecOps-only** profile is planned for ARM64-native Kubernetes and Linux platform-engineering workflows. It will exclude Windows, Active Directory, segmented-network, and other x86_64-dependent components. Until that profile is published and validated, Apple Silicon is not a supported deployment target.
+> A **DevSecOps Lite / ARM64** profile is planned for ARM64-native Kubernetes and Linux platform-engineering workflows. It will exclude Windows, Active Directory, segmented-network, and other x86_64-dependent components. Until that profile is published and validated, Apple Silicon is not a supported deployment target.
 
 ---
 
@@ -69,6 +69,7 @@ The repository is designed to be **runnable, not static**: each lab includes dep
   - [Contributing](#contributing)
   - [Security and ethics](#security-and-ethics)
   - [Known limitations](#known-limitations)
+  - [License](#license)
 
 </details>
 
@@ -80,7 +81,7 @@ The repository is designed to be **runnable, not static**: each lab includes dep
 |---|---|
 | Primary provider | KVM/QEMU with libvirt on Linux |
 | Alternative provider | VirtualBox on compatible Intel/AMD x86_64 hosts |
-| Planned ARM64 profile | Apple Silicon DevSecOps Lite profile for validated Linux and Kubernetes workflows |
+| Planned ARM64 profile | DevSecOps Lite profile for validated Linux and Kubernetes workflows |
 | Lab environments | Active Directory, network-segmented Active Directory, DevOps/DevSecOps, Windows Server hardening (experimental), and a planned ARM64 DevSecOps Lite profile |
 | Automation | Vagrant, Ansible, Bash, and Python |
 | Cloud-native stack | Selected DevOps/DevSecOps profiles use K3s, Harbor or an ARM64-compatible registry alternative, Argo CD, Prometheus, Grafana, Loki, Falco, and Kyverno; ARM64 availability is validated per component |
@@ -96,7 +97,7 @@ The repository is designed to be **runnable, not static**: each lab includes dep
 | [Active Directory — base](./labs/security/active-directory/base/) | 6; up to 11 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 200 GB+ | Learning core AD attack paths, including Kerberoasting, AS-REP roasting, and AD CS abuse, without network-segmentation complexity. Start here if you are new to AD security. |
 | [Active Directory — segmented](./labs/security/active-directory/vlan-segmented/) | 12 | 16 GB / 32 GB+ | 80 GB+ | Practicing lateral movement, routing controls, trust boundaries, and defensive visibility across segmented network boundaries. |
 | [DevOps/DevSecOps](./labs/infrastructure/devops-linux-lab/) | 12 | 16 GB for a core cluster / 32 GB+ recommended | 200 GB+ | Kubernetes, Harbor, CI/CD, GitOps, observability, runtime security, policy enforcement, and Linux administration. Not AD-focused. |
-| [DevSecOps Lite — Apple Silicon / ARM64 (planned)](./labs/infrastructure/devsecops-lite-arm64/) | Target: 1–3 ARM64 Linux nodes or containers | Target: 8 GB / 16 GB recommended | Target: 40 GB+ | Apple Silicon users who want to practice K3s, GitOps, observability, runtime security, policy enforcement, and Linux platform engineering without Windows or Active Directory dependencies. |
+| DevSecOps Lite — Apple Silicon / ARM64 (planned) | Target: 1–3 ARM64 Linux nodes or containers | Target: 8 GB / 16 GB recommended | Target: 40 GB+ | Planned — not yet published. Intended for Apple Silicon users who want to practice K3s, GitOps, observability, runtime security, policy enforcement, and Linux platform engineering without Windows or Active Directory dependencies. |
 | [Windows Server Hardening (experimental)](./labs/security/windows-hardening/) | 1; 2 with `LAB_PROFILE=full` | 8 GB / 16 GB+ | 60 GB+ | A defensive counterpart to the AD base lab: a CIS-benchmark-inspired hardening baseline with controls mapped to specific attack techniques. Start after completing the AD base lab. |
 
 > [!NOTE]
@@ -175,7 +176,7 @@ python3 vagrant_manager.py up --help
 
 After deployment, follow the selected lab README and health-validation guidance before beginning an exercise. A successful `vagrant up` does not necessarily mean that every guest service, domain role, or Kubernetes component is fully ready.
 
-The planned Apple Silicon DevSecOps Lite profile will have separate prerequisites, provider instructions, deployment commands, resource guidance, validation steps, and troubleshooting documentation. Do not use the x86_64 Vagrant workflows above as an Apple Silicon deployment path.
+The planned ARM64 DevSecOps Lite profile will have separate prerequisites, provider instructions, deployment commands, resource guidance, validation steps, and troubleshooting documentation. Do not use the x86_64 Vagrant workflows above as an Apple Silicon deployment path.
 
 See the [Installation Guide](./docs/setup/installation.md), [Quickstart Examples](./docs/setup/quickstart-examples.md), and [Learning Path](./docs/project/learning-path.md) for provider setup, deployment patterns, and lab progression.
 
@@ -218,7 +219,7 @@ Full unedited recordings are available for the [Active Directory lab](./assets/d
 | Active Directory Security Lab | Windows enterprise infrastructure, Active Directory security research, identity attack-path simulation, and detection concepts | [labs/security/active-directory/base/](./labs/security/active-directory/base/) |
 | Segmented Active Directory Lab | Segmentation-aware Active Directory research, routing controls, trust boundaries, and lateral-movement constraints | [labs/security/active-directory/vlan-segmented/](./labs/security/active-directory/vlan-segmented/) |
 | DevOps/DevSecOps Lab | Linux administration, Kubernetes, GitOps, observability, runtime security, and policy enforcement | [labs/infrastructure/devops-linux-lab/](./labs/infrastructure/devops-linux-lab/) |
-| DevSecOps Lite — Apple Silicon / ARM64 (planned) | ARM64-native Linux platform engineering, Kubernetes, GitOps, observability, runtime security, and policy enforcement without Windows or Active Directory dependencies | [labs/infrastructure/devsecops-lite-arm64/](./labs/infrastructure/devsecops-lite-arm64/) |
+| DevSecOps Lite — Apple Silicon / ARM64 (planned) | Planned ARM64-native Linux platform engineering, Kubernetes, GitOps, observability, runtime security, and policy enforcement without Windows or Active Directory dependencies | Not yet published |
 | Windows Server Hardening Lab (experimental) | CIS-benchmark-inspired defensive hardening, mapped one-to-one against the AD base lab's attack techniques | [labs/security/windows-hardening/](./labs/security/windows-hardening/) |
 
 ### Active Directory Security Lab
@@ -278,7 +279,7 @@ Each full lab uses a provider-aware `Vagrantfile` supporting KVM/QEMU with libvi
 |---|---|---|
 | **KVM/QEMU with libvirt** | Linux hosts with hardware virtualization and nested-virtualization support | `vagrant up --provider=libvirt` |
 | **VirtualBox** | Compatible Intel/AMD x86_64 hosts running Linux, macOS, or Windows | `vagrant up --provider=virtualbox` |
-| **Apple Silicon ARM64 Lite profile (planned)** | macOS users running validated ARM64-native Linux and Kubernetes workflows | Provider and deployment commands will be documented with the released Lite profile |
+| **ARM64 DevSecOps Lite profile (planned)** | Apple Silicon and other compatible ARM64 hosts running validated Linux and Kubernetes workflows | Provider and deployment commands will be documented with the published profile |
 
 KVM/QEMU with libvirt is the primary development provider and generally offers the strongest performance for CPU-, memory-, storage-, and network-intensive environments.
 
@@ -290,7 +291,7 @@ KVM/QEMU with libvirt is the primary development provider and generally offers t
 | Component | KVM/QEMU with libvirt | VirtualBox |
 |---|---|---|
 | DevOps Linux lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts; Apple Silicon requires the separate planned Lite profile |
-| DevSecOps Lite profile (planned) | N/A as a macOS-host deployment path | Experimental ARM64-native profile planned; limited to explicitly validated Linux and Kubernetes components |
+| DevSecOps Lite profile (planned) | Not applicable | Planned; provider, deployment workflow, and supported component set will be documented after ARM64 validation |
 | Active Directory base lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
 | Segmented Active Directory lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
 | Windows Server Hardening lab (experimental) | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
@@ -420,7 +421,7 @@ See the following documents for architecture details, trust boundaries, and desi
 | Active Directory security | Domain deployment, AD CS, identity attack-path simulation, privilege-escalation research, and post-compromise workflows | `labs/security/active-directory/base/` |
 | Network segmentation | Logical segmentation boundaries, routing separation, trust relationships, and segmentation-aware security-testing scenarios | `labs/security/active-directory/vlan-segmented/` |
 | DevOps/DevSecOps | Kubernetes operations, GitOps, observability, runtime security, and policy enforcement | `labs/infrastructure/devops-linux-lab/` |
-| ARM64 DevSecOps Lite (planned) | ARM64-native Kubernetes, GitOps, observability, runtime security, policy enforcement, and container-security workflows | `labs/infrastructure/devsecops-lite-arm64/` |
+| ARM64 DevSecOps Lite (planned) | Planned ARM64-native Kubernetes, GitOps, observability, runtime security, policy enforcement, and container-security workflows | Roadmap item — not yet published |
 | Defensive hardening (experimental) | CIS-benchmark-inspired hardening controls mapped to specific AD attack techniques, with validation tooling for each control | `labs/security/windows-hardening/` |
 | Infrastructure as Code | Vagrant, Ansible, Bash, Python, and automation workflows | Repository-wide |
 | Security documentation | Architecture, threat models, setup guides, troubleshooting, and learning paths | `docs/` |
@@ -618,13 +619,12 @@ security-engineering-lab/
 ├── examples/               # Example configurations and reference material
 ├── labs/
 │   ├── infrastructure/
-│   │   ├── devops-linux-lab/
-│   │   └── devsecops-lite-arm64/    # Planned Apple Silicon / ARM64 profile
+│   │   └── devops-linux-lab/
 │   └── security/
 │       ├── active-directory/
 │       │   ├── base/
 │       │   └── vlan-segmented/
-│       └── windows-hardening/       # Experimental, v0.1.0 MVP
+│       └── windows-hardening/   # Experimental, v0.1.0 MVP
 ├── scripts/                # Host-readiness, validation, and automation helpers
 ├── tests/                  # pytest, Bats, and repository validation tests
 ├── tools/                  # Standalone lab and security utilities
@@ -637,7 +637,7 @@ security-engineering-lab/
 └── pyproject.toml
 ```
 
-The `devsecops-lite-arm64/` directory is a planned structure and should be added only when the Lite profile is implemented. Until then, remove that directory from this tree if you prefer the repository structure to list only tracked paths.
+The repository structure lists tracked paths only. The planned ARM64 DevSecOps Lite profile will be added when its provider workflow, architecture compatibility, deployment automation, validation coverage, and documentation are ready.
 
 See the [Documentation Index](./docs/README.md) for the complete documentation map and each lab directory for provider-specific deployment instructions.
 
@@ -758,4 +758,12 @@ For additional security information, see:
 - The Windows Server Hardening lab is an experimental `v0.1.0` MVP with less real-world testing than the other labs. It does not yet cover AD CS hardening, LAPS, Credential Guard, or automated Sysmon deployment. See that lab's `docs/hardening-guide.md` for the complete list of known gaps.
 - Third-party Vagrant boxes may change independently.
 - CI validates repository quality and selected provider workflows but does not fully deploy every environment on every push.
-- The project is designed primarily for a single-host laboratory
+- The project is designed primarily for a single-host laboratory architecture.
+
+---
+
+## License
+
+This project is licensed under the MIT License.
+
+See [LICENSE](./LICENSE) for the full license text.
