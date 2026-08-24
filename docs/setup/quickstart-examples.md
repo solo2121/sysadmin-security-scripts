@@ -2,7 +2,7 @@
 
 This guide provides step-by-step examples for setting up and running the security-engineering-lab, including command examples, verification steps, troubleshooting, and common workflows.
 
-Most examples below use the **KVM/libvirt** provider (the repository default). Where a step differs on **VirtualBox**, an equivalent command is shown alongside it. See [Installation Guide](./installation.md) for full per-provider setup, and the main [README's Supported providers section](../../README.md#supported-providers) for an overview.
+Most examples below use the **KVM/libvirt** provider (the repository default). Where a step differs on **VirtualBox**, an equivalent command is shown alongside it. See [Installation Guide](./installation.md) for full per-provider setup, and the main [README's Provider compatibility section](../../README.md#provider-compatibility) for an overview.
 
 ---
 

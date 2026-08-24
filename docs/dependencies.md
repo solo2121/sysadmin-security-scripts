@@ -12,7 +12,7 @@ replacing them.
 
 The labs are provisioned with Vagrant and support two providers: **KVM/libvirt**
 (the default, Linux-only) and **VirtualBox** (cross-platform). See the
-[README's Supported providers section](../README.md#supported-providers) for
+[README's Provider compatibility section](../README.md#provider-compatibility) for
 an overview and [`docs/setup/installation.md`](setup/installation.md) for
 full setup steps.
 

@@ -4,7 +4,7 @@
 
 security-engineering-lab is organized as a modular DevSecOps and security-learning platform. The repository separates runnable labs, reusable tools, operational scripts, and long-form documentation so each part can be reviewed or improved independently.
 
-The project is intentionally local-first: labs are designed for Vagrant rather than public cloud infrastructure, with KVM/QEMU and libvirt as the default provider and VirtualBox supported as a cross-platform alternative (see the [README's Supported providers section](../../README.md#supported-providers)). This keeps security testing contained and makes the environments repeatable on a workstation.
+The project is intentionally local-first: labs are designed for Vagrant rather than public cloud infrastructure, with KVM/QEMU and libvirt as the default provider and VirtualBox supported as a cross-platform alternative (see the [README's Provider compatibility section](../../README.md#provider-compatibility)). This keeps security testing contained and makes the environments repeatable on a workstation.
 
 ---
 
