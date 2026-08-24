@@ -15,7 +15,7 @@ The repository is designed to be **runnable, not static**: each lab includes dep
 **Project status:** Active development
 
 > [!IMPORTANT]
-> **Supported hosts:** KVM/QEMU with libvirt is the primary provider on Linux for the supported lab environments. VirtualBox workflows are maintained for compatible Intel/AMD x86_64 hosts running Linux, macOS, or Windows.
+> **Supported hosts:** KVM/QEMU with libvirt is the primary provider on Linux for the full lab portfolio. VirtualBox workflows are maintained for compatible Intel/AMD x86_64 hosts running Linux, macOS, or Windows.
 >
 > **Apple Silicon status:** Apple Silicon is not currently supported. The Windows, Active Directory, segmented-network, and Windows Hardening labs depend on x86_64 guests, x86_64-oriented Vagrant boxes, and provider-specific validation.
 >
@@ -94,13 +94,13 @@ The repository is designed to be **runnable, not static**: each lab includes dep
 | [Active Directory — base](./labs/security/active-directory/base/) | 6; up to 11 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 200 GB+ | Learning core AD attack paths, including Kerberoasting, AS-REP roasting, and AD CS abuse, without network-segmentation complexity. Start here if you are new to AD security. |
 | [Active Directory — segmented](./labs/security/active-directory/vlan-segmented/) | 12 | 16 GB / 32 GB+ | 80 GB+ | Practicing lateral movement, routing controls, trust boundaries, and defensive visibility across segmented network boundaries. |
 | [DevOps/DevSecOps](./labs/infrastructure/devops-linux-lab/) | 12 | 16 GB for a core cluster / 32 GB+ recommended | 200 GB+ | Kubernetes, Harbor, CI/CD, GitOps, observability, runtime security, policy enforcement, and Linux administration. Not AD-focused. |
-| DevSecOps Lite — ARM64 (planned) | — | — | — | Planned ARM64-native Linux and Kubernetes platform-engineering environment for ARM64-capable hosts, including Apple Silicon Macs. |
+| DevSecOps Lite — ARM64 (planned) | — | — | — | Planned — not yet published. Intended as an ARM64-native Linux and Kubernetes platform-engineering environment for compatible ARM64 hosts, including Apple Silicon Macs. |
 | [Windows Server Hardening (experimental)](./labs/security/windows-hardening/) | 1; 2 with `LAB_PROFILE=full` | 8 GB / 16 GB+ | 60 GB+ | A defensive counterpart to the AD base lab: a CIS-benchmark-inspired hardening baseline with controls mapped to specific attack techniques. Start after completing the AD base lab. |
 
 > [!NOTE]
 > Resource figures represent practical **host capacity**, not only aggregate guest allocations. Reserve additional CPU, RAM, and disk capacity for the host OS, Vagrant and provider overhead, base boxes, snapshots, package caches, and container-image storage.
 >
-> The planned ARM64 Lite profile does not have published resource requirements yet. Measured requirements will be documented after validating the deployment on supported ARM64 hardware and the selected provider or runtime.
+> The ARM64 Lite profile is a planning item only. Do not treat its resource requirements or architecture as validated until the profile is published with measured deployment requirements.
 
 Before deploying, run the full prerequisite check:
 
@@ -172,6 +172,8 @@ python3 vagrant_manager.py up --help
 ```
 
 After deployment, follow the selected lab README and health-validation guidance before beginning an exercise. A successful `vagrant up` does not necessarily mean that every guest service, domain role, or Kubernetes component is fully ready.
+
+Apple Silicon is not currently supported. The planned DevSecOps Lite — ARM64 profile will have separate documentation when it is implemented and validated.
 
 See the [Installation Guide](./docs/setup/installation.md), [Quickstart Examples](./docs/setup/quickstart-examples.md), and [Learning Path](./docs/project/learning-path.md) for provider setup, deployment patterns, and lab progression.
 
@@ -306,7 +308,7 @@ See the [Installation Guide](./docs/setup/installation.md) for provider-specific
 
 * **Linux host:** Required for KVM/QEMU with libvirt full-lab workflows
 * **Linux, macOS, or Windows host:** Supported with VirtualBox on compatible Intel/AMD x86_64 hardware
-* **CPU architecture:** Published Windows and Vagrant box workflows currently require x86_64 compatibility
+* **CPU architecture:** Existing Windows Server and most current Vagrant box workflows require Intel/AMD x86_64 compatibility
 * **Hardware virtualization:** Intel VT-x or AMD-V enabled in BIOS/UEFI where applicable
 * **Vagrant:** A currently supported Vagrant release compatible with the selected provider
 * **Virtualization provider:** KVM/QEMU with libvirt, or a supported VirtualBox release
@@ -666,6 +668,8 @@ Before submitting a contribution:
 * Run relevant lint, test, validation, and documentation checks
 * Do not include credentials, secrets, private keys, or sensitive host information
 * Follow the repository contribution guidelines
+
+For ARM64 work, include architecture compatibility evidence, image and chart validation results, provider documentation, automated tests where practical, and a clear statement of which features remain unsupported.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the complete contributor workflow.
 
