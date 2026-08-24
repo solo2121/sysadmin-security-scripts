@@ -15,7 +15,11 @@ The repository is designed to be **runnable, not static**: each lab includes dep
 **Project status:** Active development
 
 > [!IMPORTANT]
-> **Supported hosts:** KVM/QEMU with libvirt is the primary provider on Linux. VirtualBox workflows are maintained for compatible Intel/AMD x86_64 hosts running Linux, macOS, or Windows. Apple Silicon is not currently supported or validated because the labs depend on ARM64-compatible Vagrant boxes and guest media, multi-architecture container images, and provider-specific validation—particularly for Windows-based workflows.
+> **Supported hosts:** KVM/QEMU with libvirt is the primary provider on Linux for the full lab portfolio. VirtualBox workflows are maintained for compatible Intel/AMD x86_64 hosts running Linux, macOS, or Windows.
+>
+> **Apple Silicon status:** The Windows and Active Directory labs are not supported on Apple Silicon because they depend on x86_64 Windows guests, x86_64-oriented Vagrant boxes, and provider-specific validation.
+>
+> An experimental **Apple Silicon Lite / DevSecOps-only** profile is planned for ARM64-native Kubernetes and Linux platform-engineering workflows. It will exclude Windows, Active Directory, segmented-network, and other x86_64-dependent components. Until that profile is published and validated, Apple Silicon is not a supported deployment target.
 
 ---
 
@@ -34,6 +38,7 @@ The repository is designed to be **runnable, not static**: each lab includes dep
     - [Active Directory Security Lab](#active-directory-security-lab)
     - [Segmented Active Directory Lab](#segmented-active-directory-lab-1)
     - [DevOps/DevSecOps platform lab](#devopsdevsecops-platform-lab)
+    - [DevSecOps Lite — Apple Silicon / ARM64 (planned)](#devsecops-lite--apple-silicon--arm64-planned)
     - [Windows Server Hardening Lab (experimental)](#windows-server-hardening-lab-experimental)
   - [Provider compatibility](#provider-compatibility)
     - [Compatibility matrix](#compatibility-matrix)
@@ -56,6 +61,7 @@ The repository is designed to be **runnable, not static**: each lab includes dep
     - [Wrong provider selected](#wrong-provider-selected)
     - [WinRM or SSH connection failures](#winrm-or-ssh-connection-failures)
     - [Network or segmentation conflicts](#network-or-segmentation-conflicts)
+    - [Apple Silicon and ARM64 incompatibility](#apple-silicon-and-arm64-incompatibility)
   - [Documentation hub](#documentation-hub)
   - [Repository structure](#repository-structure)
   - [Development quickstart](#development-quickstart)
@@ -63,7 +69,6 @@ The repository is designed to be **runnable, not static**: each lab includes dep
   - [Contributing](#contributing)
   - [Security and ethics](#security-and-ethics)
   - [Known limitations](#known-limitations)
-  - [License](#license)
 
 </details>
 
@@ -75,9 +80,10 @@ The repository is designed to be **runnable, not static**: each lab includes dep
 |---|---|
 | Primary provider | KVM/QEMU with libvirt on Linux |
 | Alternative provider | VirtualBox on compatible Intel/AMD x86_64 hosts |
-| Lab environments | Active Directory, network-segmented Active Directory, DevOps/DevSecOps, Windows Server hardening (experimental) |
+| Planned ARM64 profile | Apple Silicon DevSecOps Lite profile for validated Linux and Kubernetes workflows |
+| Lab environments | Active Directory, network-segmented Active Directory, DevOps/DevSecOps, Windows Server hardening (experimental), and a planned ARM64 DevSecOps Lite profile |
 | Automation | Vagrant, Ansible, Bash, and Python |
-| Cloud-native stack | Selected DevOps/DevSecOps profiles use K3s, Harbor, Argo CD, Prometheus, Grafana, Loki, Falco, and Kyverno |
+| Cloud-native stack | Selected DevOps/DevSecOps profiles use K3s, Harbor or an ARM64-compatible registry alternative, Argo CD, Prometheus, Grafana, Loki, Falco, and Kyverno; ARM64 availability is validated per component |
 | Validation | GitHub Actions, pytest, Bats, ShellCheck, and documentation checks |
 | Intended use | Authorized research, defensive security practice, and isolated education |
 
@@ -90,22 +96,24 @@ The repository is designed to be **runnable, not static**: each lab includes dep
 | [Active Directory — base](./labs/security/active-directory/base/) | 6; up to 11 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 200 GB+ | Learning core AD attack paths, including Kerberoasting, AS-REP roasting, and AD CS abuse, without network-segmentation complexity. Start here if you are new to AD security. |
 | [Active Directory — segmented](./labs/security/active-directory/vlan-segmented/) | 12 | 16 GB / 32 GB+ | 80 GB+ | Practicing lateral movement, routing controls, trust boundaries, and defensive visibility across segmented network boundaries. |
 | [DevOps/DevSecOps](./labs/infrastructure/devops-linux-lab/) | 12 | 16 GB for a core cluster / 32 GB+ recommended | 200 GB+ | Kubernetes, Harbor, CI/CD, GitOps, observability, runtime security, policy enforcement, and Linux administration. Not AD-focused. |
+| [DevSecOps Lite — Apple Silicon / ARM64 (planned)](./labs/infrastructure/devsecops-lite-arm64/) | Target: 1–3 ARM64 Linux nodes or containers | Target: 8 GB / 16 GB recommended | Target: 40 GB+ | Apple Silicon users who want to practice K3s, GitOps, observability, runtime security, policy enforcement, and Linux platform engineering without Windows or Active Directory dependencies. |
 | [Windows Server Hardening (experimental)](./labs/security/windows-hardening/) | 1; 2 with `LAB_PROFILE=full` | 8 GB / 16 GB+ | 60 GB+ | A defensive counterpart to the AD base lab: a CIS-benchmark-inspired hardening baseline with controls mapped to specific attack techniques. Start after completing the AD base lab. |
 
 > [!NOTE]
 > Resource figures represent practical **host capacity**, not only aggregate guest allocations. Reserve additional CPU, RAM, and disk capacity for the host OS, Vagrant and provider overhead, base boxes, snapshots, package caches, and container-image storage.
+>
+> Resource figures marked **Target** for the planned ARM64 Lite profile are preliminary planning estimates. Publish measured requirements after validating the deployment on supported Apple Silicon hardware and the chosen ARM64 provider workflow.
 
-Before deployment, run:
+Before deploying, run the full prerequisite check:
 
 ```bash
 ./scripts/check-prerequisites.sh --all
 ```
 
-Or:
+`--all` enables the lab-specific checks required by the repository's Windows-based and multi-lab workflows.
 
-```bash
-make prereq
-```
+> [!NOTE]
+> `make prereq` runs the baseline prerequisite check only. It does not currently pass `--all`.
 
 For the recommended progression from Active Directory fundamentals through segmentation and DevSecOps workflows, see the [Learning Path](./docs/project/learning-path.md).
 
@@ -123,7 +131,7 @@ Clone the repository and validate your host:
 ```bash
 git clone https://github.com/solo2121/security-engineering-lab.git
 cd security-engineering-lab
-make prereq
+./scripts/check-prerequisites.sh --all
 ```
 
 Start with the Active Directory base lab using the primary Linux provider:
@@ -167,6 +175,8 @@ python3 vagrant_manager.py up --help
 
 After deployment, follow the selected lab README and health-validation guidance before beginning an exercise. A successful `vagrant up` does not necessarily mean that every guest service, domain role, or Kubernetes component is fully ready.
 
+The planned Apple Silicon DevSecOps Lite profile will have separate prerequisites, provider instructions, deployment commands, resource guidance, validation steps, and troubleshooting documentation. Do not use the x86_64 Vagrant workflows above as an Apple Silicon deployment path.
+
 See the [Installation Guide](./docs/setup/installation.md), [Quickstart Examples](./docs/setup/quickstart-examples.md), and [Learning Path](./docs/project/learning-path.md) for provider setup, deployment patterns, and lab progression.
 
 ---
@@ -208,6 +218,7 @@ Full unedited recordings are available for the [Active Directory lab](./assets/d
 | Active Directory Security Lab | Windows enterprise infrastructure, Active Directory security research, identity attack-path simulation, and detection concepts | [labs/security/active-directory/base/](./labs/security/active-directory/base/) |
 | Segmented Active Directory Lab | Segmentation-aware Active Directory research, routing controls, trust boundaries, and lateral-movement constraints | [labs/security/active-directory/vlan-segmented/](./labs/security/active-directory/vlan-segmented/) |
 | DevOps/DevSecOps Lab | Linux administration, Kubernetes, GitOps, observability, runtime security, and policy enforcement | [labs/infrastructure/devops-linux-lab/](./labs/infrastructure/devops-linux-lab/) |
+| DevSecOps Lite — Apple Silicon / ARM64 (planned) | ARM64-native Linux platform engineering, Kubernetes, GitOps, observability, runtime security, and policy enforcement without Windows or Active Directory dependencies | [labs/infrastructure/devsecops-lite-arm64/](./labs/infrastructure/devsecops-lite-arm64/) |
 | Windows Server Hardening Lab (experimental) | CIS-benchmark-inspired defensive hardening, mapped one-to-one against the AD base lab's attack techniques | [labs/security/windows-hardening/](./labs/security/windows-hardening/) |
 
 ### Active Directory Security Lab
@@ -232,6 +243,23 @@ The DevOps/DevSecOps platform lab focuses on Linux platform engineering, Kuberne
 
 See the [lab README](./labs/infrastructure/devops-linux-lab/) for provider-specific deployment requirements, resource profiles, and validation guidance.
 
+### DevSecOps Lite — Apple Silicon / ARM64 (planned)
+
+The planned DevSecOps Lite profile is a deliberately scoped ARM64-native platform-engineering environment for Apple Silicon Macs and other compatible ARM64 hosts.
+
+It is intended to provide a lower-resource route into Kubernetes, GitOps, observability, runtime security, policy enforcement, container security, and Linux administration. It will not be a functional replacement for the Active Directory, Windows Hardening, or segmented-network labs.
+
+The profile is expected to include validated subsets of:
+
+- K3s
+- GitOps workflows
+- Prometheus, Grafana, and Loki
+- Falco runtime-security monitoring
+- Kyverno policy enforcement
+- Linux administration and container-security exercises
+
+The final scope depends on validation of ARM64 Vagrant boxes or an alternative supported runtime, multi-architecture container images, Helm charts, registry workflows, network behavior, host integration, provisioning automation, and test coverage.
+
 ### Windows Server Hardening Lab (experimental)
 
 A defensive counterpart to the Active Directory base lab: the same base box and AD-promotion pattern, but with a hardening baseline applied instead of intentional misconfigurations. Each control is documented against the specific attack technique it mitigates, using the base lab's own attack guide as the reference point.
@@ -244,12 +272,13 @@ See the [lab README](./labs/security/windows-hardening/) and its [hardening guid
 
 ## Provider compatibility
 
-Each lab uses a provider-aware `Vagrantfile` supporting KVM/QEMU with libvirt and VirtualBox, subject to provider-specific requirements.
+Each full lab uses a provider-aware `Vagrantfile` supporting KVM/QEMU with libvirt and VirtualBox, subject to provider-specific requirements.
 
 | Provider | Best for | Start command |
 |---|---|---|
 | **KVM/QEMU with libvirt** | Linux hosts with hardware virtualization and nested-virtualization support | `vagrant up --provider=libvirt` |
 | **VirtualBox** | Compatible Intel/AMD x86_64 hosts running Linux, macOS, or Windows | `vagrant up --provider=virtualbox` |
+| **Apple Silicon ARM64 Lite profile (planned)** | macOS users running validated ARM64-native Linux and Kubernetes workflows | Provider and deployment commands will be documented with the released Lite profile |
 
 KVM/QEMU with libvirt is the primary development provider and generally offers the strongest performance for CPU-, memory-, storage-, and network-intensive environments.
 
@@ -260,7 +289,8 @@ KVM/QEMU with libvirt is the primary development provider and generally offers t
 
 | Component | KVM/QEMU with libvirt | VirtualBox |
 |---|---|---|
-| DevOps Linux lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
+| DevOps Linux lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts; Apple Silicon requires the separate planned Lite profile |
+| DevSecOps Lite profile (planned) | N/A as a macOS-host deployment path | Experimental ARM64-native profile planned; limited to explicitly validated Linux and Kubernetes components |
 | Active Directory base lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
 | Segmented Active Directory lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
 | Windows Server Hardening lab (experimental) | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
@@ -277,15 +307,27 @@ The segmented lab uses separate libvirt networks and isolated VirtualBox interna
 
 ### Apple Silicon status
 
-Oracle provides an Arm64 version of VirtualBox for Apple Silicon Macs. VirtualBox availability alone does not make a Vagrant lab architecture-compatible.
+Apple Silicon Macs use the ARM64 architecture. The full repository is not currently supported or validated on Apple Silicon because several lab environments depend on x86_64 Windows guests, x86_64 Vagrant boxes, guest media, and provider-specific networking and provisioning behavior.
 
-Apple Silicon is not currently supported or validated. Support would require:
+The following labs remain unavailable on Apple Silicon:
 
-- ARM64-compatible Vagrant boxes
-- ARM64 guest media where required
-- Multi-architecture container images
-- Validated provider configuration for each lab
-- Documented deployment, test, and troubleshooting workflows
+- Active Directory Security Lab
+- Segmented Active Directory Lab
+- Windows Server Hardening Lab
+- Any workflow requiring x86_64-only Vagrant boxes, Windows guest media, or nested-virtualization assumptions validated only on Intel/AMD hosts
+
+A separate **DevSecOps Lite** profile is planned for Apple Silicon and other ARM64-capable hosts. Its intended scope is ARM64-native Linux and Kubernetes learning, including validated subsets of:
+
+- K3s
+- GitOps workflows
+- Prometheus, Grafana, and Loki
+- Falco runtime-security monitoring
+- Kyverno policy enforcement
+- Linux administration and container-security exercises
+
+K3s supports ARM64, and Falco supports ARM64. However, every container image, Helm chart, registry workflow, host integration, runtime-security integration, and provisioning dependency must be validated as multi-architecture compatible before inclusion in the Lite profile.
+
+Until the Lite profile is released with documented prerequisites, tested deployment procedures, provider guidance, and troubleshooting documentation, Apple Silicon remains unsupported for this repository.
 
 See the [Installation Guide](./docs/setup/installation.md) for provider-specific setup instructions.
 
@@ -295,13 +337,14 @@ See the [Installation Guide](./docs/setup/installation.md) for provider-specific
 
 ### Host requirements
 
-- **Linux host:** Required for KVM/QEMU with libvirt
+- **Linux host:** Required for KVM/QEMU with libvirt full-lab workflows
 - **Linux, macOS, or Windows host:** Supported with VirtualBox on compatible Intel/AMD x86_64 hardware
+- **Apple Silicon host:** Not currently supported for published lab workflows; the planned ARM64 DevSecOps Lite profile will document its own validated prerequisites
 - **CPU architecture:** Existing Windows Server and most current Vagrant box workflows require Intel/AMD x86_64 compatibility
 - **Hardware virtualization:** Intel VT-x or AMD-V enabled in BIOS/UEFI where applicable
 - **Vagrant:** A currently supported Vagrant release compatible with the selected provider
 - **Virtualization provider:** KVM/QEMU with libvirt, or a supported VirtualBox release
-- **Python:** Python 3.10+ for contributor tooling and lab-management utilities
+- **Python:** Python 3.12+ for contributor tooling and lab-management utilities
 - **Network:** Internet access for initial box, package, and container-image retrieval unless using prepared local or internal mirrors
 
 ### Recommended resources
@@ -312,7 +355,13 @@ For constrained systems, see [Minimal Resource Deployment](./docs/guides/optimiz
 
 ### Vagrant plugins
 
-Install only the plugins required by your selected provider and lab. Run `make prereq` or `./scripts/check-prerequisites.sh --all` first to identify missing dependencies and review provider-specific setup guidance.
+Install only the plugins required by your selected provider and lab. Run the full prerequisite check first:
+
+```bash
+./scripts/check-prerequisites.sh --all
+```
+
+This validates host dependencies and enables lab-specific plugin checks.
 
 **Common Windows guest workflows**
 
@@ -342,6 +391,8 @@ vagrant plugin install vagrant-vbguest
 
 The lab environments deploy independently through provider-aware Vagrant configurations. The architecture combines isolated Active Directory environments, segmented virtual networks, Kubernetes workloads, security monitoring, policy enforcement, and validation workflows.
 
+The planned ARM64 DevSecOps Lite profile will remain a separately scoped architecture. It will focus on ARM64-native Linux and Kubernetes components and will not include Windows guests, Active Directory services, or the existing segmented-network topology.
+
 The labs demonstrate:
 
 - Isolated security research environments
@@ -369,6 +420,7 @@ See the following documents for architecture details, trust boundaries, and desi
 | Active Directory security | Domain deployment, AD CS, identity attack-path simulation, privilege-escalation research, and post-compromise workflows | `labs/security/active-directory/base/` |
 | Network segmentation | Logical segmentation boundaries, routing separation, trust relationships, and segmentation-aware security-testing scenarios | `labs/security/active-directory/vlan-segmented/` |
 | DevOps/DevSecOps | Kubernetes operations, GitOps, observability, runtime security, and policy enforcement | `labs/infrastructure/devops-linux-lab/` |
+| ARM64 DevSecOps Lite (planned) | ARM64-native Kubernetes, GitOps, observability, runtime security, policy enforcement, and container-security workflows | `labs/infrastructure/devsecops-lite-arm64/` |
 | Defensive hardening (experimental) | CIS-benchmark-inspired hardening controls mapped to specific AD attack techniques, with validation tooling for each control | `labs/security/windows-hardening/` |
 | Infrastructure as Code | Vagrant, Ansible, Bash, Python, and automation workflows | Repository-wide |
 | Security documentation | Architecture, threat models, setup guides, troubleshooting, and learning paths | `docs/` |
@@ -523,6 +575,12 @@ vagrant destroy -f
 vagrant up
 ```
 
+### Apple Silicon and ARM64 incompatibility
+
+Do not attempt to deploy the existing Windows, Active Directory, Windows Hardening, segmented-network, or x86_64-only Vagrant workflows on Apple Silicon.
+
+Until the planned ARM64 DevSecOps Lite profile is published and validated, Apple Silicon does not have a supported deployment path in this repository. Check the selected lab README and the [Installation Guide](./docs/setup/installation.md) before deploying.
+
 See the [Troubleshooting Guide](./docs/setup/troubleshooting.md) and [segmented lab troubleshooting guide](./labs/security/active-directory/vlan-segmented/docs/troubleshooting.md) for detailed guidance.
 
 ---
@@ -560,12 +618,13 @@ security-engineering-lab/
 ├── examples/               # Example configurations and reference material
 ├── labs/
 │   ├── infrastructure/
-│   │   └── devops-linux-lab/
+│   │   ├── devops-linux-lab/
+│   │   └── devsecops-lite-arm64/    # Planned Apple Silicon / ARM64 profile
 │   └── security/
 │       ├── active-directory/
 │       │   ├── base/
 │       │   └── vlan-segmented/
-│       └── windows-hardening/   # Experimental, v0.1.0 MVP
+│       └── windows-hardening/       # Experimental, v0.1.0 MVP
 ├── scripts/                # Host-readiness, validation, and automation helpers
 ├── tests/                  # pytest, Bats, and repository validation tests
 ├── tools/                  # Standalone lab and security utilities
@@ -577,6 +636,8 @@ security-engineering-lab/
 ├── SECURITY.md
 └── pyproject.toml
 ```
+
+The `devsecops-lite-arm64/` directory is a planned structure and should be added only when the Lite profile is implemented. Until then, remove that directory from this tree if you prefer the repository structure to list only tracked paths.
 
 See the [Documentation Index](./docs/README.md) for the complete documentation map and each lab directory for provider-specific deployment instructions.
 
@@ -634,6 +695,8 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md), the [Tests README](./tests/README.md),
 
 The repository is actively developed. Core lab workflows are maintained through automated repository checks and documented validation procedures; individual provider, box, guest, dependency, and hardware combinations may still require host-specific troubleshooting.
 
+The planned ARM64 DevSecOps Lite profile is a roadmap item, not a supported deployment target. It will require independently documented architecture decisions, component compatibility validation, automated tests, deployment procedures, and troubleshooting guidance before being labeled experimental or supported.
+
 Review each lab README for its current validation status, supported profiles, provider requirements, and known limitations.
 
 ---
@@ -651,6 +714,8 @@ Before submitting a contribution:
 - Run relevant lint, test, validation, and documentation checks
 - Do not include credentials, secrets, private keys, or sensitive host information
 - Follow the repository contribution guidelines
+
+For Apple Silicon or ARM64 work, include architecture compatibility evidence, image and chart validation results, provider documentation, automated tests where practical, and a clear statement of which features remain unsupported.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the complete contributor workflow.
 
@@ -686,19 +751,11 @@ For additional security information, see:
 - Full deployments generally target 32 GB or more RAM and approximately 200 GB free disk space.
 - KVM/QEMU with libvirt requires a compatible Linux host.
 - VirtualBox support currently targets compatible Intel/AMD x86_64 hosts.
-- Apple Silicon support is a future compatibility target and requires ARM64-compatible boxes, guest media, container images, and per-lab validation.
+- Apple Silicon is not supported for the Windows, Active Directory, segmented-network, or Windows Hardening labs because those workflows depend on x86_64 guests and provider-specific validation.
+- A limited ARM64-native DevSecOps Lite profile is planned for Apple Silicon and other ARM64-capable hosts. It will support only explicitly validated Linux, Kubernetes, container-image, observability, runtime-security, and policy components.
+- ARM64 support requires per-component validation of Vagrant boxes or alternative runtime images, container manifests, Helm charts, kernel and runtime integrations, networking behavior, deployment automation, and test coverage.
 - Windows-based labs use Microsoft evaluation media; users are responsible for complying with applicable Microsoft licensing terms.
 - The Windows Server Hardening lab is an experimental `v0.1.0` MVP with less real-world testing than the other labs. It does not yet cover AD CS hardening, LAPS, Credential Guard, or automated Sysmon deployment. See that lab's `docs/hardening-guide.md` for the complete list of known gaps.
 - Third-party Vagrant boxes may change independently.
 - CI validates repository quality and selected provider workflows but does not fully deploy every environment on every push.
-- The project is designed primarily for a single-host laboratory architecture.
-
----
-
-## License
-
-This project is licensed under the MIT License.
-
-See [LICENSE](./LICENSE) for the full license text.
-
-Copyright © 2023–2026 Miguel A. Carlo
+- The project is designed primarily for a single-host laboratory
