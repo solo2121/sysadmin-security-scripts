@@ -34,6 +34,7 @@ It is designed to be **runnable, not static**: each environment includes deploya
     - [Active Directory Security Lab](#active-directory-security-lab)
     - [Segmented Active Directory Lab](#segmented-active-directory-lab)
     - [DevOps/DevSecOps platform lab](#devopsdevsecops-platform-lab)
+    - [Windows Server Hardening Lab (experimental)](#windows-server-hardening-lab-experimental)
   - [Provider compatibility](#provider-compatibility)
     - [Compatibility matrix](#compatibility-matrix)
     - [Apple Silicon status](#apple-silicon-status)
@@ -73,7 +74,7 @@ It is designed to be **runnable, not static**: each environment includes deploya
 |---|---|
 | Primary provider | KVM/QEMU with libvirt |
 | Alternative provider | VirtualBox on compatible Intel/AMD x86_64 hosts |
-| Lab environments | Active Directory, segmented Active Directory, DevOps/DevSecOps |
+| Lab environments | Active Directory, segmented Active Directory, DevOps/DevSecOps, Windows Server hardening (experimental) |
 | Automation | Vagrant, Ansible, Bash, and Python |
 | Cloud-native stack | K3s, Harbor, Argo CD, Prometheus, Grafana, Loki, Falco, and Kyverno |
 | Validation | GitHub Actions, pytest, Bats, ShellCheck, and documentation checks |
@@ -86,6 +87,7 @@ It is designed to be **runnable, not static**: each environment includes deploya
 | [Active Directory — base](./labs/security/active-directory/base/) | 6; up to 11 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 200 GB+ | Learning core AD attack paths, including Kerberoasting, AS-REP roasting, and AD CS abuse, without network segmentation complexity. Start here if you are new to AD security. |
 | [Active Directory — VLAN-segmented](./labs/security/active-directory/vlan-segmented/) | 12 | 16 GB / 32 GB+ | 80 GB+ | Practicing lateral movement, routing controls, trust boundaries, and defensive visibility across segmented network boundaries. |
 | [DevOps/DevSecOps](./labs/infrastructure/devops-linux-lab/) | 12 | 16 GB for a core cluster / 32 GB+ recommended | 200 GB+ | Kubernetes, Harbor, CI/CD, GitOps, observability, runtime security, policy enforcement, and Linux administration. Not AD-focused. |
+| [Windows Server Hardening (experimental)](./labs/security/windows-hardening/) | 1; 2 with `LAB_PROFILE=full` | 8 GB / 16 GB+ | 60 GB+ | Defensive counterpart to the AD base lab — a CIS-benchmark-inspired hardening baseline, each control mapped to a specific attack technique. Start after the AD base lab, not instead of it. |
 
 > [!NOTE]
 > Resource figures refer to practical **host capacity**, not only aggregate guest allocations. Reserve additional CPU, RAM, and disk capacity for the host OS, Vagrant/provider overhead, base boxes, snapshots, package caches, and container-image storage.
@@ -198,6 +200,7 @@ Full unedited recordings are available for the [Active Directory lab](./assets/d
 | Active Directory Security Lab | Windows enterprise infrastructure, Active Directory security research, identity attack-path simulation, and detection concepts | [labs/security/active-directory/base/](./labs/security/active-directory/base/) |
 | Segmented Active Directory Lab | Segmentation-aware Active Directory research, routing controls, trust boundaries, and lateral-movement constraints | [labs/security/active-directory/vlan-segmented/](./labs/security/active-directory/vlan-segmented/) |
 | DevOps/DevSecOps Lab | Linux administration, Kubernetes, GitOps, observability, runtime security, and policy enforcement | [labs/infrastructure/devops-linux-lab/](./labs/infrastructure/devops-linux-lab/) |
+| Windows Server Hardening Lab (experimental) | CIS-benchmark-inspired defensive hardening, mapped one-to-one against the AD base lab's attack techniques | [labs/security/windows-hardening/](./labs/security/windows-hardening/) |
 
 ### Active Directory Security Lab
 
@@ -220,6 +223,14 @@ See the [lab README](./labs/security/active-directory/vlan-segmented/) and [VLAN
 The DevOps/DevSecOps platform lab focuses on Linux platform engineering, Kubernetes operations, GitOps, observability, runtime security, policy enforcement, container-security testing, and integrated CI/CD validation.
 
 See the [lab README](./labs/infrastructure/devops-linux-lab/) for provider-specific deployment requirements, resource profiles, and validation guidance.
+
+### Windows Server Hardening Lab (experimental)
+
+A defensive counterpart to the Active Directory base lab: the same base box and AD-promotion pattern, but with a hardening baseline applied instead of intentional misconfigurations. Each control is documented against the specific attack technique it mitigates, using the base lab's own attack guide as the reference point.
+
+This lab is new (v0.1.0 MVP) and has not had the same amount of real-world testing as the labs above — work through the AD base lab first, then use this one to see and validate the defensive side.
+
+See the [lab README](./labs/security/windows-hardening/) and its [hardening guide](./labs/security/windows-hardening/docs/hardening-guide.md) for the full control list, known limitations, and how to validate the baseline.
 
 ---
 
@@ -244,6 +255,7 @@ KVM/libvirt is the primary development provider and generally provides the best 
 | DevOps Linux lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
 | Active Directory base lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
 | Active Directory segmented lab | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
+| Windows Server Hardening lab (experimental) | Supported with `--provider=libvirt` | Supported with `--provider=virtualbox` on compatible x86_64 hosts |
 | Networking | Libvirt networks with automatic detection and fallback configuration | Host-only networking and VirtualBox internal networks |
 | Network segmentation | Separate libvirt networks per segment | Isolated internal networks that model segmentation boundaries |
 | Disk storage | qcow2 with libvirt storage configuration | VDI attached through a SATA controller |
@@ -328,6 +340,7 @@ The labs demonstrate:
 - Segmented network boundaries and controlled routing
 - Kubernetes and containerized workloads
 - Runtime-security monitoring
+- Defensive hardening validation, mapped one-to-one against specific offensive techniques (experimental)
 - Reproducible infrastructure deployment
 - Automated validation and documentation workflows
 
@@ -347,6 +360,7 @@ See the following documents for architecture details, trust boundaries, and desi
 | Active Directory security | Domain deployment, AD CS, identity attack-path simulation, privilege-escalation research, and post-compromise workflows | `labs/security/active-directory/base/` |
 | Network segmentation | VLAN-like boundaries, routing separation, trust relationships, and segmentation-aware security-testing scenarios | `labs/security/active-directory/vlan-segmented/` |
 | DevOps/DevSecOps | Kubernetes operations, GitOps, observability, runtime security, and policy enforcement | `labs/infrastructure/devops-linux-lab/` |
+| Defensive hardening (experimental) | CIS-benchmark-inspired hardening controls mapped to specific AD attack techniques, with a validation script to check each control | `labs/security/windows-hardening/` |
 | Infrastructure as Code | Vagrant, Ansible, Bash, Python, and automation workflows | Repository-wide |
 | Security documentation | Architecture, threat models, setup guides, troubleshooting, and learning paths | `docs/` |
 | Validation and quality engineering | Python tests, Bash tests, linting, documentation checks, and CI workflows | `.github/`, `tests/`, and `scripts/` |
@@ -539,9 +553,10 @@ security-engineering-lab/
 │   ├── infrastructure/
 │   │   └── devops-linux-lab/
 │   └── security/
-│       └── active-directory/
-│           ├── base/
-│           └── vlan-segmented/
+│       ├── active-directory/
+│       │   ├── base/
+│       │   └── vlan-segmented/
+│       └── windows-hardening/       # experimental, v0.1.0 MVP
 ├── scripts/                # Host-readiness, validation, and automation helpers
 ├── tests/                  # pytest, Bats, and repository validation tests
 ├── tools/                  # Standalone lab and security utilities
@@ -653,6 +668,7 @@ For additional security information, see:
 - VirtualBox support currently targets compatible Intel/AMD x86_64 hosts.
 - Apple Silicon support is a future compatibility target and requires ARM64-compatible boxes, guest media, container images, and per-lab validation.
 - Windows-based labs use Microsoft evaluation media; users are responsible for complying with applicable Microsoft licensing terms.
+- The Windows Server Hardening lab is an experimental v0.1.0 MVP with less real-world testing than the other labs, and does not yet cover AD CS hardening, LAPS, Credential Guard, or automated Sysmon deployment — see that lab's `docs/hardening-guide.md` for the full list of known gaps.
 - Third-party Vagrant boxes may change independently.
 - CI validates repository quality and selected provider workflows but does not fully deploy every environment on every push.
 - The project is designed primarily for a single-host laboratory architecture.
