@@ -11,8 +11,12 @@
 
 The repository is designed to be **runnable, not static**: each lab includes deployable infrastructure, provisioning automation, validation workflows, and supporting technical documentation.
 
+This project bridges offensive security, defensive validation, and infrastructure engineering by building reproducible environments where security controls can be deployed, attacked, observed, and validated.
+
 **Maintained by:** Miguel A. Carlo (`solo2121`)  
 **Project status:** Active development
+
+**Quick links:** [Quick Start](#quick-start) · [Learning Path](./docs/project/learning-path.md) · [Architecture](./docs/architecture/architecture.md) · [Portfolio](./docs/project/portfolio.md)
 
 > [!IMPORTANT]
 > **Supported hosts:** KVM/QEMU with libvirt is the primary provider on Linux for the full lab portfolio. VirtualBox workflows are maintained for compatible Intel/AMD x86_64 hosts running Linux, macOS, or Windows.
@@ -28,6 +32,7 @@ The repository is designed to be **runnable, not static**: each lab includes dep
 
 - [Security Engineering Lab](#security-engineering-lab)
   - [At a glance](#at-a-glance)
+  - [Portfolio highlights](#portfolio-highlights)
   - [Which lab should I start with?](#which-lab-should-i-start-with)
   - [Quick start](#quick-start)
   - [See it in action](#see-it-in-action)
@@ -50,16 +55,7 @@ The repository is designed to be **runnable, not static**: each lab includes dep
   - [What this project demonstrates](#what-this-project-demonstrates)
     - [Skills and technologies](#skills-and-technologies)
   - [Common workflows](#common-workflows)
-    - [Rebuild a single VM](#rebuild-a-single-vm)
-    - [Save and restore snapshots](#save-and-restore-snapshots)
-    - [Re-run provisioning](#re-run-provisioning)
-    - [Destroy a complete lab](#destroy-a-complete-lab)
-    - [Switch providers](#switch-providers)
   - [Troubleshooting](#troubleshooting)
-    - [`vagrant up` hangs or times out](#vagrant-up-hangs-or-times-out)
-    - [Wrong provider selected](#wrong-provider-selected)
-    - [WinRM or SSH connection failures](#winrm-or-ssh-connection-failures)
-    - [Network or segmentation conflicts](#network-or-segmentation-conflicts)
   - [Documentation hub](#documentation-hub)
   - [Repository structure](#repository-structure)
   - [Development quickstart](#development-quickstart)
@@ -84,6 +80,19 @@ The repository is designed to be **runnable, not static**: each lab includes dep
 | Cloud-native stack | Selected DevOps/DevSecOps profiles use K3s, Harbor, Argo CD, Prometheus, Grafana, Loki, Falco, and Kyverno |
 | Validation | GitHub Actions, pytest, Bats, ShellCheck, and documentation checks |
 | Intended use | Authorized research, defensive security practice, and isolated education |
+
+---
+
+## Portfolio highlights
+
+- Reproducible Active Directory security lab covering Kerberoasting, AS-REP roasting, and AD CS attack paths
+- Segmented, enterprise-style network built on OPNsense with routing controls and trust boundaries
+- Kubernetes/DevSecOps platform with GitOps, observability, and runtime security enforcement
+- Defensive Windows hardening lab mapped one-to-one against the AD base lab's offensive techniques
+- Multi-provider Vagrant automation (KVM/QEMU with libvirt, VirtualBox) with Python-based lab management
+- Automated testing, linting, security scanning, and documentation validation via GitHub Actions
+
+See the [Portfolio](./docs/project/portfolio.md) document for the complete skills-and-competencies breakdown, and [What this project demonstrates](#what-this-project-demonstrates) below for the full technology matrix.
 
 ---
 
@@ -327,27 +336,7 @@ Install only the plugins required by your selected provider and lab. Run the ful
 ./scripts/check-prerequisites.sh --all
 ```
 
-This validates host dependencies and enables lab-specific plugin checks.
-
-**Common Windows guest workflows**
-
-```bash
-vagrant plugin install vagrant-reload
-vagrant plugin install vagrant-winrm
-vagrant plugin install vagrant-hostmanager
-```
-
-**KVM/QEMU with libvirt**
-
-```bash
-vagrant plugin install vagrant-libvirt
-```
-
-**Optional VirtualBox convenience plugin**
-
-```bash
-vagrant plugin install vagrant-vbguest
-```
+This validates host dependencies and enables lab-specific plugin checks. For the full list of provider- and lab-specific plugins (libvirt, VirtualBox, and Windows guest workflows), see the [Installation Guide](./docs/setup/installation.md).
 
 ---
 
@@ -417,56 +406,7 @@ Run these commands from the selected lab directory.
 > [!WARNING]
 > `vagrant destroy -f` permanently removes the selected lab's VMs and can remove provider-managed disks. Vagrant snapshots are provider-dependent and are not a substitute for exporting artifacts or maintaining external backups of work you need to retain.
 
-### Rebuild a single VM
-
-```bash
-vagrant destroy dc01 -f
-vagrant up dc01
-```
-
-### Save and restore snapshots
-
-Create a snapshot before a risky laboratory exercise:
-
-```bash
-vagrant snapshot save dc01 clean-install
-```
-
-Restore the snapshot:
-
-```bash
-vagrant snapshot restore dc01 clean-install
-```
-
-### Re-run provisioning
-
-```bash
-vagrant provision
-```
-
-### Destroy a complete lab
-
-```bash
-vagrant destroy -f
-```
-
-### Switch providers
-
-Provider switching generally requires destroying and recreating the environment:
-
-```bash
-vagrant destroy -f
-vagrant up --provider=libvirt
-```
-
-Or:
-
-```bash
-vagrant destroy -f
-vagrant up --provider=virtualbox
-```
-
-For complete deployment and lab-management guidance, see:
+Everyday tasks — rebuilding a single VM, saving and restoring snapshots, re-running provisioning, destroying a lab, and switching providers — follow standard Vagrant commands (`vagrant destroy`, `vagrant up`, `vagrant snapshot save|restore`, `vagrant provision`). For the full walkthrough of each, including snapshot listing/deletion and performance-tuning options not covered here, see:
 
 - [Quickstart Examples](./docs/setup/quickstart-examples.md)
 - [Vagrant Management Tutorial](./docs/guides/infrastructure/vagrant-management-tutorial.md)
@@ -477,68 +417,13 @@ For complete deployment and lab-management guidance, see:
 
 ## Troubleshooting
 
-### `vagrant up` hangs or times out
-
-Confirm the following:
-
-- Hardware virtualization is enabled in BIOS/UEFI where applicable
-- The selected virtualization provider is installed and available
-- The prerequisites check completes successfully
-- The host has sufficient CPU, RAM, and storage
-- The selected lab profile is appropriate for available resources
-- The selected Vagrant box is compatible with the host architecture
-
-Run:
+Most deployment issues fall into a few categories: `vagrant up` hanging or timing out, a VM created under the wrong provider, WinRM/SSH connection failures on Windows guests, and stale network or segmentation resources after an interrupted deployment. Start by re-running the prerequisite check:
 
 ```bash
 ./scripts/check-prerequisites.sh --all
 ```
 
-### Wrong provider selected
-
-A VM created with one provider cannot normally be reused with another provider. Destroy the current environment and recreate it with the intended provider:
-
-```bash
-vagrant destroy -f
-vagrant up --provider=libvirt
-```
-
-### WinRM or SSH connection failures
-
-Windows guests may require additional time for boot, networking, service initialization, and reboot cycles.
-
-Try:
-
-```bash
-vagrant up
-```
-
-Then re-run provisioning if necessary:
-
-```bash
-vagrant provision
-```
-
-Also verify that the expected guest interface, provider-assigned address, and architecture-compatible Vagrant box are available.
-
-### Network or segmentation conflicts
-
-Check for stale resources after an interrupted deployment:
-
-- Libvirt bridges and networks
-- VirtualBox host-only adapters
-- VirtualBox internal-network definitions
-- Previously allocated IP ranges
-- Conflicting `NETWORK_BASE` settings
-
-A clean redeployment may be required:
-
-```bash
-vagrant destroy -f
-vagrant up
-```
-
-See the [Troubleshooting Guide](./docs/setup/troubleshooting.md) and [segmented lab troubleshooting guide](./labs/security/active-directory/vlan-segmented/docs/troubleshooting.md) for detailed guidance.
+For step-by-step fixes for each of these — including debug logging, provider-switch recovery, and network cleanup — see the [Troubleshooting Guide](./docs/setup/troubleshooting.md) and the [segmented lab troubleshooting guide](./labs/security/active-directory/vlan-segmented/docs/troubleshooting.md).
 
 ---
 
