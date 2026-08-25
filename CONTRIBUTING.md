@@ -15,6 +15,7 @@ We appreciate your interest in helping improve this project.
 - [Code Standards](#code-standards)
 - [Pull Request Process](#pull-request-process)
 - [Local Setup](#local-setup)
+- [Self-Hosted Smoke-Test Runner (Optional)](#self-hosted-smoke-test-runner-optional)
 - [Community Guidelines](#community-guidelines)
 
 ---
@@ -205,6 +206,42 @@ cd labs/security/active-directory/base && vagrant validate
 cd labs/security/active-directory/vlan-segmented && vagrant validate
 cd labs/infrastructure/devops-linux-lab && vagrant validate
 ```
+
+---
+
+## Self-Hosted Smoke-Test Runner (Optional)
+
+The CI pipeline's `smoke-test-devops-lab` job actually boots the DevOps
+lab's `minimal` profile (`devops-1`, `worker-1`) and confirms k3s comes
+up cleanly — catching provisioning drift that syntax validation alone
+can't. It requires a self-hosted GitHub Actions runner with nested
+virtualization enabled, which is not something GitHub-hosted runners
+support.
+
+**Security first:** this job is intentionally gated to
+`workflow_dispatch` only — it never runs on `push` or `pull_request`.
+Self-hosted runners on a public repository are a well-documented attack
+vector: a malicious pull request could otherwise get arbitrary code
+executed on your runner's network if the job ran automatically. Do not
+change this job's trigger to `pull_request` without first restricting it
+to non-fork pull requests, and even then, treat that as a deliberate
+security decision, not a convenience change.
+
+To set one up:
+
+1. Provision a Linux host (bare metal or a cloud VM) with nested
+   virtualization enabled and the same prerequisites as any other
+   deployment target for this repo (see the root
+   [README's Quick Start](README.md#quick-start)).
+2. Register it as a self-hosted runner under this repository's
+   **Settings → Actions → Runners**, following
+   [GitHub's official runner setup guide](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/adding-self-hosted-runners).
+3. When registering, add the label `smoke-test` in addition to the
+   default `self-hosted` label — the workflow targets
+   `runs-on: [self-hosted, smoke-test]` specifically, so a general-purpose
+   self-hosted runner without that label will not pick up this job.
+4. Trigger it manually from the **Actions** tab → **CI** → **Run workflow**,
+   selecting the Vagrant provider your runner has installed.
 
 ---
 

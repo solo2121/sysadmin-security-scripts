@@ -30,6 +30,16 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: 'Vagrant provider to use on the self-hosted runner'
+        required: false
+        default: 'libvirt'
+        type: choice
+        options:
+          - libvirt
+          - virtualbox
 
 # Least-privilege default: this pipeline only needs to read the repo.
 # Individual jobs can widen this if a future job needs to write (e.g.
@@ -493,3 +503,66 @@ jobs:
           echo
           echo "Markdown link check complete (see findings above for review)"
           exit 0
+
+  # ---------------------------------------------------------------------------
+  # Job 7: Self-hosted smoke test — actual VM provisioning, not just syntax
+  #
+  # Every job above validates syntax or lints code; none of them actually
+  # boot a VM, so "provisioning drift" (a script that's valid but fails
+  # during real execution) goes uncaught until someone runs `vagrant up`
+  # by hand. This job closes that gap for the DevOps/K3s lab's minimal
+  # profile: boot devops-1 and worker-1, wait for the k3s service to come
+  # up, confirm the node reports Ready via kubectl, then tear the VMs down.
+  #
+  # SECURITY: this job requires a self-hosted runner with nested
+  # virtualization enabled, which you must provision and register
+  # yourself (see CONTRIBUTING.md). It intentionally does NOT run on
+  # `push` or `pull_request` — self-hosted runners on a public repository
+  # are a known attack vector when triggered by untrusted input (a PR from
+  # any external contributor could otherwise execute arbitrary code on
+  # your runner's network). This job only runs when a repository
+  # maintainer manually triggers it from the Actions tab
+  # (workflow_dispatch), which cannot be invoked by a pull request.
+  # ---------------------------------------------------------------------------
+  smoke-test-devops-lab:
+    name: Self-Hosted Smoke Test (DevOps Lab)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, smoke-test]
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Provision minimal profile (devops-1, worker-1)
+        working-directory: labs/infrastructure/devops-linux-lab
+        env:
+          VAGRANT_DEFAULT_PROVIDER: ${{ inputs.provider }}
+          LAB_PROFILE: minimal
+        run: vagrant up
+
+      - name: Wait for k3s and confirm the node is Ready
+        working-directory: labs/infrastructure/devops-linux-lab
+        run: |
+          echo "Checking k3s service status on devops-1..."
+          vagrant ssh devops-1 -c "sudo systemctl is-active k3s"
+
+          echo "Waiting for the devops-1 node to report Ready..."
+          for i in $(seq 1 20); do
+            if vagrant ssh devops-1 -c "sudo kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml get node devops-1 -o jsonpath='{.status.conditions[?(@.type==\"Ready\")].status}'" 2>/dev/null | grep -qx "True"; then
+              echo "Node is Ready."
+              exit 0
+            fi
+            echo "Not ready yet, retrying ($i/20)..."
+            sleep 15
+          done
+
+          echo "::error::devops-1 did not report Ready within the timeout." >&2
+          exit 1
+
+      - name: Tear down VMs
+        if: always()
+        working-directory: labs/infrastructure/devops-linux-lab
+        env:
+          VAGRANT_DEFAULT_PROVIDER: ${{ inputs.provider }}
+        run: vagrant destroy -f || true
