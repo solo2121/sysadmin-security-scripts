@@ -167,6 +167,56 @@ check_kubernetes() {
     log_pass "Services: $services total"
 }
 
+# CIS Kubernetes Benchmark (kube-bench)
+check_kube_bench() {
+    header "CIS BENCHMARK (kube-bench)"
+
+    if ! command -v kubectl &> /dev/null; then
+        log_warn "kubectl not installed, skipping kube-bench"
+        return
+    fi
+
+    if ! kubectl cluster-info &> /dev/null; then
+        log_warn "Kubernetes cluster unreachable, skipping kube-bench"
+        return
+    fi
+
+    log_info "Running kube-bench as a Kubernetes Job (this can take a minute)..."
+
+    local job_name="kube-bench-validate-$$"
+    local manifest
+    manifest=$(curl -sfL https://raw.githubusercontent.com/aquasecurity/kube-bench/main/job-node.yaml 2>/dev/null \
+        | sed "s/name: kube-bench/name: ${job_name}/")
+
+    if [ -z "$manifest" ]; then
+        log_warn "Could not fetch kube-bench job manifest, skipping"
+        return
+    fi
+
+    if ! echo "$manifest" | kubectl apply -f - &> /dev/null; then
+        log_warn "Failed to schedule kube-bench Job, skipping"
+        return
+    fi
+
+    if kubectl wait --for=condition=complete --timeout=120s "job/${job_name}" &> /dev/null; then
+        local pod
+        pod=$(kubectl get pods -l "job-name=${job_name}" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+        local summary
+        summary=$(kubectl logs "$pod" 2>/dev/null | grep -A 4 "^== Summary ==" | tail -4)
+
+        if [ -n "$summary" ]; then
+            log_pass "kube-bench completed"
+            echo "$summary" | sed 's/^/    /'
+        else
+            log_warn "kube-bench completed but the summary could not be parsed"
+        fi
+    else
+        log_fail "kube-bench Job did not complete within the 120s timeout"
+    fi
+
+    kubectl delete job "$job_name" &> /dev/null || true
+}
+
 # Network connectivity
 check_network() {
     header "NETWORK CONNECTIVITY"
@@ -273,6 +323,7 @@ main() {
     check_tools
     check_vagrant
     check_kubernetes
+    check_kube_bench
     check_network
     check_services
     check_permissions

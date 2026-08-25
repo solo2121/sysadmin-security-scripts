@@ -407,7 +407,7 @@ Run the automated health check after deployment:
 ./scripts/validate-lab.sh
 ```
 
-Checks: RAM, CPU, disk, installed tools, VM states, Kubernetes cluster health, network connectivity, service availability.
+Checks: RAM, CPU, disk, installed tools, VM states, Kubernetes cluster health, CIS Kubernetes Benchmark compliance (kube-bench), network connectivity, service availability.
 
 ---
 
