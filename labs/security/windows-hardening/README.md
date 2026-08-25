@@ -104,7 +104,8 @@ or RDP session to the VM and paste the script's contents into a PowerShell
 window directly. It checks each control independently (LLMNR, NetBIOS, SMB
 signing, NTLM restriction, Print Spooler, SMBv1, Defender real-time
 protection, audit policy categories, password policy) and prints a
-pass/fail summary — it does not modify anything.
+per-control pass/fail table plus an overall compliance score (percentage
+of controls passed) — it does not modify anything.
 
 See [`docs/hardening-guide.md`](docs/hardening-guide.md) for what each
 check means and how to remediate a failure manually.
