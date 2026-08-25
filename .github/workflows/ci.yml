@@ -505,6 +505,95 @@ jobs:
           exit 0
 
   # ---------------------------------------------------------------------------
+  # Job 6b: Topology diagram smoke check (informational, never blocks)
+  #
+  # scripts/generate_topology_diagram.py renders the segmented AD lab's
+  # network diagram from a hand-maintained data mirror of the
+  # Vagrantfile's VLAN_CONFIG (see that script's docstring for the sync
+  # caveat). This job only confirms the script still runs and produces a
+  # PNG -- it does NOT diff the output against the Vagrantfile, so it
+  # catches library/API breakage, not semantic drift between the two
+  # files. It does not commit the generated image anywhere; regenerating
+  # and committing an updated diagram, if you want one, remains a manual
+  # step.
+  # ---------------------------------------------------------------------------
+  topology-diagram-smoke-check:
+    name: Topology Diagram Smoke Check (informational — never blocks)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Graphviz and diagrams
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y graphviz
+          pip install diagrams --quiet
+
+      - name: Render the segmented AD topology diagram (informational)
+        run: |
+          python3 scripts/generate_topology_diagram.py --output /tmp/topology-smoke-check || {
+            echo "::warning::Topology diagram generation failed -- see log above. Not blocking the build."
+            exit 0
+          }
+          echo "Topology diagram rendered successfully (not committed anywhere)."
+
+  # ---------------------------------------------------------------------------
+  # Job 6c: Ansible role linting
+  #
+  # The roadmap includes creating Ansible roles for the DevOps lab (see
+  # docs/project/roadmap.md), but that work has not started yet as of
+  # this job's addition -- there is no ansible/ directory in the repo.
+  # Rather than block on that future work, this job checks whether
+  # labs/infrastructure/devops-linux-lab/ansible/ exists and skips
+  # cleanly (not a failure) if it doesn't. Once roles are added there,
+  # this job activates automatically with no further CI changes needed.
+  # ---------------------------------------------------------------------------
+  lint-ansible-roles:
+    name: Lint Ansible Roles
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check for an ansible/ directory
+        id: check
+        run: |
+          if [ -d "labs/infrastructure/devops-linux-lab/ansible" ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo "No labs/infrastructure/devops-linux-lab/ansible/ directory yet -- skipping."
+            echo "See docs/project/roadmap.md: \"Create Ansible roles to improve"
+            echo "repeatability of DevOps lab provisioning.\" This job will start"
+            echo "linting automatically once that directory exists."
+          fi
+
+      - name: Set up Python 3.12
+        if: steps.check.outputs.found == 'true'
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install ansible-lint
+        if: steps.check.outputs.found == 'true'
+        run: pip install ansible-lint --quiet
+
+      - name: Run ansible-lint
+        if: steps.check.outputs.found == 'true'
+        working-directory: labs/infrastructure/devops-linux-lab/ansible
+        run: ansible-lint
+
+  # ---------------------------------------------------------------------------
   # Job 7: Self-hosted smoke test — actual VM provisioning, not just syntax
   #
   # Every job above validates syntax or lints code; none of them actually

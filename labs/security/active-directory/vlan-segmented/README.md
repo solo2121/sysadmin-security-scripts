@@ -284,6 +284,15 @@ Key components:
 
 ![VLAN Enterprise Lab Topology](diagrams/vlan-topology.png)
 
+> The diagram above is hand-designed and is the canonical reference. A
+> code-generated version of the same topology, built from a data mirror
+> of this Vagrantfile's `VLAN_CONFIG`, is also available for quick
+> regeneration if this file goes stale — run
+> `python3 scripts/generate_topology_diagram.py` from the repo root. It
+> is a plainer functional diagram, not a replacement for the image
+> above; see the script's docstring for what it does and does not keep
+> in sync automatically.
+
 The lab is designed around a segmented enterprise-style network architecture.
 
 The environment contains two primary network layers:
