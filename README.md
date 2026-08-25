@@ -85,10 +85,10 @@ This project bridges offensive security, defensive validation, and infrastructur
 
 ## Portfolio highlights
 
-- Reproducible Active Directory security lab covering Kerberoasting, AS-REP roasting, and AD CS attack paths
+- Reproducible Active Directory security lab covering Kerberoasting, AS-REP roasting, and AD CS attack-path research
 - Segmented, enterprise-style network built on OPNsense with routing controls and trust boundaries
 - Kubernetes/DevSecOps platform with GitOps, observability, and runtime security enforcement
-- Defensive Windows hardening lab mapped one-to-one against the AD base lab's offensive techniques
+- Defensive Windows hardening lab with controls mapped to specific offensive techniques from the AD base lab
 - Multi-provider Vagrant automation (KVM/QEMU with libvirt, VirtualBox) with Python-based lab management
 - Automated testing, linting, security scanning, and documentation validation via GitHub Actions
 
@@ -101,13 +101,15 @@ See the [Portfolio](./docs/project/portfolio.md) document for the complete skill
 | Lab | Default VMs | Host RAM (min / recommended) | Free disk | Best for |
 |---|---:|---:|---:|---|
 | [Active Directory — base](./labs/security/active-directory/base/) | 6; up to 11 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 200 GB+ | Learning core AD attack paths, including Kerberoasting, AS-REP roasting, and AD CS abuse, without network-segmentation complexity. Start here if you are new to AD security. |
-| [Active Directory — segmented](./labs/security/active-directory/vlan-segmented/) | 12 | 16 GB / 32 GB+ | 80 GB+ | Practicing lateral movement, routing controls, trust boundaries, and defensive visibility across segmented network boundaries. |
+| [Active Directory — segmented](./labs/security/active-directory/vlan-segmented/) | 7; up to 12 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 80 GB+ | Practicing lateral movement, routing controls, trust boundaries, and defensive visibility across segmented network boundaries. |
 | [DevOps/DevSecOps](./labs/infrastructure/devops-linux-lab/) | 12 | 16 GB for a core cluster / 32 GB+ recommended | 200 GB+ | Kubernetes, Harbor, CI/CD, GitOps, observability, runtime security, policy enforcement, and Linux administration. Not AD-focused. |
 | DevSecOps Lite — ARM64 (planned) | — | — | — | Planned — not yet published. Intended as an ARM64-native Linux and Kubernetes platform-engineering environment for compatible ARM64 hosts. |
 | [Windows Server Hardening (experimental)](./labs/security/windows-hardening/) | 1; 2 with `LAB_PROFILE=full` | 8 GB / 16 GB+ | 60 GB+ | A defensive counterpart to the AD base lab: a CIS-benchmark-inspired hardening baseline with controls mapped to specific attack techniques. Start after completing the AD base lab. |
 
 > [!NOTE]
 > Resource figures represent practical **host capacity**, not only aggregate guest allocations. Reserve additional CPU, RAM, and disk capacity for the host OS, Vagrant and provider overhead, base boxes, snapshots, package caches, and container-image storage.
+>
+> The segmented Active Directory lab's RAM figures reflect its default `ad` profile (7 VMs). Its `full` profile (12 VMs) needs more: 32 GB minimum / 48 GB+ recommended. See the [lab README](./labs/security/active-directory/vlan-segmented/) for the complete profile-by-profile breakdown.
 >
 > The ARM64 Lite profile is a planning item only. Do not treat its resource requirements or architecture as validated until the profile is published with measured deployment requirements.
 
@@ -160,7 +162,7 @@ Check the VM state:
 vagrant status
 ```
 
-Each lab includes a Python-based `vagrant_manager.py` for interactive or scripted VM management:
+Supported lab environments include a Python-based `vagrant_manager.py` for interactive or scripted VM management:
 
 ```bash
 python3 vagrant_manager.py
@@ -223,7 +225,7 @@ Full unedited recordings are available for the [Active Directory lab](./assets/d
 | Active Directory Security Lab | Windows enterprise infrastructure, Active Directory security research, identity attack-path simulation, and detection concepts | [labs/security/active-directory/base/](./labs/security/active-directory/base/) |
 | Segmented Active Directory Lab | Segmentation-aware Active Directory research, routing controls, trust boundaries, and lateral-movement constraints | [labs/security/active-directory/vlan-segmented/](./labs/security/active-directory/vlan-segmented/) |
 | DevOps/DevSecOps Lab | Linux administration, Kubernetes, GitOps, observability, runtime security, and policy enforcement | [labs/infrastructure/devops-linux-lab/](./labs/infrastructure/devops-linux-lab/) |
-| Windows Server Hardening Lab (experimental) | CIS-benchmark-inspired defensive hardening, mapped one-to-one against the AD base lab's attack techniques | [labs/security/windows-hardening/](./labs/security/windows-hardening/) |
+| Windows Server Hardening Lab (experimental) | CIS-benchmark-inspired defensive hardening, with controls mapped to specific attack techniques from the AD base lab | [labs/security/windows-hardening/](./labs/security/windows-hardening/) |
 
 ### Active Directory Security Lab
 
@@ -411,7 +413,7 @@ Everyday tasks — rebuilding a single VM, saving and restoring snapshots, re-ru
 - [Quickstart Examples](./docs/setup/quickstart-examples.md)
 - [Vagrant Management Tutorial](./docs/guides/infrastructure/vagrant-management-tutorial.md)
 - [Guides](./docs/guides/)
-- Each lab's `docs/attack-guide.md`
+- Lab-specific documentation and security-testing guides
 
 ---
 
