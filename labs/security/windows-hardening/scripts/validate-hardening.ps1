@@ -28,13 +28,13 @@ function Test-Control {
     try {
         $actual = & $Check
         $pass = $actual -eq $true
-        $results += [PSCustomObject]@{
+        $script:results += [PSCustomObject]@{
             Control  = $Name
             Status   = if ($pass) { 'PASS' } else { 'FAIL' }
             Expected = $Expected
         }
     } catch {
-        $results += [PSCustomObject]@{
+        $script:results += [PSCustomObject]@{
             Control  = $Name
             Status   = 'WARN (check errored)'
             Expected = "$Expected -- error: $($_.Exception.Message)"
@@ -118,10 +118,26 @@ Test-Control -Name "Domain password policy hardened" -Expected "MinPasswordLengt
 Write-Host ""
 $results | Format-Table -AutoSize
 
+$passCount = ($results | Where-Object { $_.Status -eq 'PASS' }).Count
 $failCount = ($results | Where-Object { $_.Status -ne 'PASS' }).Count
+$totalCount = $results.Count
+$scorePercent = if ($totalCount -gt 0) { [math]::Round(($passCount / $totalCount) * 100, 1) } else { 0 }
+
 Write-Host ""
+Write-Host "==============================================================" -ForegroundColor Cyan
+Write-Host " HARDENING COMPLIANCE SCORE" -ForegroundColor Cyan
+Write-Host "==============================================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "  CIS Level 1-inspired baseline: $scorePercent% ($passCount/$totalCount controls passed)" -ForegroundColor $(if ($scorePercent -ge 90) { 'Green' } elseif ($scorePercent -ge 70) { 'Yellow' } else { 'Red' })
+Write-Host ""
+Write-Host "  This score reflects the hand-written control checks in this" -ForegroundColor Gray
+Write-Host "  script, mapped loosely to CIS Level 1 domains -- it is not a" -ForegroundColor Gray
+Write-Host "  formal CIS-CAT or HardeningKitty assessment. See" -ForegroundColor Gray
+Write-Host "  docs/hardening-guide.md for what is and is not covered." -ForegroundColor Gray
+Write-Host ""
+
 if ($failCount -eq 0) {
-    Write-Host "[SUCCESS] All $($results.Count) controls passed." -ForegroundColor Green
+    Write-Host "[SUCCESS] All $totalCount controls passed." -ForegroundColor Green
 } else {
-    Write-Host "[WARN] $failCount of $($results.Count) controls did not pass. See docs/hardening-guide.md for remediation." -ForegroundColor Yellow
+    Write-Host "[WARN] $failCount of $totalCount controls did not pass. See docs/hardening-guide.md for remediation." -ForegroundColor Yellow
 }
