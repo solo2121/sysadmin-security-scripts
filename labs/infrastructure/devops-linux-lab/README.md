@@ -1,7 +1,7 @@
 # DevOps / DevSecOps Lab
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/platform-KVM%2Flibvirt-blue)](https://www.linux-kvm.org/)
+[![Platform](https://img.shields.io/badge/platform-KVM%2Flibvirt%20%7C%20VirtualBox-blue)](https://www.linux-kvm.org/)
 [![Version](https://img.shields.io/badge/version-8.2.0-green)](https://github.com/solo2121/security-engineering-lab)
 [![Vagrant](https://img.shields.io/badge/Vagrant-%3E%3D2.4-1563FF)](https://www.vagrantup.com/)
 
