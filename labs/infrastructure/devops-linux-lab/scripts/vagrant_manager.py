@@ -31,7 +31,6 @@ import argparse
 import getpass
 import os
 import platform
-import re
 import shutil
 import subprocess
 import sys
