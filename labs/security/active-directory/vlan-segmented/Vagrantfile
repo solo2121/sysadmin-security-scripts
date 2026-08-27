@@ -70,7 +70,6 @@ puts "Provider: #{PROVIDER}"
 DOMAIN_NAME = "lab.local"
 DOMAIN_NETBIOS = "LAB"
 DC_IP = "172.28.10.21"
-LAB_SUBNET = "172.28.128.0/24"
 # Set LAB_GUI=true to open a VirtualBox GUI window per VM (default: headless)
 LAB_GUI = ENV.fetch('LAB_GUI', 'false').downcase == 'true'
 
