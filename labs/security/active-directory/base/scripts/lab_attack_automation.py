@@ -625,7 +625,7 @@ class LabAttackAutomation:
                 return False
             self.log.info("All dependencies satisfied")
             return True
-        
+
         # Validate specific dependencies
         missing = self._check_dependencies(dependencies)
         if missing:
@@ -1062,7 +1062,7 @@ class LabAttackAutomation:
     ) -> AttackResult:
         """
         Execute a command-line tool as an attack step.
-        
+
         Args:
             attack_name: Name of the attack
             phase: Phase name
@@ -1107,7 +1107,7 @@ class LabAttackAutomation:
     ) -> AttackResult:
         """
         Execute Responder for a fixed duration.
-        
+
         Args:
             attack_name: Name of the attack
             phase: Phase name
@@ -1152,7 +1152,7 @@ class LabAttackAutomation:
                 stdout = await proc.stdout.read()
                 stderr = await proc.stderr.read()
                 combined_output = (stdout + stderr).decode(errors="replace")
-                
+
                 if check_hashes:
                     ok = parse_responder_output(combined_output)
                     if ok:
@@ -1321,7 +1321,7 @@ class LabAttackAutomation:
             self.META_TARGET: self.config.dc_ip,
             self.META_HOST_ROLE: "domain_controller",
         }
-        return self._record("GPP Password Extraction", Phase.CREDENTIAL_ATTACKS.value, 
+        return self._record("GPP Password Extraction", Phase.CREDENTIAL_ATTACKS.value,
                            ok, combined_output, metadata, dur)  # noqa: E131
 
     @attack(
@@ -1396,7 +1396,7 @@ class LabAttackAutomation:
             self.META_HOST_ROLE: "domain_controller",
             "passwords_tested": len(passwords),
         }
-        return self._record("Password Spraying", Phase.CREDENTIAL_ATTACKS.value, 
+        return self._record("Password Spraying", Phase.CREDENTIAL_ATTACKS.value,
                            spray_success, output_text, metadata, 0.0)  # noqa: E131
 
     @attack(
@@ -1720,7 +1720,7 @@ class LabAttackAutomation:
             self.META_HOST_ROLE: "domain_controller",
         }
         return self._record("Shadow Credentials", Phase.EXPLOITATION.value, ok, combined_output, metadata, dur)
-    
+
     @attack(
         phase=Phase.EXPLOITATION.value,
         name="NoPac (CVE-2021-42287 / 42278)",
@@ -1755,7 +1755,7 @@ class LabAttackAutomation:
             self.META_HOST_ROLE: "domain_controller",
         }
         return self._record("NoPac", Phase.EXPLOITATION.value, ok, combined_output, metadata, dur)
-    
+
     @attack(
         phase=Phase.EXPLOITATION.value,
         name="RBCD",
@@ -1793,7 +1793,7 @@ class LabAttackAutomation:
             self.META_HOST_ROLE: "domain_controller",
         }
         return self._record("RBCD", Phase.EXPLOITATION.value, ok, combined_output, metadata, dur)
-    
+
     @attack(
         phase=Phase.EXPLOITATION.value,
         name="PrintNightmare (CVE-2021-1675)",
@@ -1825,7 +1825,7 @@ class LabAttackAutomation:
             self.META_HOST_ROLE: "print_server",
         }
         return self._record("PrintNightmare", Phase.EXPLOITATION.value, ok, combined_output, metadata, dur)
-    
+
     @attack(
         phase=Phase.EXPLOITATION.value,
         name="SQL Server xp_cmdshell",
@@ -1861,7 +1861,7 @@ class LabAttackAutomation:
             self.META_HOST_ROLE: "sql_server",
         }
         return self._record("SQL xp_cmdshell", Phase.EXPLOITATION.value, ok, combined_output, metadata, dur)
-    
+
     @attack(
         phase=Phase.PRIVILEGE_ESCALATION.value,
         name="Lateral Movement (CrackMapExec)",
@@ -1894,7 +1894,7 @@ class LabAttackAutomation:
             self.META_TARGET: self.config.dc_ip,
             self.META_HOST_ROLE: "domain_controller",
         }
-        return self._record("Lateral Movement", Phase.PRIVILEGE_ESCALATION.value, 
+        return self._record("Lateral Movement", Phase.PRIVILEGE_ESCALATION.value,
                            ok, combined_output, metadata, dur)  # noqa: E131
 
     @attack(
@@ -1972,7 +1972,7 @@ class LabAttackAutomation:
             self.META_TARGET: self.config.dc_ip,
             self.META_HOST_ROLE: "domain_controller",
         }
-        return self._record("BloodHound Collection", Phase.PRIVILEGE_ESCALATION.value, 
+        return self._record("BloodHound Collection", Phase.PRIVILEGE_ESCALATION.value,
                            ok, combined_output, metadata, dur)  # noqa: E131
 
     @attack(
