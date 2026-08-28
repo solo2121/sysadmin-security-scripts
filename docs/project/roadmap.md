@@ -7,7 +7,7 @@ For a log of what has already been released, see [`CHANGELOG.md`](../../CHANGELO
 ## Near-term
 
 - [ ] Add a recorded demo (asciinema or GIF) to the README showing `vagrant up` provisioning and an Active Directory attack chain in action.
-- [ ] Expand automated test coverage across additional `sysadmin/` and `security/` scripts (currently: `log-analyzer.sh`, `setup-vlans.sh`, `port-scanner.py`).
+- [ ] Expand automated test coverage across additional `sysadmin/` and `security/` scripts (currently: `log-analyzer.sh`, `setup-vlans.sh`, `port-scanner.py`, `user-audit.sh`).
 
 ## Mid-term
 
