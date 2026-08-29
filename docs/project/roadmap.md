@@ -12,7 +12,7 @@ For a log of what has already been released, see [`CHANGELOG.md`](../../CHANGELO
 ## Mid-term
 
 - [ ] Add AD CS attack scenarios beyond the current ESC1/4/7/8/9 coverage — ESC2, ESC3, ESC6, ESC11, and ESC13 are natural next additions.
-- [ ] Create Ansible roles to improve repeatability of DevOps lab provisioning, reducing reliance on Vagrant provisioners. Place roles under `labs/infrastructure/devops-linux-lab/ansible/` — the CI pipeline's `lint-ansible-roles` job already checks for that directory and will start running `ansible-lint` against it automatically once it exists, no CI changes needed.
+- [x] Create Ansible roles to improve repeatability of DevOps lab provisioning, reducing reliance on Vagrant provisioners — added under [`labs/infrastructure/devops-linux-lab/ansible/`](../../labs/infrastructure/devops-linux-lab/ansible/) (`common`, `docker`, `ssh_keys`, `devops_tools` roles); VM lifecycle, networking, and the stateful K3s bootstrap/join sequence remain in the Vagrantfile for now (see that directory's `README.md`).
 - [x] Build a Windows Server hardening lab as a defensive counterpart to the Active Directory pentest lab — MVP in [`labs/security/windows-hardening/`](../../labs/security/windows-hardening/) (single hardened DC, `LAB_PROFILE=full` adds a domain-joined member server). Not yet at feature parity with the AD pentest lab (no AD CS, no LAPS, no Credential Guard, no Sysmon auto-install — see that lab's `docs/hardening-guide.md` §10 for the full list). Contributions toward closing that gap are welcome.
 - [ ] Expand the VLAN lab with more realistic segmentation scenarios beyond the current five VLANs.
 
