@@ -1,0 +1,50 @@
+---
+- name: Install kubectl
+  when: devops_tools_install_kubectl | bool
+  ansible.builtin.get_url:
+    url: "https://dl.k8s.io/release/{{ devops_tools_kubectl_version }}/bin/linux/amd64/kubectl"
+    dest: "{{ devops_tools_bin_dir }}/kubectl"
+    mode: '0755'
+
+- name: Install Helm
+  when: devops_tools_install_helm | bool
+  block:
+    - name: Check whether Helm is already installed
+      ansible.builtin.command: helm version --short
+      register: devops_tools_helm_check
+      changed_when: false
+      failed_when: false
+
+    - name: Download and install Helm
+      ansible.builtin.shell: |
+        set -o pipefail
+        curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      args:
+        executable: /bin/bash
+      when: devops_tools_helm_check.rc != 0
+      changed_when: true
+
+- name: Install kind
+  when: devops_tools_install_kind | bool
+  ansible.builtin.get_url:
+    url: "https://kind.sigs.k8s.io/dl/{{ devops_tools_kind_version }}/kind-linux-amd64"
+    dest: "{{ devops_tools_bin_dir }}/kind"
+    mode: '0755'
+
+- name: Install k3d
+  when: devops_tools_install_k3d | bool
+  block:
+    - name: Check whether k3d is already installed
+      ansible.builtin.command: k3d version
+      register: devops_tools_k3d_check
+      changed_when: false
+      failed_when: false
+
+    - name: Download and install k3d
+      ansible.builtin.shell: |
+        set -o pipefail
+        curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG={{ devops_tools_k3d_version }} bash
+      args:
+        executable: /bin/bash
+      when: devops_tools_k3d_check.rc != 0
+      changed_when: true

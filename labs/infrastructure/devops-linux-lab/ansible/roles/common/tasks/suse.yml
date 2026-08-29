@@ -1,0 +1,5 @@
+---
+- name: Install base packages
+  ansible.builtin.package:
+    name: "{{ common_suse_packages }}"
+    state: present

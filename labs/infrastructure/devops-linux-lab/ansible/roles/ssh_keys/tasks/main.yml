@@ -1,0 +1,30 @@
+---
+- name: Ensure the target user's .ssh directory exists
+  ansible.builtin.file:
+    path: "/home/{{ ssh_keys_user }}/.ssh"
+    state: directory
+    owner: "{{ ssh_keys_user }}"
+    group: "{{ ssh_keys_user }}"
+    mode: '0700'
+
+- name: Ensure the authorized_keys file exists
+  ansible.builtin.file:
+    path: "/home/{{ ssh_keys_user }}/.ssh/authorized_keys"
+    state: touch
+    owner: "{{ ssh_keys_user }}"
+    group: "{{ ssh_keys_user }}"
+    mode: '0600'
+    access_time: preserve
+    modification_time: preserve
+  when: ssh_keys_authorized | length > 0
+
+- name: Install authorized SSH keys
+  ansible.builtin.lineinfile:
+    path: "/home/{{ ssh_keys_user }}/.ssh/authorized_keys"
+    line: "{{ item }}"
+    owner: "{{ ssh_keys_user }}"
+    group: "{{ ssh_keys_user }}"
+    mode: '0600'
+    state: present
+  loop: "{{ ssh_keys_authorized }}"
+  when: ssh_keys_authorized | length > 0

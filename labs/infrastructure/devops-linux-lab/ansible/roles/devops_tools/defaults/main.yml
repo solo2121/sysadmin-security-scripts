@@ -1,0 +1,13 @@
+---
+devops_tools_bin_dir: /usr/local/bin
+
+devops_tools_install_kubectl: false
+devops_tools_kubectl_version: "v1.31.0"
+
+devops_tools_install_helm: false
+
+devops_tools_install_kind: false
+devops_tools_kind_version: "v0.24.0"
+
+devops_tools_install_k3d: false
+devops_tools_k3d_version: "v5.7.4"

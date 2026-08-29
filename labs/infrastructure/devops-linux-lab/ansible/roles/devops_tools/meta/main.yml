@@ -1,0 +1,21 @@
+---
+galaxy_info:
+  role_name: devops_tools
+  author: solo2121
+  description: >-
+    Installs common DevOps CLI tooling (kubectl, Helm, kind, k3d) idempotently,
+    replacing the ad hoc curl-install blocks previously embedded per VM in the
+    Vagrantfile.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: EL
+      versions:
+        - all
+    - name: opensuse
+      versions:
+        - all
+dependencies: []

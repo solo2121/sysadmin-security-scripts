@@ -1,0 +1,9 @@
+---
+common_timezone: "UTC"
+common_manage_timezone: true
+
+docker_users:
+  - vagrant
+
+ssh_keys_user: vagrant
+ssh_keys_authorized: []

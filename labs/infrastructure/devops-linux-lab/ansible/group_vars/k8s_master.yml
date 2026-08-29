@@ -1,0 +1,3 @@
+---
+devops_tools_install_kubectl: true
+devops_tools_install_helm: true

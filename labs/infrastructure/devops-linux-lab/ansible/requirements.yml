@@ -1,0 +1,6 @@
+---
+# No external Galaxy collections are required: every role in this project
+# uses only ansible.builtin modules, so `ansible-playbook site.yml` works
+# with a stock ansible-core install and no `ansible-galaxy collection
+# install` step. Kept as an empty manifest in case a future role needs one.
+collections: []

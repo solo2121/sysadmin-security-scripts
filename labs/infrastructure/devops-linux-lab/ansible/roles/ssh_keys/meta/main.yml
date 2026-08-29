@@ -1,0 +1,20 @@
+---
+galaxy_info:
+  role_name: ssh_keys
+  author: solo2121
+  description: >-
+    Distributes shared authorized SSH keys to lab nodes, replacing the
+    ansible_key.pub polling loop previously embedded in the Vagrantfile.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: EL
+      versions:
+        - all
+    - name: opensuse
+      versions:
+        - all
+dependencies: []

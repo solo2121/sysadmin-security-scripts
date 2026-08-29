@@ -1,0 +1,4 @@
+---
+docker_package_state: present
+docker_users: []
+docker_daemon_options: {}

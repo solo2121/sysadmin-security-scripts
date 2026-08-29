@@ -1,0 +1,5 @@
+---
+- name: Install base packages
+  ansible.builtin.dnf:
+    name: "{{ common_redhat_packages }}"
+    state: present

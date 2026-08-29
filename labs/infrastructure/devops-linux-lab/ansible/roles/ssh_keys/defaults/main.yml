@@ -1,0 +1,3 @@
+---
+ssh_keys_user: vagrant
+ssh_keys_authorized: []

@@ -1,0 +1,43 @@
+---
+- name: Install base packages (Debian family)
+  ansible.builtin.include_tasks: debian.yml
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Install base packages (RedHat family)
+  ansible.builtin.include_tasks: redhat.yml
+  when: ansible_facts['os_family'] == "RedHat"
+
+- name: Install base packages (Suse family)
+  ansible.builtin.include_tasks: suse.yml
+  when: ansible_facts['os_family'] == "Suse"
+
+- name: Determine platform SSH service name
+  ansible.builtin.set_fact:
+    common_ssh_service_name: "{{ 'ssh' if ansible_facts['os_family'] == 'Debian' else 'sshd' }}"
+
+- name: Enable and start the SSH service
+  ansible.builtin.service:
+    name: "{{ common_ssh_service_name }}"
+    state: started
+    enabled: true
+
+- name: Read the currently configured timezone
+  ansible.builtin.command: timedatectl show --property=Timezone --value
+  register: common_current_timezone
+  changed_when: false
+  when: common_manage_timezone | bool
+
+- name: Set the system timezone
+  ansible.builtin.command: "timedatectl set-timezone {{ common_timezone }}"
+  when:
+    - common_manage_timezone | bool
+    - common_current_timezone.stdout != common_timezone
+  changed_when: true
+
+- name: Add lab-managed entries to /etc/hosts
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} ANSIBLE MANAGED LAB HOSTS"
+    block: '{{ common_hosts_entries | join("\n") }}'
+    mode: '0644'
+  when: common_hosts_entries | length > 0

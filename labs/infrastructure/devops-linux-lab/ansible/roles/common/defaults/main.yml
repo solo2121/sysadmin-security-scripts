@@ -1,0 +1,53 @@
+---
+common_manage_timezone: true
+common_timezone: "UTC"
+
+common_hosts_entries: []
+
+common_debian_packages:
+  - curl
+  - wget
+  - git
+  - jq
+  - vim
+  - tree
+  - tmux
+  - htop
+  - net-tools
+  - bash-completion
+  - python3
+  - python3-pip
+  - netcat-openbsd
+  - openssl
+
+common_redhat_packages:
+  - curl
+  - wget
+  - git
+  - jq
+  - vim
+  - tree
+  - tmux
+  - htop
+  - net-tools
+  - bash-completion
+  - python3
+  - python3-pip
+  - nmap-ncat
+  - openssl
+
+common_suse_packages:
+  - curl
+  - wget
+  - git
+  - jq
+  - vim
+  - tree
+  - tmux
+  - htop
+  - net-tools
+  - bash-completion
+  - python3
+  - python3-pip
+  - netcat
+  - openssl

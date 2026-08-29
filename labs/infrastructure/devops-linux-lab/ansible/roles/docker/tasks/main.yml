@@ -1,0 +1,40 @@
+---
+- name: Install Docker Engine (Debian family)
+  ansible.builtin.include_tasks: debian.yml
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Install Docker Engine (RedHat family)
+  ansible.builtin.include_tasks: redhat.yml
+  when: ansible_facts['os_family'] == "RedHat"
+
+- name: Install Docker Engine (Suse family)
+  ansible.builtin.include_tasks: suse.yml
+  when: ansible_facts['os_family'] == "Suse"
+
+- name: Ensure the Docker configuration directory exists
+  ansible.builtin.file:
+    path: /etc/docker
+    state: directory
+    mode: '0755'
+  when: docker_daemon_options | length > 0
+
+- name: Configure Docker daemon options
+  ansible.builtin.copy:
+    content: "{{ docker_daemon_options | to_nice_json }}\n"
+    dest: /etc/docker/daemon.json
+    mode: '0644'
+  when: docker_daemon_options | length > 0
+  notify: Restart docker
+
+- name: Enable and start the Docker service
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Add users to the docker group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  loop: "{{ docker_users }}"

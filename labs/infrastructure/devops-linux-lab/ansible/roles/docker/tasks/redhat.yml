@@ -1,0 +1,23 @@
+---
+- name: Install dnf-plugins-core
+  ansible.builtin.dnf:
+    name: dnf-plugins-core
+    state: present
+
+- name: Add the Docker CE repository
+  ansible.builtin.yum_repository:
+    name: docker-ce
+    description: Docker CE Stable
+    baseurl: "https://download.docker.com/linux/centos/{{ ansible_facts['distribution_major_version'] }}/$basearch/stable"
+    gpgcheck: true
+    gpgkey: https://download.docker.com/linux/centos/gpg
+
+- name: Install Docker Engine packages
+  ansible.builtin.dnf:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: "{{ docker_package_state }}"

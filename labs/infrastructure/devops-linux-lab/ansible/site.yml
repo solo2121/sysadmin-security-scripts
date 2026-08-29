@@ -1,0 +1,24 @@
+---
+- name: Apply baseline OS configuration to every lab node
+  hosts: all
+  become: true
+  roles:
+    - common
+
+- name: Install the container runtime on Kubernetes and multi-distro lab nodes
+  hosts: k8s_cluster:linux_labs
+  become: true
+  roles:
+    - docker
+
+- name: Install DevOps CLI tooling on the Kubernetes control-plane node
+  hosts: k8s_master
+  become: true
+  roles:
+    - devops_tools
+
+- name: Distribute shared SSH keys to the Ansible practice and lab nodes
+  hosts: ansible_practice:linux_labs
+  become: true
+  roles:
+    - ssh_keys
