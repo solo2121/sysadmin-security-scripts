@@ -21,9 +21,7 @@ This project bridges offensive security, defensive validation, and infrastructur
 > [!IMPORTANT]
 > **Supported hosts:** KVM/QEMU with libvirt is the primary provider on Linux for the full lab portfolio. VirtualBox workflows are maintained for compatible Intel/AMD x86_64 hosts running Linux, macOS, or Windows.
 >
-> **Apple Silicon status:** Apple Silicon hosts are not supported or validated for published lab workflows. The current labs depend on x86_64 guests, x86_64-oriented Vagrant boxes, and provider-specific validation.
->
-> A separate **DevSecOps Lite — ARM64** profile is planned for ARM64-native Linux and Kubernetes workflows. It will be documented only after provider compatibility, component support, deployment automation, and validation coverage are established.
+> **Apple Silicon (ARM64) is not currently supported or validated.** See [Apple Silicon status](#apple-silicon-status) for what's affected and the planned ARM64 path.
 
 ---
 
@@ -102,7 +100,7 @@ See the [Portfolio](./docs/project/portfolio.md) document for the complete skill
 |---|---:|---:|---:|---|
 | [Active Directory — base](./labs/security/active-directory/base/) | 6; up to 11 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 200 GB+ | Learning core AD attack paths, including Kerberoasting, AS-REP roasting, and AD CS abuse, without network-segmentation complexity. Start here if you are new to AD security. |
 | [Active Directory — segmented](./labs/security/active-directory/vlan-segmented/) | 7; up to 12 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 80 GB+ | Practicing lateral movement, routing controls, trust boundaries, and defensive visibility across segmented network boundaries. |
-| [DevOps/DevSecOps](./labs/infrastructure/devops-linux-lab/) | 12 | 16 GB for a core cluster / 32 GB+ recommended | 200 GB+ | Kubernetes, Harbor, CI/CD, GitOps, observability, runtime security, policy enforcement, and Linux administration. Not AD-focused. |
+| [DevOps/DevSecOps](./labs/infrastructure/devops-linux-lab/) | 2 (`minimal`); up to 12 with `LAB_PROFILE=full` | 16 GB for the minimal control plane / 32 GB+ for the full profile | 200 GB+ | Kubernetes, Harbor, CI/CD, GitOps, observability, runtime security, policy enforcement, and Linux administration. Not AD-focused. |
 | DevSecOps Lite — ARM64 (planned) | — | — | — | Planned — not yet published. Intended as an ARM64-native Linux and Kubernetes platform-engineering environment for compatible ARM64 hosts. |
 | [Windows Server Hardening (experimental)](./labs/security/windows-hardening/) | 1; 2 with `LAB_PROFILE=full` | 8 GB / 16 GB+ | 60 GB+ | A defensive counterpart to the AD base lab: a CIS-benchmark-inspired hardening baseline with controls mapped to specific attack techniques. Start after completing the AD base lab. |
 
@@ -111,7 +109,9 @@ See the [Portfolio](./docs/project/portfolio.md) document for the complete skill
 >
 > The segmented Active Directory lab's RAM figures reflect its default `ad` profile (7 VMs). Its `full` profile (12 VMs) needs more: 32 GB minimum / 48 GB+ recommended. See the [lab README](./labs/security/active-directory/vlan-segmented/) for the complete profile-by-profile breakdown.
 >
-> The ARM64 Lite profile is a planning item only. Do not treat its resource requirements or architecture as validated until the profile is published with measured deployment requirements.
+> The DevOps/DevSecOps lab defaults to `LAB_PROFILE=minimal` (control plane + one worker) unless overridden. See the [lab README](./labs/infrastructure/devops-linux-lab/) for the full `minimal`/`dev`/`full` profile breakdown.
+>
+> The ARM64 Lite profile is planning-only; see [Apple Silicon status](#apple-silicon-status).
 
 Before deploying, run the full prerequisite check:
 
@@ -283,7 +283,7 @@ KVM/QEMU with libvirt is the primary development provider and generally offers t
 | Windows Server Hardening (experimental) | Supported | Supported | Not supported |
 | DevSecOps Lite — ARM64 (planned) | Not applicable | Not applicable | Planned |
 
-The **DevSecOps Lite — ARM64** profile is a roadmap item, not a published lab. Its final provider, runtime, deployment workflow, and supported component set will be documented after ARM64 compatibility validation.
+The **DevSecOps Lite — ARM64** profile is a roadmap item, not a published lab — see [Apple Silicon status](#apple-silicon-status) for details.
 
 The segmented lab uses separate libvirt networks and isolated VirtualBox internal networks to model segmentation boundaries. VirtualBox networking provides logical isolation but does not reproduce physical IEEE 802.1Q VLAN tagging.
 
