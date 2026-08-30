@@ -100,7 +100,7 @@ See the [Portfolio](./docs/project/portfolio.md) document for the complete skill
 |---|---:|---:|---:|---|
 | [Active Directory — base](./labs/security/active-directory/base/) | 6; up to 11 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 200 GB+ | Learning core AD attack paths, including Kerberoasting, AS-REP roasting, and AD CS abuse, without network-segmentation complexity. Start here if you are new to AD security. |
 | [Active Directory — segmented](./labs/security/active-directory/vlan-segmented/) | 7; up to 12 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 80 GB+ | Practicing lateral movement, routing controls, trust boundaries, and defensive visibility across segmented network boundaries. |
-| [DevOps/DevSecOps](./labs/infrastructure/devops-linux-lab/) | 2 (`minimal`); up to 12 with `LAB_PROFILE=full` | 16 GB for the minimal control plane / 32 GB+ for the full profile | 200 GB+ | Kubernetes, Harbor, CI/CD, GitOps, observability, runtime security, policy enforcement, and Linux administration. Not AD-focused. |
+| [DevOps/DevSecOps](./labs/infrastructure/devops-linux-lab/) | 2; up to 12 with `LAB_PROFILE=full` | 16 GB for the minimal control plane / 32 GB+ for the full profile | 200 GB+ | Kubernetes, Harbor, CI/CD, GitOps, observability, runtime security, policy enforcement, and Linux administration. Not AD-focused. |
 | DevSecOps Lite — ARM64 (planned) | — | — | — | Planned — not yet published. Intended as an ARM64-native Linux and Kubernetes platform-engineering environment for compatible ARM64 hosts. |
 | [Windows Server Hardening (experimental)](./labs/security/windows-hardening/) | 1; 2 with `LAB_PROFILE=full` | 8 GB / 16 GB+ | 60 GB+ | A defensive counterpart to the AD base lab: a CIS-benchmark-inspired hardening baseline with controls mapped to specific attack techniques. Start after completing the AD base lab. |
 
@@ -162,24 +162,24 @@ Check the VM state:
 vagrant status
 ```
 
-Supported lab environments include a Python-based `vagrant_manager.py` for interactive or scripted VM management:
+Supported lab environments include a Python-based `vagrant_manager.py` for interactive or scripted VM management (from within the lab directory, e.g. `labs/security/active-directory/base/`):
 
 ```bash
-python3 vagrant_manager.py
+python3 scripts/vagrant_manager.py
 ```
 
 Examples:
 
 ```bash
-python3 vagrant_manager.py up kali dc01
-python3 vagrant_manager.py up --provider virtualbox
+python3 scripts/vagrant_manager.py up kali dc01
+python3 scripts/vagrant_manager.py up --provider virtualbox
 ```
 
 Verify available commands:
 
 ```bash
-python3 vagrant_manager.py --help
-python3 vagrant_manager.py up --help
+python3 scripts/vagrant_manager.py --help
+python3 scripts/vagrant_manager.py up --help
 ```
 
 After deployment, follow the selected lab README and health-validation guidance before beginning an exercise. A successful `vagrant up` does not necessarily mean that every guest service, domain role, or Kubernetes component is fully ready.
@@ -477,7 +477,8 @@ security-engineering-lab/
 ├── Makefile
 ├── README.md
 ├── SECURITY.md
-└── pyproject.toml
+├── pyproject.toml
+└── requirements-dev.txt
 ```
 
 See the [Documentation Index](./docs/README.md) for the complete documentation map and each lab directory for provider-specific deployment instructions.
@@ -508,7 +509,7 @@ make security   # Bandit and detect-secrets checks
 make docs-refs  # Check for dangling documentation references
 ```
 
-Additional targets may include:
+Additional development targets:
 
 ```bash
 make format
