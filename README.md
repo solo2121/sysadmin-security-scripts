@@ -98,7 +98,7 @@ See the [Portfolio](./docs/project/portfolio.md) document for the complete skill
 
 | Lab | Default VMs | Host RAM (min / recommended) | Free disk | Best for |
 |---|---:|---:|---:|---|
-| [Active Directory — base](./labs/security/active-directory/base/) | 6; up to 11 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 200 GB+ | Learning core AD attack paths, including Kerberoasting, AS-REP roasting, and AD CS abuse, without network-segmentation complexity. Start here if you are new to AD security. |
+| [Active Directory — base](./labs/security/active-directory/base/) | 6; up to 11 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 200 GB+ | Learning core AD attack paths, including Kerberoasting, AS-REP roasting, and AD CS abuse, without network-segmentation complexity. Also hosts the OWASP Top 10 for LLM Applications (2025) training lab on its own `llm01` VM (`LAB_PROFILE=llm`) — see [`llm-lab/README.md`](./labs/security/active-directory/base/llm-lab/README.md). Start here if you are new to AD security. |
 | [Active Directory — segmented](./labs/security/active-directory/vlan-segmented/) | 7; up to 12 with `LAB_PROFILE=full` | 16 GB / 32 GB+ | 80 GB+ | Practicing lateral movement, routing controls, trust boundaries, and defensive visibility across segmented network boundaries. |
 | [DevOps/DevSecOps](./labs/infrastructure/devops-linux-lab/) | 2; up to 12 with `LAB_PROFILE=full` | 16 GB for the minimal control plane / 32 GB+ for the full profile | 200 GB+ | Kubernetes, Harbor, CI/CD, GitOps, observability, runtime security, policy enforcement, and Linux administration. Not AD-focused. |
 | DevSecOps Lite — ARM64 (planned) | — | — | — | Planned — not yet published. Intended as an ARM64-native Linux and Kubernetes platform-engineering environment for compatible ARM64 hosts. |
@@ -232,6 +232,8 @@ Full unedited recordings are available for the [Active Directory lab](./assets/d
 The base Active Directory lab provides Windows enterprise-style infrastructure for authorized identity security research and defensive validation.
 
 It covers Active Directory Domain Services, Kerberos, LDAP, Active Directory Certificate Services, credential-access simulation, privilege-escalation research, post-compromise workflows, and detection-engineering concepts.
+
+It also hosts the OWASP Top 10 for LLM Applications (2025) training lab on a dedicated `llm01` VM, brought up on its own with `LAB_PROFILE=llm vagrant up llm01` — see [`llm-lab/README.md`](./labs/security/active-directory/base/llm-lab/README.md) for the safety model and full category/endpoint table.
 
 See the [lab README](./labs/security/active-directory/base/) for provider-specific instructions, resource profiles, validation procedures, and authorized security-testing guidance.
 
@@ -373,6 +375,7 @@ See the following documents for architecture details, trust boundaries, and desi
 | Domain | Capabilities | Location |
 |---|---|---|
 | Active Directory security | Domain deployment, AD CS, identity attack-path simulation, privilege-escalation research, and post-compromise workflows | `labs/security/active-directory/base/` |
+| LLM application security | OWASP Top 10 for LLM Applications (2025) — prompt injection, sensitive information disclosure, supply chain, data/model poisoning, improper output handling, excessive agency, system prompt leakage, vector/embedding weaknesses, misinformation, and unbounded consumption, each with a safety-sandboxed vulnerable/defensive pair | `labs/security/active-directory/base/llm-lab/` |
 | Network segmentation | Logical segmentation boundaries, routing separation, trust relationships, and segmentation-aware security-testing scenarios | `labs/security/active-directory/vlan-segmented/` |
 | DevOps/DevSecOps | Kubernetes operations, GitOps, observability, runtime security, and policy enforcement | `labs/infrastructure/devops-linux-lab/` |
 | Defensive hardening (experimental) | CIS-benchmark-inspired hardening controls mapped to specific AD attack techniques, with validation tooling for each control | `labs/security/windows-hardening/` |
