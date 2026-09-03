@@ -1,0 +1,27 @@
+[Unit]
+Description=OWASP Top 10 for LLM Applications Training Lab (llm01)
+After=network.target
+Documentation=https://genai.owasp.org/initiatives/top-10-for-llm-and-genai/
+
+[Service]
+Type=simple
+User=llmlab
+Group=llmlab
+WorkingDirectory=/opt/llm-lab
+Environment="PATH=/opt/llm-lab/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+Environment="LLM_LAB_ROOT=/opt/llm-lab"
+ExecStart=/opt/llm-lab/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=5
+
+# Defense in depth at the OS level, on top of the app-level sandboxing in
+# app/safety.py — this unit cannot write outside /opt/llm-lab even if a bug
+# in the app tried to.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/llm-lab/data/sandbox
+
+[Install]
+WantedBy=multi-user.target

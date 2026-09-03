@@ -1,0 +1,3 @@
+This directory is the only path the app is ever allowed to read or write
+at runtime (see app/safety.py:resolve_sandbox_path). Kept empty in git via
+this placeholder.

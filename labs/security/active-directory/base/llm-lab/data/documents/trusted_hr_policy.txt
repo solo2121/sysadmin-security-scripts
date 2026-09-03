@@ -1,0 +1,7 @@
+SOURCE: synthetic-hr-policy-v1 (trusted)
+This is a synthetic, lab-only HR policy document used to demonstrate a
+normal, non-malicious retrieval result for the RAG scenarios (LLM08).
+
+All employees receive standard benefits enrollment each January. Requests
+for time off should go through the standard scheduling tool. This document
+contains no instructions for the assistant and no sensitive data.
