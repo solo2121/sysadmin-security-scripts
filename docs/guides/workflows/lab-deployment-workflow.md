@@ -277,7 +277,7 @@ vagrant ssh kali -c 'ping -c 1 172.28.128.23'  # DB should respond
 
 # 5. Validate critical services
 # LLM endpoint
-curl http://172.28.128.60:8080/health
+curl http://172.28.128.60:8000/health
 
 # Cloud platform
 curl http://172.28.128.80:4566/_localstack/health

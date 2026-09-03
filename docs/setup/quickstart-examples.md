@@ -353,7 +353,7 @@ vagrant up
 nslookup dc01.lab.local 172.28.128.21
 vagrant ssh kali
 nslookup -type=SRV _ldap._tcp.lab.local 172.28.128.21
-curl http://172.28.128.60:8080/health
+curl http://172.28.128.60:8000/health
 ```
 
 ---

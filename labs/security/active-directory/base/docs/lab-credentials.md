@@ -175,11 +175,12 @@ LOCAL_ACCOUNTS:
     - username: "root"
       password: "toor"
       host: "Linux VMs"
-
-    - username: "llmuser"
-      password: "LLMlab123!"
-      host: "llm01.lab.local"
 ```
+
+> **Note:** `llm01` does not have a password-based login account. The lab app runs as
+> an unprivileged, no-shell service account (`llmlab`, `/usr/sbin/nologin`) under
+> systemd — see [`llm-lab/README.md`](../llm-lab/README.md#safety-model). Access
+> `llm01` via `vagrant ssh llm01` (key-based) or the API directly.
 
 </details>
 

@@ -884,23 +884,27 @@ Alert if: metadata service access log shows request to:
 
 ### LLM Endpoint Abuse (llm01 VM)
 
-```bash
-# On llm01 — log all requests to the LLM API
-tail -f /var/log/llm-service.log | grep -E "v1/chat|v7/execute|v14/function"
+The app logs structured JSON to stdout, captured by systemd/journald (see
+[`llm-lab/README.md`](../../../labs/security/active-directory/base/llm-lab/README.md)).
 
-# Alert on suspicious prompt content
-tail -f /var/log/llm-service.log | grep -iE "ignore.*instruction|system.*prompt|jailbreak|exec|whoami"
+```bash
+# On llm01 — follow all lab-app log output
+journalctl -u llm-owasp-lab -f
+
+# Alert on suspicious prompt content or blocked actions
+journalctl -u llm-owasp-lab -f | grep -iE \
+  "override_detected.:true|blocked_command|blocked_path_traversal|rate_limited|daily_quota_exceeded"
 ```
 
 **Detection patterns:**
 
 ```
-Alert if: LLM API log shows request body containing:
-  "ignore" AND "instruction"
-  "system" AND "prompt"
-  "developer mode"
-  Any request to /v5/load-model with base64 content
-  Any request to /v14/function-call with path traversal in params
+Alert if: llm-owasp-lab journal shows:
+  "override_detected":true          (LLM01 prompt-injection attempt against /llm01/chat)
+  "blocked_command"                 (LLM06 attempted a non-allowlisted "tool" command)
+  "blocked_path_traversal"          (LLM06/LLM02 attempted to escape the data/sandbox path)
+  "cross_tenant_leak":true          (LLM08 rag-query returned another tenant's documents)
+  "rate_limited" or "daily_quota_exceeded" repeated from the same client_id (LLM10 abuse)
 ```
 
 ---
