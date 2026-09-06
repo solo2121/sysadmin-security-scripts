@@ -3,7 +3,7 @@
 # This helps `git shortlog` and some git tools show the correct name/email.
 
 # Map the VirtualBox Integration placeholder author email to your GitHub noreply address
-Miguel Carlo <59803489+solo2121@users.noreply.github.com> <vbox-integration@local>
+Miguel A. Carlo <59803489+solo2121@users.noreply.github.com> <vbox-integration@local>
 
 # Also map the plain display name (no email) just in case
-Miguel Carlo <59803489+solo2121@users.noreply.github.com> "VirtualBox Integration"
+Miguel A. Carlo <59803489+solo2121@users.noreply.github.com> "VirtualBox Integration"
