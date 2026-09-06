@@ -5,7 +5,7 @@
 # Enterprise Cloud-Native DevSecOps Kubernetes Lab - UNIFIED
 # =============================================================================
 #
-# Author        : Miguel Carlo (solo2121)
+# Author        : Miguel A. Carlo (solo2121)
 # Version       : 8.2.0
 # Created       : 2025
 # Last Updated  : 2026-08-16
@@ -33,7 +33,7 @@
 
 LAB_NAME        = "Enterprise Cloud-Native DevSecOps Lab"
 LAB_VERSION     = "8.2.0"
-LAB_AUTHOR      = "Miguel Carlo (solo2121)"
+LAB_AUTHOR      = "Miguel A. Carlo (solo2121)"
 LAB_CREATED     = "2025"
 LAB_UPDATED     = "2026-08-16"
 LAB_STATUS      = "Active & Maintained"
